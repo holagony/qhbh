@@ -260,7 +260,7 @@ def energy_solar_power(data_json):
                 all_png['预估'][exp] = dict()
                 for insti,stats_table in sub_dict1.items():
                     all_png['预估'][exp][insti] = dict()
-                    stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
+                    stats_table = pd.DataFrame(stats_table[elem_dict[element]]).iloc[:,:-5:]
                     stats_table=stats_table[['时间']+(station_dict['站号'].to_list())]
                     
                     for i in range(len(stats_table)):
