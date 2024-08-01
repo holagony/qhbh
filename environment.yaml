@@ -1,0 +1,31 @@
+name: myconda
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - flask
+  - celery
+  - gevent
+  - xarray
+  - cnmaps
+  - cartopy
+  - transbigdata
+  - pandas=1.5.3
+  - numpy
+  - openpyxl
+  - sqlalchemy
+  - psycopg2
+  - sshtunnel
+  - metpy
+  - simplejson
+  - tqdm
+  - docxtpl
+  - docxcompose
+  - jenkspy
+  - pip:
+    - nmc-met-io
+    - probscale
+    - redis
+    - gunicorn
+    - supervisor
+
