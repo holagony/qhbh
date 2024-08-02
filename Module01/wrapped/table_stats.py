@@ -67,36 +67,37 @@ def table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year):
     tmp_df.loc['距平百分率%'] = ((tmp_df.loc['距平']/tmp_df.loc['参考时段均值'])*100).round(2)
 
     # 合并所有结果
-    result_df = data_df.copy()
-    result_df['区域均值'] = result_df.iloc[:,:].mean(axis=1).round(1)
-    result_df['区域参考时段'] = np.nan
-    result_df['区域距平'] = (result_df.iloc[:,:].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).round(1)
-    result_df['区域最大值'] = result_df.iloc[:,:].max(axis=1)
-    result_df['区域最小值'] = result_df.iloc[:,:].min(axis=1)
-    result_df = pd.concat((result_df,tmp_df),axis=0)
+    stats_result = data_df.copy()
+    stats_result['区域均值'] = stats_result.iloc[:,:].mean(axis=1).round(1)
+    stats_result['区域参考时段'] = np.nan
+    stats_result['区域距平'] = (stats_result.iloc[:,:].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).round(1)
+    stats_result['区域最大值'] = stats_result.iloc[:,:].max(axis=1)
+    stats_result['区域最小值'] = stats_result.iloc[:,:].min(axis=1)
+    stats_result = pd.concat((stats_result,tmp_df),axis=0)
 
     # index处理
     if time_freq in ['Y','Q']:
-        result_df.insert(loc=0, column='时间', value=result_df.index)
+        stats_result.insert(loc=0, column='时间', value=stats_result.index)
     elif time_freq in ['M1','M2']:
-        result_df.insert(loc=0, column='时间', value=result_df.index)
+        stats_result.insert(loc=0, column='时间', value=stats_result.index)
     elif time_freq in ['D1','D2']:
-        result_df.insert(loc=0, column='时间', value=result_df.index)
-    result_df.reset_index(drop=True, inplace=True)
-
-    return result_df
-
+        stats_result.insert(loc=0, column='时间', value=stats_result.index)
+        
+    stats_result.reset_index(drop=True, inplace=True)
+    post_data_df = data_df.copy()
+    post_refer_df = refer_df.copy()
+    
+    return stats_result, post_data_df, post_refer_df
 
 
 if __name__ == '__main__':
     path = r'C:/Users/MJY/Desktop/qhkxxlz/app/Files/test_data/qh_mon.csv'
-    df = pd.read_csv(path)
+    df = pd.read_csv(path, low_memory=False)
     df = data_processing(df)
-
     data_df = df[df.index.year<=2011]
     refer_df = df[(df.index.year>2000) & (df.index.year<2020)]
     nearly_df = df[df.index.year>2011]
     last_year = 2023
     time_freq = 'M1'
     ele = 'PRS_Avg'
-    result_df =  table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year)
+    stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year)

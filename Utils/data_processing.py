@@ -102,7 +102,7 @@ def data_processing(yearly_data):
     if 'WIN_D_S_Max_C' in df_data.columns:
         df_data['WIN_D_S_Max_C'] = df_data['WIN_D_S_Max_C'].astype(str).apply(wind_direction_to_symbol)
 
-    if 'WIN_D_S_Max' in df_data.columns:
+    if 'WIN_D_Max_C' in df_data.columns:
         df_data['WIN_D_Max_C'] = df_data['WIN_D_Max_C'].astype(str).apply(wind_direction_to_symbol)
 
     return df_data
