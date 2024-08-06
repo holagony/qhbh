@@ -95,7 +95,7 @@ def contour_picture(result_df,data_df,shp_name,method,output_filepath):
     lat_var = nc_file.createVariable('latitude', 'f8',('lat',))
     lat_var[:] = gridy  
 
-    time_var = nc_file.createVariable('time', 'f8',('lat',))
+    time_var = nc_file.createVariable('time', 'f8',('time',))
     time_var[:] = year  
     
     grid_var = nc_file.createVariable('data_year', 'f4', ('time','lat', 'lon',))  # grid
@@ -111,12 +111,12 @@ def contour_picture(result_df,data_df,shp_name,method,output_filepath):
     for ele in ele_choose:
         value_sta=df_sta_1[ele].values
         ele_name='data'+str(i)
-        data=station_to_grid(lon_sta,lat_sta,value_sta,gridx,gridy,method,ele)
+        data2=station_to_grid(lon_sta,lat_sta,value_sta,gridx,gridy,method,ele)
         
         nc_file = Dataset(output_filepath_name, 'a', format='NETCDF4', encoding='gbk')
 
-        grid_var = nc_file.createVariable(ele_name, 'f4', ('time','lat', 'lon',))  # grid
-        grid_var[:] = data
+        grid_var = nc_file.createVariable(ele_name, 'f4', ('lat', 'lon',))  # grid
+        grid_var[:] = data2
 
         nc_file.close()
         i=i+1
@@ -125,11 +125,12 @@ def contour_picture(result_df,data_df,shp_name,method,output_filepath):
     
 
     
-    return result
+    return result,data,gridx,gridy,year
 
 if __name__ == "__main__":
     output_filepath=r'D:\Project\1'
     shp_name=r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
     method='idw2'
     
-    result=contour_picture(result_df,data_df,shp_name,method,output_filepath)
+    result,data,gridx,gridy,year=contour_picture(stats_result,data_df,shp_name,method,output_filepath)
+    result_df=stats_result
