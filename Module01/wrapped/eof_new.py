@@ -28,16 +28,21 @@ time_freq = 'M1'
 ele = 'TEM_Avg'
 stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year)
 
- 
+# EOF
 t2m = xr.tutorial.open_dataset("air_temperature")
 
-eof = xe.models.EOF(n_modes=10)
+eof = xe.models.EOF(n_modes=4)
 eof.fit(t2m, dim="time")
 comps = eof.components()  # EOFs (spatial patterns)
 scores = eof.scores()  # PCs (temporal patterns)
 
-rotator = xe.models.EOFRotator(n_modes=3)
+rotator = xe.models.EOFRotator(n_modes=4)
 rotator.fit(eof) # doctest: +ELLIPSIS
 rot_comps = rotator.components()  # Rotated EOFs (spatial patterns)
 rot_scores = rotator.scores()  # Rotated PCs (temporal patterns)
+
+
+# list(ds.keys())
+
+
 
