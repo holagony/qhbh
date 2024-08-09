@@ -1,7 +1,17 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Aug  9 16:19:41 2024
+
+@author: EDY
+"""
+
 import json
 import simplejson
 import requests
-from Module03.module03_handler import weather_phenomena_days
+from flask import Blueprint, request, jsonify
+from Utils.config import cfg
+from Utils.ordered_easydict import OrderedEasyDict as edict
+from Module01.module01_handler import statistical_climate_features
 
 
 def callback(url, result_id, result):
@@ -12,13 +22,13 @@ def callback(url, result_id, result):
     requests.put(url, headers=header, data=json.dumps(_json))
 
 
-class workerHighA:
+class workerAirportWind:
 
     def act(self, json_str):
         data_json = json.loads(json_str)
         result_id = data_json.get('id')
         callback_url = data_json.get('callback')
-        result_dict = weather_phenomena_days(data_json)
+        result_dict = statistical_climate_features(data_json)
         return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result_dict}, ensure_ascii=False, ignore_nan=True)
         callback(callback_url, result_id, return_data)
         return return_data

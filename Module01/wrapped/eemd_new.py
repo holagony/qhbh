@@ -1,20 +1,23 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Aug  2 16:12:31 2024
+Created on Fri Aug  9 11:32:50 2024
 
 @author: EDY
 
 EEMD方法
+
+尝试使用多线程同时画图，失败
 """
 
-from PyEMD import EMD, EEMD
-from PyEMD.visualisation import Visualisation 
+from PyEMD import EEMD
 import numpy  as np
 import pylab as plt
 import pandas as pd
 import warnings
 import os
 import matplotlib
+from multiprocessing import Pool, Manager
+from matplotlib.path import Path
 from Module01.wrapped.table_stats import table_stats
 from Utils.data_processing import data_processing
 
@@ -25,31 +28,12 @@ plt.rcParams['axes.unicode_minus'] = False
 warnings.filterwarnings('ignore')
 
 
-def eemd(stats_result,output_filepath):
-    df_sta_1=stats_result.T.reset_index()
+def eemd_picture(result,i,df_sta_3,columns,year):
+    dat=df_sta_3.iloc[:,i].values
     
-    df_sta_1.columns =df_sta_1.iloc[0]
-    df_sta_1 = df_sta_1.drop(df_sta_1.index[0])
-    df_sta_1 = df_sta_1.iloc[:-5:,:]
-    
-    # 历年平均值
-    df_sta_2 = df_sta_1.iloc[:,:-10:].T
-    df_sta_2.columns =df_sta_2.iloc[0]
-    df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
-    df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
-    
-    df_sta_2.index = pd.DatetimeIndex(df_sta_2.index)
-    df_sta_3 = df_sta_2.resample('Y').mean()
-    year=df_sta_3.index.year
-    columns=df_sta_3.columns
-    
-    result=dict()
-    for i in range(len(columns)):
-        dat=df_sta_3.iloc[:,i].values
-        
-        if np.any(np.isnan(dat)):
-            print(f'{columns[i]}存在nan值，时间序列不完整')
-            continue
+    if np.any(np.isnan(dat)):
+        print(f'{columns[i]}存在nan值，时间序列不完整')
+    else:
 
         t0 = year[0]                               # 开始的时间，以年为单位
         dt = 1                                # 采样间隔，以年为单位
@@ -59,12 +43,10 @@ def eemd(stats_result,output_filepath):
         p = np.polyfit(t - t0, dat, 1)               # 线性拟合
         dat_notrend = dat - np.polyval(p, t - t0)    # 去趋势
         std = dat_notrend.std()                      # 标准差
-        var = std ** 2                               # 方差
         dat_norm = dat_notrend / std                 # 标准化
         
         eemd = EEMD()
          
-        emd = eemd.EMD
          
         eIMFs = eemd.eemd(dat_norm, t)
         nIMFs = eIMFs.shape[0]
@@ -92,7 +74,36 @@ def eemd(stats_result,output_filepath):
         
         result['eemd_'+columns[i]]=result_picture
 
-    return result
+        return result
+    
+def eemd(stats_result,output_filepath):
+    df_sta_1=stats_result.T.reset_index()
+    
+    df_sta_1.columns =df_sta_1.iloc[0]
+    df_sta_1 = df_sta_1.drop(df_sta_1.index[0])
+    df_sta_1 = df_sta_1.iloc[:-5:,:]
+    
+    # 历年平均值
+    df_sta_2 = df_sta_1.iloc[:,:-10:].T
+    df_sta_2.columns =df_sta_2.iloc[0]
+    df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
+    df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
+    
+    df_sta_2.index = pd.DatetimeIndex(df_sta_2.index)
+    df_sta_3 = df_sta_2.resample('Y').mean()
+    year=df_sta_3.index.year
+    columns=df_sta_3.columns
+    
+    manager = Manager()
+    result = manager.dict()
+    params_list = [(result,i,df_sta_3,columns,year) for i in range(len(columns))]
+
+    # 使用进程池并行处理数据下载
+    with Pool(processes=1) as pool:  # 假设我们使用4个进程
+        pool.starmap(eemd_picture, params_list)
+        
+    return dict(result)
+
 if __name__ == "__main__":
     
     output_filepath=r'D:\Project\1'

@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Aug  9 13:57:46 2024
+
+@author: EDY
+"""
+
 import numpy as np
 import pandas as pd
 import pycwt as wavelet
@@ -8,70 +15,9 @@ from scipy.special._ufuncs import gammainc, gamma
 from scipy.optimize import fminbound
 from Utils.data_processing import data_processing
 from Module01.wrapped.table_stats import table_stats
-
-# # WAVELET  1D Wavelet transform with optional significance testing
-#   wave, period, scale, coi = wavelet(Y, dt, pad, dj, s0, J1, mother, param)
-#
-#   Computes the wavelet transform of the vector Y (length N),
-#   with sampling rate DT.
-#
-#   By default, the Morlet wavelet (k0=6) is used.
-#   The wavelet basis is normalized to have total energy=1 at all scales.
-#
-# INPUTS:
-#
-#    Y = the time series of length N.
-#    DT = amount of time between each Y value, i.e. the sampling time.
-#
-# OUTPUTS:
-#
-#    WAVE is the WAVELET transform of Y. This is a complex array
-#    of dimensions (N,J1+1). FLOAT(WAVE) gives the WAVELET amplitude,
-#    ATAN(IMAGINARY(WAVE),FLOAT(WAVE) gives the WAVELET phase.
-#    The WAVELET power spectrum is ABS(WAVE)**2.
-#    Its units are sigma**2 (the time series variance).
-#
-# OPTIONAL INPUTS:
-#
-# *** Note *** if none of the optional variables is set up, then the program
-#   uses default values of -1.
-#
-#    PAD = if set to 1 (default is 0), pad time series with enough zeroes to get
-#         N up to the next higher power of 2. This prevents wraparound
-#         from the end of the time series to the beginning, and also
-#         speeds up the FFT's used to do the wavelet transform.
-#         This will not eliminate all edge effects (see COI below).
-#
-#    DJ = the spacing between discrete scales. Default is 0.25.
-#         A smaller # will give better scale resolution, but be slower to plot.
-#
-#    S0 = the smallest scale of the wavelet.  Default is 2*DT.
-#
-#    J1 = the # of scales minus one. Scales range from S0 up to S0*2**(J1*DJ),
-#        to give a total of (J1+1) scales. Default is J1 = (LOG2(N DT/S0))/DJ.
-#
-#    MOTHER = the mother wavelet function.
-#             The choices are 'MORLET', 'PAUL', or 'DOG'
-#
-#    PARAM = the mother wavelet parameter.
-#            For 'MORLET' this is k0 (wavenumber), default is 6.
-#            For 'PAUL' this is m (order), default is 4.
-#            For 'DOG' this is m (m-th derivative), default is 2.
-#
-#
-# OPTIONAL OUTPUTS:
-#
-#    PERIOD = the vector of "Fourier" periods (in time units) that corresponds
-#           to the SCALEs.
-#
-#    SCALE = the vector of scale indices, given by S0*2**(j*DJ), j=0...J1
-#            where J1+1 is the total # of scales.
-#
-#    COI = if specified, then return the Cone-of-Influence, which is a vector
-#        of N points that contains the maximum period of useful information
-#        at that particular time.
-#        Periods greater than this are subject to edge effects.
-
+import os
+import matplotlib
+matplotlib.use('Agg')
 
 def wavelet(Y, dt, pad=0, dj=-1, s0=-1, J1=-1, mother=-1, param=-1, freq=None):
     n1 = len(Y)
@@ -141,31 +87,6 @@ def wavelet(Y, dt, pad=0, dj=-1, s0=-1, J1=-1, mother=-1, param=-1, freq=None):
     return wave, period, scale, coi
 
 
-#-------------------------------------------------------------------------------------------------------------------
-# WAVE_BASES  1D Wavelet functions Morlet, Paul, or DOG
-#
-#  DAUGHTER,FOURIER_FACTOR,COI,DOFMIN = wave_bases(MOTHER,K,SCALE,PARAM)
-#
-#   Computes the wavelet function as a function of Fourier frequency,
-#   used for the wavelet transform in Fourier space.
-#   (This program is called automatically by WAVELET)
-#
-# INPUTS:
-#
-#    MOTHER = a string, equal to 'MORLET' or 'PAUL' or 'DOG'
-#    K = a vector, the Fourier frequencies at which to calculate the wavelet
-#    SCALE = a number, the wavelet scale
-#    PARAM = the nondimensional parameter for the wavelet function
-#
-# OUTPUTS:
-#
-#    DAUGHTER = a vector, the wavelet function
-#    FOURIER_FACTOR = the ratio of Fourier period to scale
-#    COI = a number, the cone-of-influence size at the scale
-#    DOFMIN = a number, degrees of freedom for each point in the wavelet power
-#             (either 2 for Morlet and Paul, or 1 for the DOG)
-
-
 def wave_bases(mother, k, scale, param):
     n = len(k)
     kplus = np.array(k > 0., dtype=float)
@@ -207,63 +128,6 @@ def wave_bases(mother, k, scale, param):
         print('Mother must be one of MORLET, PAUL, DOG')
 
     return daughter, fourier_factor, coi, dofmin
-
-
-#-------------------------------------------------------------------------------------------------------------------
-# WAVE_SIGNIF  Significance testing for the 1D Wavelet transform WAVELET
-#
-#   SIGNIF = wave_signif(Y,DT,SCALE,SIGTEST,LAG1,SIGLVL,DOF,MOTHER,PARAM)
-#
-# INPUTS:
-#
-#    Y = the time series, or, the VARIANCE of the time series.
-#        (If this is a single number, it is assumed to be the variance...)
-#    DT = amount of time between each Y value, i.e. the sampling time.
-#    SCALE = the vector of scale indices, from previous call to WAVELET.
-#
-#
-# OUTPUTS:
-#
-#    SIGNIF = significance levels as a function of SCALE
-#    FFT_THEOR = output theoretical red-noise spectrum as fn of PERIOD
-#
-#
-# OPTIONAL INPUTS:
-#    SIGTEST = 0, 1, or 2.    If omitted, then assume 0.
-#
-#         If 0 (the default), then just do a regular chi-square test,
-#             i.e. Eqn (18) from Torrence & Compo.
-#         If 1, then do a "time-average" test, i.e. Eqn (23).
-#             In this case, DOF should be set to NA, the number
-#             of local wavelet spectra that were averaged together.
-#             For the Global Wavelet Spectrum, this would be NA=N,
-#             where N is the number of points in your time series.
-#         If 2, then do a "scale-average" test, i.e. Eqns (25)-(28).
-#             In this case, DOF should be set to a
-#             two-element vector [S1,S2], which gives the scale
-#             range that was averaged together.
-#             e.g. if one scale-averaged scales between 2 and 8,
-#             then DOF=[2,8].
-#
-#    LAG1 = LAG 1 Autocorrelation, used for SIGNIF levels. Default is 0.0
-#
-#    SIGLVL = significance level to use. Default is 0.95
-#
-#    DOF = degrees-of-freedom for signif test.
-#         IF SIGTEST=0, then (automatically) DOF = 2 (or 1 for MOTHER='DOG')
-#         IF SIGTEST=1, then DOF = NA, the number of times averaged together.
-#         IF SIGTEST=2, then DOF = [S1,S2], the range of scales averaged.
-#
-#       Note: IF SIGTEST=1, then DOF can be a vector (same length as SCALEs),
-#            in which case NA is assumed to vary with SCALE.
-#            This allows one to average different numbers of times
-#            together at different scales, or to take into account
-#            things like the Cone of Influence.
-#            See discussion following Eqn (23) in Torrence & Compo.
-#
-#    GWS = global wavelet spectrum, a vector of the same length as scale.
-#          If input then this is used as the theoretical background spectrum,
-#          rather than white or red noise.
 
 
 def wave_signif(Y, dt, scale, sigtest=0, lag1=0.0, siglvl=0.95, dof=None, mother='MORLET', param=None, gws=None):
@@ -358,18 +222,6 @@ def wave_signif(Y, dt, scale, sigtest=0, lag1=0.0, siglvl=0.95, dof=None, mother
     return signif
 
 
-#-------------------------------------------------------------------------------------------------------------------
-# CHISQUARE_INV  Inverse of chi-square cumulative distribution function (cdf).
-#
-#   X = chisquare_inv(P,V) returns the inverse of chi-square cdf with V
-#   degrees of freedom at fraction P.
-#   This means that P*100 percent of the distribution lies between 0 and X.
-#
-#   To check, the answer should satisfy:   P==gammainc(X/2,V/2)
-
-# Uses FMIN and CHISQUARE_SOLVE
-
-
 def chisquare_inv(P, V):
 
     if (1 - P) < 1E-4:
@@ -395,19 +247,6 @@ def chisquare_inv(P, V):
     return X  # end of code
 
 
-#-------------------------------------------------------------------------------------------------------------------
-# CHISQUARE_SOLVE  Internal function used by CHISQUARE_INV
-#
-#   PDIFF=chisquare_solve(XGUESS,P,V)  Given XGUESS, a percentile P,
-#   and degrees-of-freedom V, return the difference between
-#   calculated percentile and P.
-
-# Uses GAMMAINC
-#
-# Written January 1998 by C. Torrence
-
-# extra factor of V is necessary because X is Normalized
-
 
 def chisquare_solve(XGUESS, P, V):
 
@@ -420,129 +259,168 @@ def chisquare_solve(XGUESS, P, V):
 
     return PDIFF
 
-# In[]
-path = r'C:/Users/MJY/Desktop/qhkxxlz/app/Files/test_data/qh_mon.csv'
-df = pd.read_csv(path, low_memory=False)
-df = data_processing(df)
-data_df = df[df.index.year <= 5000]
-refer_df = df[(df.index.year > 2000) & (df.index.year < 2020)]
-nearly_df = df[df.index.year > 2011]
-last_year = 2023
-time_freq = 'M1'
-ele = 'TEM_Avg'
-stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year)
 
-# sst = np.loadtxt(r'C:/Users/MJY/Desktop/小波变换/小波变换/sst_nino3.dat')  # input SST time series
+def wavelet_main(stats_result,output_filepath):
 
-sst = post_data_df.iloc[:,2]
-sst = sst - np.mean(sst)
-variance = np.std(sst, ddof=1)**2
+    # sst = np.loadtxt(r'C:/Users/MJY/Desktop/小波变换/小波变换/sst_nino3.dat')  # input SST time series
+    df_sta_1=stats_result.T.reset_index()
+    
+    df_sta_1.columns =df_sta_1.iloc[0]
+    df_sta_1 = df_sta_1.drop(df_sta_1.index[0])
+    df_sta_1 = df_sta_1.iloc[:-5:,:]
+    
+    # 历年平均值
+    df_sta_2 = df_sta_1.iloc[:,:-10:].T
+    df_sta_2.columns =df_sta_2.iloc[0]
+    df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
+    df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
+    
+    df_sta_2.index = pd.DatetimeIndex(df_sta_2.index)
+    df_sta_3 = df_sta_2.resample('Y').mean()
+    year=df_sta_3.index.year
+    columns=df_sta_3.columns
+    
+    result=dict()
+    for i in range(len(columns)):
+        dat=df_sta_3.iloc[:,i].values
+        
+        if np.any(np.isnan(dat)):
+            print(f'{columns[i]}存在nan值，时间序列不完整')
+            continue
+    
+        sst = dat
+        # sst = sst - np.mean(sst)
+        variance = np.std(sst, ddof=1)**2
+        
+        # In[]
+        #----------C-O-M-P-U-T-A-T-I-O-N------S-T-A-R-T-S------H-E-R-E------------------------------------------------------
+        # normalize by standard deviation (not necessary, but makes it easier
+        # to compare with plot on Interactive Wavelet page, at
+        # "http://paos.colorado.edu/research/wavelets/plot/"
+        if 1:
+            variance = 1.0
+            sst = sst / np.std(sst, ddof=1)
+        
+        n = len(sst)
+        dt = 1
+        time = np.arange(len(sst)) * dt + year[0]  # construct time array
+        xlim = ([year[0]-1,year[-1]+1])  # plotting range
+        pad = 1  # pad the time series with zeroes (recommended)
+        dj = 0.25  # this will do 4 sub-octaves per octave
+        s0 = 0.5  # this says start at a scale of 6 months
+        j1 = 7 / dj  # this says do 7 powers-of-two with dj sub-octaves each
+        lag1 = 0.72  # lag-1 autocorrelation for red noise background
+        print("lag1 = ", lag1)
+        mother = 'MORLET'
+        
+        # Wavelet transform:
+        wave, period, scale, coi = wavelet(sst, dt, pad, dj, s0, j1, mother)
+        power = (np.abs(wave))**2  # compute wavelet power spectrum
+        global_ws = (np.sum(power, axis=1) / n)  # time-average over all times
+        
+        # Significance levels:
+        signif = wave_signif(([variance]), dt=dt, sigtest=0, scale=scale, lag1=lag1, mother=mother)
+        sig95 = signif[:, np.newaxis].dot(np.ones(n)[np.newaxis, :])  # expand signif --> (J+1)x(N) array
+        sig95 = power / sig95  # where ratio > 1, power is significant
+        
+        # Global wavelet spectrum & significance levels:
+        dof = n - scale  # the -scale corrects for padding at edges
+        global_signif = wave_signif(variance, dt=dt, scale=scale, sigtest=1, lag1=lag1, dof=dof, mother=mother)
+        
+        # Scale-average between El Nino periods of 2--8 years
+        avg = np.logical_and(scale >= 2, scale < 8)
+        Cdelta = 0.776  # this is for the MORLET wavelet
+        scale_avg = scale[:, np.newaxis].dot(np.ones(n)[np.newaxis, :])  # expand scale --> (J+1)x(N) array
+        scale_avg = power / scale_avg  # [Eqn(24)]
+        scale_avg = dj * dt / Cdelta * sum(scale_avg[avg, :])  # [Eqn(24)]
+        scaleavg_signif = wave_signif(variance, dt=dt, scale=scale, sigtest=2, lag1=lag1, dof=([2, 7.9]), mother=mother)
+        
+        #------------------------------------------------------ Plotting
+        
+        #--- Plot time series
+        fig = plt.figure(figsize=(9, 10))
+        gs = GridSpec(3, 4, hspace=0.4, wspace=0.75)
+        plt.subplots_adjust(left=0.1, bottom=0.05, right=0.9, top=0.95, wspace=0, hspace=0)
+        plt.subplot(gs[0, 0:3])
+        plt.plot(time, sst, 'k')
+        plt.xlim(xlim[:])
+        plt.xlabel('Time (year)')
+        plt.ylabel('variance')
+        plt.title('a) Time Series')
+        
+        #--- Contour plot wavelet power spectrum
+        # plt3 = plt.subplot(3, 1, 2)
+        plt3 = plt.subplot(gs[1, 0:3])
+        levels = [0, 0.5, 1, 2, 4, 999]
+        CS = plt.contourf(time, period, power, len(levels))  #*** or use 'contour'
+        im = plt.contourf(CS, levels=levels, colors=['white', 'bisque', 'orange', 'orangered', 'darkred'])
+        plt.xlabel('Time (year)')
+        plt.ylabel('Period (years)')
+        plt.title('b) Wavelet Power Spectrum')
+        plt.xlim(xlim[:])
+        # 95# significance contour, levels at -99 (fake) and 1 (95# signif)
+        plt.contour(time, period, sig95, [-99, 1], colors='k')
+        # cone-of-influence, anything "below" is dubious
+        plt.plot(time, coi[:-1], 'k')
+        # format y-scale
+        plt3.set_yscale('log', base=2, subs=None)
+        plt.ylim([np.min(period), np.max(period)])
+        ax = plt.gca().yaxis
+        ax.set_major_formatter(ticker.ScalarFormatter())
+        plt3.ticklabel_format(axis='y', style='plain')
+        plt3.invert_yaxis()
+        # set up the size and location of the colorbar
+        # position=fig.add_axes([0.5,0.36,0.2,0.01])
+        # plt.colorbar(im, cax=position, orientation='horizontal') #, fraction=0.05, pad=0.5)
+        
+        # plt.subplots_adjust(right=0.7, top=0.9)
+        
+        #--- Plot global wavelet spectrum
+        plt4 = plt.subplot(gs[1, -1])
+        plt.plot(global_ws, period)
+        plt.plot(global_signif, period, '--')
+        plt.xlabel('Power (\u00B0C$^2$)')
+        plt.title('c) Global Wavelet Spectrum')
+        plt.xlim([0, 1.25 * np.max(global_ws)])
+        # format y-scale
+        plt4.set_yscale('log', base=2, subs=None)
+        plt.ylim([np.min(period), np.max(period)])
+        ax = plt.gca().yaxis
+        ax.set_major_formatter(ticker.ScalarFormatter())
+        plt4.ticklabel_format(axis='y', style='plain')
+        plt4.invert_yaxis()
+        
+        # --- Plot 2--8 yr scale-average time series
+        plt.subplot(gs[2, 0:3])
+        plt.plot(time, scale_avg, 'k')
+        plt.xlim(xlim[:])
+        plt.xlabel('Time (year)')
+        plt.ylabel('Avg variance')
+        plt.title('d) 2-8 yr Scale-average Time Series')
+        plt.plot(xlim, scaleavg_signif + [0, 0], '--')
+        
+        result_picture = os.path.join(output_filepath,'wavelet_'+columns[i]+'.png')
+        result[columns[i]]=result_picture
+        fig.savefig(result_picture, dpi=200, bbox_inches='tight')
+        plt.close()
+        
+        result['wavelet_'+columns[i]]=result_picture
+        
+    return result
 
-# In[]
-#----------C-O-M-P-U-T-A-T-I-O-N------S-T-A-R-T-S------H-E-R-E------------------------------------------------------
-# normalize by standard deviation (not necessary, but makes it easier
-# to compare with plot on Interactive Wavelet page, at
-# "http://paos.colorado.edu/research/wavelets/plot/"
-if 1:
-    variance = 1.0
-    sst = sst / np.std(sst, ddof=1)
+if __name__ == "__main__":
+    
+    output_filepath=r'D:\Project\1'
+    path = r'D:\Project\3_项目\2_气候评估和气候可行性论证\qhkxxlz\Files\test_data\qh_mon.csv'
 
-n = len(sst)
-dt = 1/12
-time = np.arange(len(sst)) * dt + 1990.0  # construct time array
-xlim = ([1989, 2023])  # plotting range
-pad = 1  # pad the time series with zeroes (recommended)
-dj = 0.25  # this will do 4 sub-octaves per octave
-s0 = 2 * dt  # this says start at a scale of 6 months
-j1 = 7 / dj  # this says do 7 powers-of-two with dj sub-octaves each
-lag1 = 0.72  # lag-1 autocorrelation for red noise background
-print("lag1 = ", lag1)
-mother = 'MORLET'
+    df = pd.read_csv(path, low_memory=False)
+    df = data_processing(df)
+    data_df = df[df.index.year<=5000]
+    refer_df = df[(df.index.year>2000) & (df.index.year<2020)]
+    nearly_df = df[df.index.year>2011]
+    last_year = 2023
+    time_freq = 'M1'
+    ele = 'TEM_Avg'
+    stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year)
 
-# Wavelet transform:
-wave, period, scale, coi = wavelet(sst, dt, pad, dj, s0, j1, mother)
-power = (np.abs(wave))**2  # compute wavelet power spectrum
-global_ws = (np.sum(power, axis=1) / n)  # time-average over all times
-
-# Significance levels:
-signif = wave_signif(([variance]), dt=dt, sigtest=0, scale=scale, lag1=lag1, mother=mother)
-sig95 = signif[:, np.newaxis].dot(np.ones(n)[np.newaxis, :])  # expand signif --> (J+1)x(N) array
-sig95 = power / sig95  # where ratio > 1, power is significant
-
-# Global wavelet spectrum & significance levels:
-dof = n - scale  # the -scale corrects for padding at edges
-global_signif = wave_signif(variance, dt=dt, scale=scale, sigtest=1, lag1=lag1, dof=dof, mother=mother)
-
-# Scale-average between El Nino periods of 2--8 years
-avg = np.logical_and(scale >= 2, scale < 8)
-Cdelta = 0.776  # this is for the MORLET wavelet
-scale_avg = scale[:, np.newaxis].dot(np.ones(n)[np.newaxis, :])  # expand scale --> (J+1)x(N) array
-scale_avg = power / scale_avg  # [Eqn(24)]
-scale_avg = dj * dt / Cdelta * sum(scale_avg[avg, :])  # [Eqn(24)]
-scaleavg_signif = wave_signif(variance, dt=dt, scale=scale, sigtest=2, lag1=lag1, dof=([2, 7.9]), mother=mother)
-
-#------------------------------------------------------ Plotting
-
-#--- Plot time series
-fig = plt.figure(figsize=(9, 10))
-gs = GridSpec(3, 4, hspace=0.4, wspace=0.75)
-plt.subplots_adjust(left=0.1, bottom=0.05, right=0.9, top=0.95, wspace=0, hspace=0)
-plt.subplot(gs[0, 0:3])
-plt.plot(time, sst, 'k')
-plt.xlim(xlim[:])
-plt.xlabel('Time (year)')
-plt.ylabel('NINO3 SST (\u00B0C)')
-plt.title('a) NINO3 Sea Surface Temperature (seasonal)')
-
-#--- Contour plot wavelet power spectrum
-# plt3 = plt.subplot(3, 1, 2)
-plt3 = plt.subplot(gs[1, 0:3])
-levels = [0, 0.5, 1, 2, 4, 999]
-CS = plt.contourf(time, period, power, len(levels))  #*** or use 'contour'
-im = plt.contourf(CS, levels=levels, colors=['white', 'bisque', 'orange', 'orangered', 'darkred'])
-plt.xlabel('Time (year)')
-plt.ylabel('Period (years)')
-plt.title('b) Wavelet Power Spectrum (contours at 0.5,1,2,4\u00B0C$^2$)')
-plt.xlim(xlim[:])
-# 95# significance contour, levels at -99 (fake) and 1 (95# signif)
-plt.contour(time, period, sig95, [-99, 1], colors='k')
-# cone-of-influence, anything "below" is dubious
-plt.plot(time, coi[:-1], 'k')
-# format y-scale
-plt3.set_yscale('log', base=2, subs=None)
-plt.ylim([np.min(period), np.max(period)])
-ax = plt.gca().yaxis
-ax.set_major_formatter(ticker.ScalarFormatter())
-plt3.ticklabel_format(axis='y', style='plain')
-plt3.invert_yaxis()
-# set up the size and location of the colorbar
-# position=fig.add_axes([0.5,0.36,0.2,0.01])
-# plt.colorbar(im, cax=position, orientation='horizontal') #, fraction=0.05, pad=0.5)
-
-# plt.subplots_adjust(right=0.7, top=0.9)
-
-#--- Plot global wavelet spectrum
-plt4 = plt.subplot(gs[1, -1])
-plt.plot(global_ws, period)
-plt.plot(global_signif, period, '--')
-plt.xlabel('Power (\u00B0C$^2$)')
-plt.title('c) Global Wavelet Spectrum')
-plt.xlim([0, 1.25 * np.max(global_ws)])
-# format y-scale
-plt4.set_yscale('log', base=2, subs=None)
-plt.ylim([np.min(period), np.max(period)])
-ax = plt.gca().yaxis
-ax.set_major_formatter(ticker.ScalarFormatter())
-plt4.ticklabel_format(axis='y', style='plain')
-plt4.invert_yaxis()
-
-# --- Plot 2--8 yr scale-average time series
-plt.subplot(gs[2, 0:3])
-plt.plot(time, scale_avg, 'k')
-plt.xlim(xlim[:])
-plt.xlabel('Time (year)')
-plt.ylabel('Avg variance (\u00B0C$^2$)')
-plt.title('d) 2-8 yr Scale-average Time Series')
-plt.plot(xlim, scaleavg_signif + [0, 0], '--')
-
-plt.show()
+    result=wavelet_main(stats_result,output_filepath)

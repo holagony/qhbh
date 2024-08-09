@@ -4,19 +4,25 @@ Created on Mon Aug  5 14:38:58 2024
 
 @author: EDY
 """
-
 import os
+import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.mpl.ticker as ctk
 import xeofs as xe
+from matplotlib.path import Path
+from cartopy.io.shapereader import BasicReader
+from cartopy.mpl.patch import geos_to_path
+from xeofs.models import EOF,EOFRotator
+import matplotlib
 
+matplotlib.use('Agg')
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 
 
-def plot_eof_and_pc(lons, lats, eof, pc, var, ax1, ax2, EOF, PC, time_min, time_max):
+def plot_eof_and_pc(lons, lats, eof, pc, ax1, ax2, EOF, PC, time_min, time_max,path):
 
     mesh = ax1.contourf(lons, lats, eof.squeeze(), cmap=plt.cm.RdBu_r, transform=ccrs.PlateCarree())
     cb = plt.colorbar(mesh, ax=ax1, extend='both', shrink=0.8)
@@ -30,6 +36,9 @@ def plot_eof_and_pc(lons, lats, eof, pc, var, ax1, ax2, EOF, PC, time_min, time_
     gl.ylocator = ctk.LatitudeLocator(8)
     gl.xformatter = ctk.LongitudeFormatter(zero_direction_label=True)
     gl.yformatter = ctk.LatitudeFormatter()
+    for col in mesh.collections:
+        col.set_clip_path(path,ccrs.PlateCarree()._as_mpl_transform(ax1))
+
 
     years = range(int(time_min), int(time_max) + 1)
     ax2.plot(years, pc, color='b', linewidth=2)
@@ -38,34 +47,82 @@ def plot_eof_and_pc(lons, lats, eof, pc, var, ax1, ax2, EOF, PC, time_min, time_
     ax2.set_xlabel('Year')
     ax2.set_ylabel('Normalized Units')
     ax2.set_xlim(int(time_min), int(time_max))
-    # ax2.set_ylim(-3, 3)
-    ax2.set_title(f'Var={var:.2}', loc='right')
-
-
-def eof(ds):
+    ax2.set_xticks(years[::3])
+    
+        
+def eof(ds,shp_name,output_filepath):
     eof = xe.models.EOF(n_modes=4)
-    eof.fit(ds, dim="time")
+    eof.fit(ds.data_year, dim="time")
     comps = eof.components()  # EOFs (spatial patterns)
     scores = eof.scores()  # PCs (temporal patterns)
 
-    key_name = list(comps.keys())[0]
-    comps = comps[key_name].data
-    scores = scores.data
-
-    fig = plt.figure(figsize=(10, 10))
+    fig = plt.figure(figsize=(14, 14))
     EOFs = ['EOF1', 'EOF2', 'EOF3', 'EOF4']
     PCs = ['PC1', 'PC2', 'PC3', 'PC4']
-    lon, lat = np.meshgrid(ds.lon, ds.lat)
+    lon, lat = np.meshgrid(ds.longitude, ds.latitude)
     year = ds.time
 
-    for i, EOF in enumerate(EOFs):
-        print(i, EOF)
+
+    area=BasicReader(shp_name)
+    geo_list=list(area.geometries())
+    path=Path.make_compound_path(*geos_to_path(geo_list))
+
+    for i, EOF1 in enumerate(EOFs):
+        print(i, EOF1)
         ax1 = fig.add_subplot(4, 2, 2 * i + 1, projection=ccrs.PlateCarree()) # 第一个子图带投影
         ax2 = fig.add_subplot(4, 2, 2 * i + 2)
-        plot_eof_and_pc(lon, lat, comps[i], scores[i,:], var[i], ax1, ax2, EOFs[i], PCs[i], year[0], year[-1])         # 第二个子图不带投影
+        plot_eof_and_pc(lon, lat, comps[i], scores[i,:],ax1, ax2, EOFs[i], PCs[i], year[0], year[-1],path)         # 第二个子图不带投影
 
-    plt.tight_layout()
-    plt.show()
-    # TODO 保存图片
 
-def reof()
+    result_picture = os.path.join(output_filepath,'EOF.png')
+    fig.savefig(result_picture, dpi=200, bbox_inches='tight')
+    plt.cla()
+    
+    return result_picture
+    
+def reof(ds,shp_name,output_filepath):
+    components = []
+    scores = []
+    model = EOF(n_modes=4, standardize=True, use_coslat=True)
+    model.fit(ds.data_year, dim="time")
+    rot_var = EOFRotator(n_modes=4, power=1)
+    rot_var.fit(model)
+    components.append(rot_var.components())
+    scores.append(rot_var.scores())
+
+    comps=components[0]
+    scores=scores[0]
+
+    fig = plt.figure(figsize=(14, 14))
+    EOFs = ['EOF1', 'EOF2', 'EOF3', 'EOF4']
+    PCs = ['PC1', 'PC2', 'PC3', 'PC4']
+    lon, lat = np.meshgrid(ds.longitude, ds.latitude)
+    year = ds.time
+
+
+    area=BasicReader(shp_name)
+    geo_list=list(area.geometries())
+    path=Path.make_compound_path(*geos_to_path(geo_list))
+
+    for i, EOF1 in enumerate(EOFs):
+        print(i, EOF1)
+        ax1 = fig.add_subplot(4, 2, 2 * i + 1, projection=ccrs.PlateCarree()) # 第一个子图带投影
+        ax2 = fig.add_subplot(4, 2, 2 * i + 2)
+        plot_eof_and_pc(lon, lat, comps[i], scores[i,:],ax1, ax2, EOFs[i], PCs[i], year[0], year[-1],path)         # 第二个子图不带投影
+
+
+    result_picture = os.path.join(output_filepath,'REOF.png')
+    fig.savefig(result_picture, dpi=200, bbox_inches='tight')
+    plt.cla()
+
+    return result_picture
+
+if __name__ == "__main__":
+    
+    output_filepath=r'D:\Project\1'
+    nc_path=r'D:\Project\1\data.nc'
+    shp_name = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
+
+    ds = xr.open_dataset(nc_path)
+    eof_path=eof(ds,shp_name,output_filepath)
+    reof_path=reof(ds,shp_name,output_filepath)

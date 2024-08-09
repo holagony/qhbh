@@ -14,9 +14,11 @@ from Utils.station_to_grid import station_to_grid
 import os
 from netCDF4 import Dataset
 import netCDF4 as nc
+from Module01.wrapped.table_stats import table_stats
+from Utils.data_processing import data_processing
 
 
-def contour_picture(result_df, data_df, shp_name, method, output_filepath):
+def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
     #%% 数据选取
 
     # 插值范围、掩膜
@@ -35,7 +37,7 @@ def contour_picture(result_df, data_df, shp_name, method, output_filepath):
     df_shp = pd.DataFrame(points, columns=['Longitude', 'Latitude'])
 
     # 站点经纬度匹配
-    df_sta_1 = result_df.T.reset_index()
+    df_sta_1 = stats_result.T.reset_index()
 
     df_sta_1.columns = df_sta_1.iloc[0]
     df_sta_1 = df_sta_1.drop(df_sta_1.index[0])
@@ -65,7 +67,7 @@ def contour_picture(result_df, data_df, shp_name, method, output_filepath):
     gridx = np.arange(start_lon, end_lon + resolution, resolution)
     gridy = np.arange(start_lat, end_lat + resolution, resolution)
 
-    result = dict()
+    # result = dict()
 
     # 历年平均值
     df_sta_2 = df_sta_1.iloc[:, :-10:].T
@@ -82,7 +84,26 @@ def contour_picture(result_df, data_df, shp_name, method, output_filepath):
 
     for i in np.arange(len(year)):
         value_sta = df_sta_3.iloc[i, :].values
-        data[i, :, :] = station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, str(year[i]))
+        
+        # 数据清洗
+        data_uclean = pd.DataFrame({
+            'lon': lon_sta,
+            'lat': lat_sta,
+            'value': value_sta
+        })
+        
+        # 将inf值替换为NaN
+        data_uclean.replace([np.inf, -np.inf], np.nan, inplace=True)
+        
+        # 移除包含NaN值的行
+        data_clean = data_uclean.dropna()
+        
+        # 从清洗后的DataFrame中提取经度、纬度和值
+        lon_clean = data_clean['lon'].values
+        lat_clean = data_clean['lat'].values
+        value_clean = data_clean['value'].values        
+        
+        data[i, :, :] = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, str(year[i]))
 
     nc_file = nc.Dataset(output_filepath_name, 'w', format='NETCDF4', encoding='gbk')
     nc_file.createDimension('lon', gridx.shape[0])
@@ -114,28 +135,57 @@ def contour_picture(result_df, data_df, shp_name, method, output_filepath):
     for ele in ele_choose:
         value_sta = df_sta_1[ele].values
         ele_name = 'data' + str(i)
-        data2 = station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, ele)
+        
+        # 数据清洗
+        data_uclean = pd.DataFrame({
+            'lon': lon_sta,
+            'lat': lat_sta,
+            'value': value_sta
+        })
+        
+        # 将inf值替换为NaN
+        data_uclean.replace([np.inf, -np.inf], np.nan, inplace=True)
+        
+        # 移除包含NaN值的行
+        data_clean = data_uclean.dropna()
+        
+        # 从清洗后的DataFrame中提取经度、纬度和值
+        lon_clean = data_clean['lon'].values
+        lat_clean = data_clean['lat'].values
+        value_clean = data_clean['value'].values
+
+        data2 = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, ele)
 
         nc_file = Dataset(output_filepath_name, 'a', format='NETCDF4', encoding='gbk')
 
-        grid_var = nc_file.createVariable(ele_name, 'f4', (
-            'lat',
-            'lon',
-        ))  # grid
+        grid_var = nc_file.createVariable(ele_name, 'f4', ('lat','lon',))  # grid
         grid_var[:] = data2
 
         nc_file.close()
         i = i + 1
 
-    result['data'] = output_filepath_name
+    # result['data'] = output_filepath_name
 
-    return result, data, gridx, gridy, year
+    return output_filepath_name, data, gridx, gridy, year
 
 
 if __name__ == "__main__":
+    
+    path = r'D:\Project\3_项目\2_气候评估和气候可行性论证\qhkxxlz\Files\test_data\qh_mon.csv'
+
+    df = pd.read_csv(path, low_memory=False)
+    df = data_processing(df)
+    data_df = df[df.index.year<=5000]
+    refer_df = df[(df.index.year>2000) & (df.index.year<2020)]
+    nearly_df = df[df.index.year>2011]
+    last_year = 2023
+    time_freq = 'M1'
+    ele = 'TEM_Avg'
+    stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year)
+
+
     output_filepath = r'D:\Project\1'
-    shp_name = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
+    shp_name =r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
     method = 'idw2'
 
-    # result,data,gridx,gridy,year=contour_picture(stats_result,data_df,shp_name,method,output_filepath)
-    # result_df=stats_result
+    result,data,gridx,gridy,year=contour_picture(stats_result,data_df,shp_name,method,output_filepath)

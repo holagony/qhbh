@@ -5,7 +5,7 @@ from Utils.data_processing import data_processing
 from Module01.wrapped.table_stats import table_stats
 
 
-def calc_anomaly_cum(df, refer_df):
+def calc_anomaly_cum(df, post_refer_df):
     '''
     计算累积距平
     '''

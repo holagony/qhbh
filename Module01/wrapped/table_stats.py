@@ -91,7 +91,9 @@ def table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year):
 
 
 if __name__ == '__main__':
-    path = r'C:/Users/MJY/Desktop/qhkxxlz/app/Files/test_data/qh_mon.csv'
+    # path = r'C:/Users/MJY/Desktop/qhkxxlz/app/Files/test_data/qh_mon.csv'
+    path = r'D:\Project\3_项目\2_气候评估和气候可行性论证\qhkxxlz\Files\test_data\qh_mon.csv'
+
     df = pd.read_csv(path, low_memory=False)
     df = data_processing(df)
     data_df = df[df.index.year<=2011]
