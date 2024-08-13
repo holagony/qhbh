@@ -2,6 +2,9 @@ import os
 import uuid
 import pandas as pd
 import xarray as xr
+import psycopg2
+from io import StringIO
+from psycopg2 import sql
 from Utils.config import cfg
 from Utils.ordered_easydict import OrderedEasyDict as edict
 from Utils.data_loader_with_threads import get_cmadaas_yearly_data
@@ -16,7 +19,7 @@ from Module01.wrapped.cumsum_anomaly import calc_anomaly_cum
 from Module01.wrapped.moving_avg import calc_moving_avg
 from Module01.wrapped.wavelet_analyse import wavelet_main
 from Module01.wrapped.correlation_analysis import correlation_analysis
-from Module01.wrapped.eof import eof,reof
+from Module01.wrapped.eof import eof, reof
 from Module01.wrapped.eemd import eemd
 
 
@@ -87,6 +90,11 @@ def statistical_climate_features(data_json):
         克里金 - 'kriging'
         泛克里金 - 'uni_kriging'
         反距离权重 - 'idw'
+
+    :param ci: 置信区间    
+    :param shp_path: shp文件
+    :param output_filepath: 输出结果文件
+
     '''
     result_dict = edict()
 
@@ -98,9 +106,10 @@ def statistical_climate_features(data_json):
     stats_times = data_json['stats_times']
     sta_ids = data_json['sta_ids']
     interp_method = data_json['interp_method']
+    ci = data_json['ci']
     shp_path = data_json['shp_path']
     output_filepath = data_json['output_filepath']
-    
+
     # 2.参数处理
     uuid4 = uuid.uuid4().hex
     result_dict['uuid'] = uuid4
@@ -109,93 +118,96 @@ def statistical_climate_features(data_json):
         os.makedirs(data_dir)
         os.chmod(data_dir, 0o007 | 0o070 | 0o700)
 
-    if cfg.INFO.READ_LOCAL:
+    last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
+
+    if not cfg.INFO.READ_LOCAL:
 
         # 3.解析要下载的参数
-        last_year = int(nearly_years.split(',')[-1]) # 上一年的年份
         ele = ''
-        elements_list = ['TEM_Avg', 'TEM_Max', 'TEM_Min', 'PRE_Time_2020', 'PRE_Days', 'PRE_Max_Day', 'PRS_Avg', 'PRS_Max', 'PRS_Min', 
-                         'WIN_S_2mi_Avg', 'WIN_S_Max', 'WIN_S_Inst_Max', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Max', 'GST_Min', 'GST_Avg_5cm', 'GST_Avg_10cm', 
-                         'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 
-                         'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'RHU_Min']
-        resample_max = ['TEM_Max','PRS_Max','WIN_S_Max','WIN_S_Inst_Max','GST_Max']
-        resample_min = ['TEM_Min','PRS_Min','GST_Min','RHU_Min']
-        resample_sum = ['PRE_Time_2020','PRE_Days']
-        resample_mean = ['TEM_Avg','PRS_Avg','WIN_S_2mi_Avg','WIN_D_S_Max_C','GST_Avg','GST_Avg_5cm','GST_Avg_10cm','GST_Avg_15cm','GST_Avg_20cm','GST_Avg_40cm', 
-                         'GST_Avg_80cm','GST_Avg_160cm','GST_Avg_320cm','CLO_Cov_Avg','CLO_Cov_Low_Avg','SSH','SSP_Mon','EVP_Big','EVP','RHU_Avg']
-    
+        elements_list = [
+            'TEM_Avg', 'TEM_Max', 'TEM_Min', 'PRE_Time_2020', 'PRE_Days', 'PRE_Max_Day', 'PRS_Avg', 'PRS_Max', 'PRS_Min', 'WIN_S_2mi_Avg', 'WIN_S_Max', 'WIN_S_Inst_Max', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Max', 'GST_Min', 'GST_Avg_5cm', 'GST_Avg_10cm',
+            'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'RHU_Min'
+        ]
+        resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max']
+        resample_min = ['TEM_Min', 'PRS_Min', 'GST_Min', 'RHU_Min']
+        resample_sum = ['PRE_Time_2020', 'PRE_Days']
+        resample_mean = [
+            'TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH',
+            'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg'
+        ]
+
         if element in elements_list:
             ele += element
-    
+
         elif element == 'WIND':
-            if time_freq in ['D1','D2']:
+            if time_freq in ['D1', 'D2']:
                 ele += 'WIN_D_S_Max'
             else:
                 ele += 'WIN_D_S_Max_C'
-    
+
         elif element == 'EVP_Taka':
             ele += 'PRE_Time_2020,TEM_Avg'
-    
+
         elif element == 'EVP_Penman':
             ele += 'PRS_Avg,WIN_S_2mi_Avg,TEM_Max,TEM_Min,RHU_Avg,SSH'
-    
+
         # 4.下载 and 后处理
         if time_freq == 'Y':
             # 下载统计年份的数据
             years = stats_times
             data_df = get_cmadaas_yearly_data(years, ele, sta_ids)
             data_df = data_processing(data_df)
-    
+
             # 下载参考时段的数据
             refer_df = get_cmadaas_yearly_data(refer_years, ele, sta_ids)
             refer_df = data_processing(refer_df)
-    
+
             # 下载近10年的数据
             nearly_df = get_cmadaas_yearly_data(nearly_years, ele, sta_ids)
             nearly_df = data_processing(nearly_df)
-    
+
         elif time_freq == 'Q':
             # 统一使用的后处理pandas apply func
-            ele_max = list(set(data_df.columns) & set(resample_max))
-            ele_min = list(set(data_df.columns) & set(resample_min))
-            ele_sum = list(set(data_df.columns) & set(resample_sum))
-            ele_mean = list(set(data_df.columns) & set(resample_mean))
-    
             def sample(x):
-                x_info = x[['Station_Id_C','Station_Name','Lat','Lon','Year']].resample('1A').first()
+                x_info = x[['Station_Id_C', 'Station_Name', 'Lat', 'Lon', 'Year', 'Mon']].resample('1A').first()
                 x_max = x[ele_max].resample('1A').max()
                 x_min = x[ele_min].resample('1A').min()
                 x_sum = x[ele_sum].resample('1A').sum()
                 x_mean = x[ele_mean].resample('1A').mean().round(1)
-                x_concat = pd.concat([x_info,x_max,x_min,x_sum,x_mean],axis=1)
+                x_concat = pd.concat([x_info, x_max, x_min, x_sum, x_mean], axis=1)
                 return x_concat
-        
+
             # 下载统计年份的数据
-            mon_list =  [int(mon_) for mon_ in stats_times[1].split(',')] # 提取月份
+            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
             years = stats_times[0]
             mon = '01,12'
             data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
             data_df = data_processing(data_df)
-    
+
+            ele_max = list(set(data_df.columns) & set(resample_max))
+            ele_min = list(set(data_df.columns) & set(resample_min))
+            ele_sum = list(set(data_df.columns) & set(resample_sum))
+            ele_mean = list(set(data_df.columns) & set(resample_mean))
+
             # TODO if element in ['EVP_Penman', 'EVP_taka']:
             data_df = data_df[data_df['Mon'].isin(mon_list)]
-            data_df = data_df.groupby('Station_Id_C').apply(sample) # 转化为季度数据
-            data_df.reset_index(level=0,drop=True,inplace=True)
-    
+            data_df = data_df.groupby('Station_Id_C').apply(sample)  # 转化为季度数据
+            data_df.reset_index(level=0, drop=True, inplace=True)
+
             # 下载参考时段的数据
             refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
             refer_df = data_processing(refer_df)
             refer_df = refer_df[refer_df['Mon'].isin(mon_list)]
-            refer_df = refer_df.groupby('Station_Id_C').apply(sample) # 转化为季度数据
-            refer_df.reset_index(level=0,drop=True,inplace=True)
-    
+            refer_df = refer_df.groupby('Station_Id_C').apply(sample)  # 转化为季度数据
+            refer_df.reset_index(level=0, drop=True, inplace=True)
+
             # 下载近10年的数据
             nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
             nearly_df = data_processing(nearly_df)
             nearly_df = nearly_df[nearly_df['Mon'].isin(mon_list)]
-            nearly_df = nearly_df.groupby('Station_Id_C').apply(sample) # 转化为季度数据
-            nearly_df.reset_index(level=0,drop=True,inplace=True)
-    
+            nearly_df = nearly_df.groupby('Station_Id_C').apply(sample)  # 转化为季度数据
+            nearly_df.reset_index(level=0, drop=True, inplace=True)
+
         elif time_freq == 'M1':
             # 下载统计年份的数据
             start_time = stats_times.split(',')[0]
@@ -204,133 +216,382 @@ def statistical_climate_features(data_json):
             mon = start_time[4:] + ',' + end_time[4:]
             data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
             data_df = data_processing(data_df)
-    
+
             # 下载参考时段的数据
             refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
             refer_df = data_processing(refer_df)
-    
+
             # 下载近10年的数据
             nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
             nearly_df = data_processing(nearly_df)
-    
+
         elif time_freq == 'M2':
             # 下载统计年份的数据
-            mon_list =  [int(mon_) for mon_ in stats_times[1].split(',')]
+            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]
             years = stats_times[0]
             mon = '01,12'
             data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
             data_df = data_processing(data_df)
-            data_df = data_df[data_df['Mon'].isin(mon_list)] # 按区间提取月份
-    
+            data_df = data_df[data_df['Mon'].isin(mon_list)]  # 按区间提取月份
+
             # 下载参考时段的数据
             refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
             refer_df = data_processing(refer_df)
             refer_df = refer_df[refer_df['Mon'].isin(mon_list)]
-    
+
             # 下载近10年的数据
             nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
             nearly_df = data_processing(nearly_df)
             nearly_df = nearly_df[nearly_df['Mon'].isin(mon_list)]
-    
+
         elif time_freq == 'D1':
             # 下载统计年份的数据
-            start_time = time_freq.split(',')[0]
-            end_time = time_freq.split(',')[1]
+            start_time = stats_times.split(',')[0]
+            end_time = stats_times.split(',')[1]
             years = start_time[:4] + ',' + end_time[:4]
             date = start_time[4:] + ',' + end_time[4:]
             data_df = get_cmadaas_daily_data(years, date, ele, sta_ids)
             data_df = data_processing(data_df)
-    
+
             # 下载参考时段的数据
             refer_df = get_cmadaas_daily_data(refer_years, date, ele, sta_ids)
             refer_df = data_processing(refer_df)
-    
+
             # 下载近10年的数据
             nearly_df = get_cmadaas_daily_data(nearly_years, date, ele, sta_ids)
             nearly_df = data_processing(nearly_df)
-    
+
         elif time_freq == 'D2':
             # 下载统计年份的数据
-            years = time_freq[0]
-            date = time_freq[1]
+            years = stats_times[0]
+            date = stats_times[1]
             data_df = get_cmadaas_daily_period_data(years, date, ele, sta_ids)
             data_df = data_processing(data_df)
-    
+
             # 下载参考时段的数据
             refer_df = get_cmadaas_daily_period_data(refer_years, date, ele, sta_ids)
             refer_df = data_processing(refer_df)
-    
+
             # 下载近10年的数据
             nearly_df = get_cmadaas_daily_period_data(nearly_years, date, ele, sta_ids)
             nearly_df = data_processing(nearly_df)
+
+    # 走数据库
     else:
-        path = r'D:\Project\3_项目\2_气候评估和气候可行性论证\qhkxxlz\Files\test_data\qh_mon.csv'
+        conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
+        cur = conn.cursor()
 
-        df = pd.read_csv(path, low_memory=False)
-        df = data_processing(df)
-        data_df = df[df.index.year <= 5000]
-        refer_df = df[(df.index.year > 2000) & (df.index.year < 2020)]
-        nearly_df = df[df.index.year > 2011]
-        last_year = 2023
+        if time_freq == 'Y':
+            elements = 'Station_Id_C,Station_Name,Datetime,Year,' + element
+            sta_ids = tuple(sta_ids.split(','))
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.qh_qhbh_cmadaas_year
+                            WHERE
+                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND station_id_c IN %s
+                            """)
 
+            # 下载统计年份的数据
+            start_year = stats_times.split(',')[0]
+            end_year = stats_times.split(',')[1]
+            cur.execute(query, (start_year, end_year, sta_ids))
+            data = cur.fetchall()
+            data_df = pd.DataFrame(data)
+            data_df.columns = elements.split(',')
+            data_df = data_processing(data_df)
 
+            # 下载参考时段的数据
+            start_year = refer_years.split(',')[0]
+            end_year = refer_years.split(',')[1]
+            cur.execute(query, (start_year, end_year, sta_ids))
+            data = cur.fetchall()
+            refer_df = pd.DataFrame(data)
+            refer_df.columns = elements.split(',')
+            refer_df = data_processing(refer_df)
 
+            # 下载近10年的数据
+            start_year = nearly_years.split(',')[0]
+            end_year = nearly_years.split(',')[1]
+            cur.execute(query, (start_year, end_year, sta_ids))
+            data = cur.fetchall()
+            nearly_df = pd.DataFrame(data)
+            nearly_df.columns = elements.split(',')
+            nearly_df = data_processing(nearly_df)
+
+        elif time_freq == 'Q':
+
+            def sample(x):
+                '''
+                重采样的applyfunc
+                '''
+                x_info = x[['Station_Id_C', 'Station_Name', 'Lat', 'Lon', 'Year', 'Mon']].resample('1A').first()
+
+                if element in resample_max:
+                    x_res = x[element].resample('1A').max()
+                elif element in resample_min:
+                    x_res = x[element].resample('1A').min()
+                elif element in resample_sum:
+                    x_res = x[element].resample('1A').sum()
+                elif element in resample_mean:
+                    x_res = x[element].resample('1A').mean().round(1)
+
+                x_concat = pd.concat([x_info, x_res], axis=1)
+                return x_concat
+
+            elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,' + element
+            sta_ids = tuple(sta_ids.split(','))
+            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
+            mon_ = tuple(mon_list)
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.qh_qhbh_cmadaas_month
+                            WHERE
+                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s
+                                AND station_id_c IN %s
+                            """)
+
+            # 下载统计年份的数据
+            years = stats_times[0]
+            start_year = years.split(',')[0]
+            end_year = years.split(',')[1]
+            cur.execute(query, (start_year, end_year, mon_, sta_ids))
+            data = cur.fetchall()
+            data_df = pd.DataFrame(data)
+            data_df.columns = elements.split(',')
+            data_df = data_processing(data_df)
+            data_df = data_df.groupby('Station_Id_C').apply(sample)  # 转化为季度数据
+            data_df.reset_index(level=0, drop=True, inplace=True)
+
+            # 下载参考时段的数据
+            start_year = refer_years.split(',')[0]
+            end_year = refer_years.split(',')[1]
+            cur.execute(query, (start_year, end_year, mon_, sta_ids))
+            data = cur.fetchall()
+            refer_df = pd.DataFrame(data)
+            refer_df.columns = elements.split(',')
+            refer_df = data_processing(refer_df)
+            refer_df = refer_df.groupby('Station_Id_C').apply(sample)  # 转化为季度数据
+            refer_df.reset_index(level=0, drop=True, inplace=True)
+
+            # 下载近10年的数据
+            start_year = nearly_years.split(',')[0]
+            end_year = nearly_years.split(',')[1]
+            cur.execute(query, (start_year, end_year, mon_, sta_ids))
+            data = cur.fetchall()
+            nearly_df = pd.DataFrame(data)
+            nearly_df.columns = elements.split(',')
+            nearly_df = data_processing(nearly_df)
+            nearly_df = nearly_df.groupby('Station_Id_C').apply(sample)  # 转化为季度数据
+            nearly_df.reset_index(level=0, drop=True, inplace=True)
+
+        elif time_freq == 'M1':
+            elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,' + element
+            sta_ids = tuple(sta_ids.split(','))
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.qh_qhbh_cmadaas_month
+                            WHERE
+                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND station_id_c IN %s
+                            """)
+
+            # 下载统计年份的数据
+            start_year = stats_times.split(',')[0]
+            end_year = stats_times.split(',')[1]
+            cur.execute(query, (start_year, end_year, sta_ids))
+            data = cur.fetchall()
+            data_df = pd.DataFrame(data)
+            data_df.columns = elements.split(',')
+            data_df = data_processing(data_df)
+
+            # 下载参考时段的数据
+            start_year = refer_years.split(',')[0]
+            end_year = refer_years.split(',')[1]
+            cur.execute(query, (start_year, end_year, sta_ids))
+            data = cur.fetchall()
+            refer_df = pd.DataFrame(data)
+            refer_df.columns = elements.split(',')
+            refer_df = data_processing(refer_df)
+
+            # 下载近10年的数据
+            start_year = nearly_years.split(',')[0]
+            end_year = nearly_years.split(',')[1]
+            cur.execute(query, (start_year, end_year, sta_ids))
+            data = cur.fetchall()
+            nearly_df = pd.DataFrame(data)
+            nearly_df.columns = elements.split(',')
+            nearly_df = data_processing(nearly_df)
+
+        elif time_freq == 'M2':
+            elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,' + element
+            sta_ids = tuple(sta_ids.split(','))
+            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
+            mon_ = tuple(mon_list)
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.qh_qhbh_cmadaas_month
+                            WHERE
+                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s
+                                AND station_id_c IN %s
+                            """)
+
+            # 下载统计年份的数据
+            years = stats_times[0]
+            start_year = years.split(',')[0]
+            end_year = years.split(',')[1]
+            cur.execute(query, (start_year, end_year, mon_, sta_ids))
+            data = cur.fetchall()
+            data_df = pd.DataFrame(data)
+            data_df.columns = elements.split(',')
+            data_df = data_processing(data_df)
+
+            # 下载参考时段的数据
+            start_year = refer_years.split(',')[0]
+            end_year = refer_years.split(',')[1]
+            cur.execute(query, (start_year, end_year, mon_, sta_ids))
+            data = cur.fetchall()
+            refer_df = pd.DataFrame(data)
+            refer_df.columns = elements.split(',')
+            refer_df = data_processing(refer_df)
+
+            # 下载近10年的数据
+            start_year = nearly_years.split(',')[0]
+            end_year = nearly_years.split(',')[1]
+            cur.execute(query, (start_year, end_year, mon_, sta_ids))
+            data = cur.fetchall()
+            nearly_df = pd.DataFrame(data)
+            nearly_df.columns = elements.split(',')
+            nearly_df = data_processing(nearly_df)
+
+        elif time_freq == 'D1':
+            elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,Day' + element
+            sta_ids = tuple(sta_ids.split(','))
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.qh_qhbh_cmadaas_day
+                            WHERE
+                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND station_id_c IN %s
+                            """)
+
+            # 下载统计年份的数据
+            start_year = stats_times.split(',')[0]
+            end_year = stats_times.split(',')[1]
+            cur.execute(query, (start_year, end_year, sta_ids))
+            data = cur.fetchall()
+            data_df = pd.DataFrame(data)
+            data_df.columns = elements.split(',')
+            data_df = data_processing(data_df)
+
+            # 下载参考时段的数据
+            start_year = refer_years.split(',')[0]
+            end_year = refer_years.split(',')[1]
+            cur.execute(query, (start_year, end_year, sta_ids))
+            data = cur.fetchall()
+            refer_df = pd.DataFrame(data)
+            refer_df.columns = elements.split(',')
+            refer_df = data_processing(refer_df)
+
+            # 下载近10年的数据
+            start_year = nearly_years.split(',')[0]
+            end_year = nearly_years.split(',')[1]
+            cur.execute(query, (start_year, end_year, sta_ids))
+            data = cur.fetchall()
+            nearly_df = pd.DataFrame(data)
+            nearly_df.columns = elements.split(',')
+            nearly_df = data_processing(nearly_df)
+
+        elif time_freq == 'D2':
+            elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,Day' + element
+            sta_ids = tuple(sta_ids.split(','))
+            elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,' + element
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.qh_qhbh_cmadaas_day
+                            WHERE
+                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND (
+                                    (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
+                                    OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) < %s)
+                                    OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s)
+                                )
+                                AND station_id_c IN %s
+                            """)
+
+            # 下载统计年份的数据 ['%Y,%Y','%m%d,%m%d']
+            years = stats_times[0]
+            dates = stats_times[1]
+            start_year = years.split(',')[0]
+            end_year = years.split(',')[1]
+            start_mon = dates.split(',')[0][:2]
+            end_mon = dates.split(',')[1][:2]
+            start_date = dates.split(',')[0][2:]
+            end_date = dates.split(',')[1][2:]
+            cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_date, end_mon, sta_ids))
+            data = cur.fetchall()
+            nearly_df = pd.DataFrame(data)
+            nearly_df.columns = elements.split(',')
+            nearly_df = data_processing(nearly_df)
+
+    # 开始计算
     # stats_result 展示结果表格
     # post_data_df 统计年份数据，用于后续计算
     # post_refer_df 参考年份数据，用于后续计算
     stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year)
-    
+
     # 分布图
     result, data, gridx, gridy, year = contour_picture(stats_result, data_df, shp_path, interp_method, output_filepath)
-    
+
     # 1.统计分析-mk检验
     mk_result = time_analysis(post_data_df)
-    
+
     # 2.统计分析-累积距平
     anomaly, anomaly_accum = calc_anomaly_cum(post_data_df, post_refer_df)
-    
+
     # 3.统计分析-滑动平均
     moving_result = calc_moving_avg(post_data_df, 3)
-    
+
     # 4. 统计分析-小波分析
-    wave_result=wavelet_main(stats_result,output_filepath)
-    
+    wave_result = wavelet_main(stats_result, output_filepath)
+
     # 5. 统计分析-相关分析
-    correlation_result= correlation_analysis(post_data_df,output_filepath)
-    
+    correlation_result = correlation_analysis(post_data_df, output_filepath)
+
     # 6. 统计分析-EOF分析
     ds = xr.open_dataset(result)
-    eof_path=eof(ds,shp_path,output_filepath)
-    
+    eof_path = eof(ds, shp_path, output_filepath)
+
     # 7. 统计分析-REOF分析
     ds = xr.open_dataset(result)
-    reof_path=reof(ds,shp_path,output_filepath)
-    
+    reof_path = reof(ds, shp_path, output_filepath)
+
     # 8.EEMD分析
-    eemd_result=eemd(stats_result,output_filepath)
-    
+    eemd_result = eemd(stats_result, output_filepath)
+
     # 数据保存
-    
-    result_dict['表格']=dict()
-    result_dict['表格']=stats_result.to_dict()
-    
-    result_dict['分布图']=dict()
-    result_dict['分布图']=result
-    
-    result_dict['统计分析']=dict()
-    result_dict['统计分析']['mk检验']=mk_result
-    result_dict['统计分析']['累积距平']=dict()
-    result_dict['统计分析']['累积距平']['距平']=anomaly.to_dict()
-    result_dict['统计分析']['累积距平']['累积']=anomaly_accum.to_dict()
-    result_dict['统计分析']['滑动平均']=moving_result.to_dict()
-    result_dict['统计分析']['小波分析']=wave_result
-    result_dict['统计分析']['相关分析']=correlation_result
-    result_dict['统计分析']['EOF分析']=eof_path
-    result_dict['统计分析']['REOF分析']=reof_path
-    result_dict['统计分析']['EEMD分析']=eemd_result
-    
+
+    result_dict['表格'] = dict()
+    result_dict['表格'] = stats_result.to_dict()
+
+    result_dict['分布图'] = dict()
+    result_dict['分布图'] = result
+
+    result_dict['统计分析'] = dict()
+    result_dict['统计分析']['mk检验'] = mk_result
+    result_dict['统计分析']['累积距平'] = dict()
+    result_dict['统计分析']['累积距平']['距平'] = anomaly.to_dict()
+    result_dict['统计分析']['累积距平']['累积'] = anomaly_accum.to_dict()
+    result_dict['统计分析']['滑动平均'] = moving_result.to_dict()
+    result_dict['统计分析']['小波分析'] = wave_result
+    result_dict['统计分析']['相关分析'] = correlation_result
+    result_dict['统计分析']['EOF分析'] = eof_path
+    result_dict['统计分析']['REOF分析'] = reof_path
+    result_dict['统计分析']['EEMD分析'] = eemd_result
+
     # end_time=time.perf_counter()
     # print(str(round(end_time-start_time,3))+'s')
 
-    
     return result_dict
