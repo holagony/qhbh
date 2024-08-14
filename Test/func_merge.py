@@ -6,16 +6,16 @@ import xarray as xr
 from sklearn.linear_model import LinearRegression
 from Utils.data_processing import data_processing
 from Utils.utils import array2nc
-from Module01.wrapped.table_stats import table_stats
-from Module01.wrapped.contour_ficture import contour_picture
-from Module01.wrapped.mk_tests import time_analysis
-from Module01.wrapped.cumsum_anomaly import calc_anomaly_cum
-from Module01.wrapped.moving_avg import calc_moving_avg
-from Module01.wrapped.moving_avg import calc_moving_avg
-from Module01.wrapped.wavelet_analyse import wavelet_main
-from Module01.wrapped.correlation_analysis import correlation_analysis
-from Module01.wrapped.eof import eof,reof
-from Module01.wrapped.eemd import eemd
+from Module01.wrapped.func01_table_stats import table_stats
+from Module01.wrapped.func02_interp_grid import contour_picture
+from Module01.wrapped.func03_mk_tests import time_analysis
+from Module01.wrapped.func04_cumsum_anomaly import calc_anomaly_cum
+from Module01.wrapped.func05_moving_avg import calc_moving_avg
+from Module01.wrapped.func05_moving_avg import calc_moving_avg
+from Module01.wrapped.func06_wavelet_analyse import wavelet_main
+from Module01.wrapped.func07_correlation_analysis import correlation_analysis
+from Module01.wrapped.func08_eof import eof,reof
+from Module01.wrapped.func09_eemd import eemd
 
 
 # step1 读取数据，计算基础的统计表格

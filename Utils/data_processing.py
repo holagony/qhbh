@@ -72,13 +72,15 @@ def wind_direction_to_symbol(x):
 
     return x
 
-def data_processing(yearly_data):
+def data_processing(data_in, element):
     '''
     年/月/日数据前处理
+    月和日尺度转换为年尺度
+    element: 指定的要素
     '''
-    if yearly_data is None or yearly_data.empty:
-        return yearly_data
-    df_data = yearly_data.copy()
+    if data_in is None or data_in.empty:
+        return data_in
+    df_data = data_in.copy()
     df_data.set_index('Datetime', inplace=True)
     df_data.index = pd.DatetimeIndex(df_data.index)
     df_data['Station_Id_C'] = df_data['Station_Id_C'].astype(str)
@@ -86,7 +88,7 @@ def data_processing(yearly_data):
     if 'Unnamed: 0' in df_data.columns:
         df_data.drop(['Unnamed: 0'], axis=1, inplace=True)
 
-    # 根据要素处理
+    # 1.首先进行要素处理
     if 'PRE_Time_2020' in df_data.columns:
         df_data['PRE_Time_2020'] = df_data['PRE_Time_2020'].map(str)
         df_data.loc[df_data['PRE_Time_2020'].str.contains('9999'), 'PRE_Time_2020'] = np.nan
@@ -104,4 +106,33 @@ def data_processing(yearly_data):
     if 'WIN_D_Max_C' in df_data.columns:
         df_data['WIN_D_Max_C'] = df_data['WIN_D_Max_C'].astype(str).apply(wind_direction_to_symbol)
 
+    # 2.时间转换
+    resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max']
+    resample_min = ['TEM_Min', 'PRS_Min', 'GST_Min', 'RHU_Min']
+    resample_sum = ['PRE_Time_2020', 'PRE_Days']
+    resample_mean = ['TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 
+                     'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 
+                     'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg']
+
+    def sample(x):
+        '''
+        重采样的applyfunc
+        '''
+        x_info = x[['Station_Id_C', 'Station_Name', 'Lat', 'Lon', 'Year']].resample('1A').first()
+
+        if element in resample_max:
+            x_res = x[element].resample('1A').max()
+        elif element in resample_min:
+            x_res = x[element].resample('1A').min()
+        elif element in resample_sum:
+            x_res = x[element].resample('1A').sum()
+        elif element in resample_mean:
+            x_res = x[element].resample('1A').mean().round(1)
+
+        x_concat = pd.concat([x_info, x_res], axis=1)
+        return x_concat
+    
+    df_data = df_data.groupby('Station_Id_C').apply(sample)  # 转化为季度数据
+    df_data.reset_index(level=0, drop=True, inplace=True)
+    
     return df_data

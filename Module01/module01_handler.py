@@ -12,15 +12,15 @@ from Utils.data_loader_with_threads import get_cmadaas_monthly_data
 from Utils.data_loader_with_threads import get_cmadaas_daily_data
 from Utils.data_loader_with_threads import get_cmadaas_daily_period_data
 from Utils.data_processing import data_processing
-from Module01.wrapped.table_stats import table_stats
-from Module01.wrapped.contour_ficture import contour_picture
-from Module01.wrapped.mk_tests import time_analysis
-from Module01.wrapped.cumsum_anomaly import calc_anomaly_cum
-from Module01.wrapped.moving_avg import calc_moving_avg
-from Module01.wrapped.wavelet_analyse import wavelet_main
-from Module01.wrapped.correlation_analysis import correlation_analysis
-from Module01.wrapped.eof import eof, reof
-from Module01.wrapped.eemd import eemd
+from Module01.wrapped.func01_table_stats import table_stats
+from Module01.wrapped.func02_interp_grid import contour_picture
+from Module01.wrapped.func03_mk_tests import time_analysis
+from Module01.wrapped.func04_cumsum_anomaly import calc_anomaly_cum
+from Module01.wrapped.func05_moving_avg import calc_moving_avg
+from Module01.wrapped.func06_wavelet_analyse import wavelet_main
+from Module01.wrapped.func07_correlation_analysis import correlation_analysis
+from Module01.wrapped.func08_eof import eof, reof
+from Module01.wrapped.func09_eemd import eemd
 
 
 def statistical_climate_features(data_json):
@@ -96,8 +96,6 @@ def statistical_climate_features(data_json):
     :param output_filepath: 输出结果文件
 
     '''
-    result_dict = edict()
-
     # 1.参数读取
     element = data_json['element']
     refer_years = data_json['refer_years']
@@ -108,33 +106,29 @@ def statistical_climate_features(data_json):
     interp_method = data_json['interp_method']
     ci = data_json['ci']
     shp_path = data_json['shp_path']
-    output_filepath = data_json['output_filepath']
 
     # 2.参数处理
+    last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
     uuid4 = uuid.uuid4().hex
-    result_dict['uuid'] = uuid4
+
     data_dir = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
         os.chmod(data_dir, 0o007 | 0o070 | 0o700)
 
-    last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
-
     if not cfg.INFO.READ_LOCAL:
 
         # 3.解析要下载的参数
         ele = ''
-        elements_list = [
-            'TEM_Avg', 'TEM_Max', 'TEM_Min', 'PRE_Time_2020', 'PRE_Days', 'PRE_Max_Day', 'PRS_Avg', 'PRS_Max', 'PRS_Min', 'WIN_S_2mi_Avg', 'WIN_S_Max', 'WIN_S_Inst_Max', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Max', 'GST_Min', 'GST_Avg_5cm', 'GST_Avg_10cm',
-            'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'RHU_Min'
-        ]
+        elements_list = ['TEM_Avg', 'TEM_Max', 'TEM_Min', 'PRE_Time_2020', 'PRE_Days', 'PRE_Max_Day', 'PRS_Avg', 'PRS_Max', 'PRS_Min', 
+                         'WIN_S_2mi_Avg', 'WIN_S_Max', 'WIN_S_Inst_Max', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Max', 'GST_Min', 'GST_Avg_5cm', 'GST_Avg_10cm',
+                         'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 
+                         'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'RHU_Min']
         resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max']
         resample_min = ['TEM_Min', 'PRS_Min', 'GST_Min', 'RHU_Min']
         resample_sum = ['PRE_Time_2020', 'PRE_Days']
-        resample_mean = [
-            'TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH',
-            'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg'
-        ]
+        resample_mean = ['TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 
+                         'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg']
 
         if element in elements_list:
             ele += element
@@ -167,46 +161,25 @@ def statistical_climate_features(data_json):
             nearly_df = data_processing(nearly_df)
 
         elif time_freq == 'Q':
-            # 统一使用的后处理pandas apply func
-            def sample(x):
-                x_info = x[['Station_Id_C', 'Station_Name', 'Lat', 'Lon', 'Year', 'Mon']].resample('1A').first()
-                x_max = x[ele_max].resample('1A').max()
-                x_min = x[ele_min].resample('1A').min()
-                x_sum = x[ele_sum].resample('1A').sum()
-                x_mean = x[ele_mean].resample('1A').mean().round(1)
-                x_concat = pd.concat([x_info, x_max, x_min, x_sum, x_mean], axis=1)
-                return x_concat
-
             # 下载统计年份的数据
             mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
             years = stats_times[0]
             mon = '01,12'
             data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
-            data_df = data_processing(data_df)
-
-            ele_max = list(set(data_df.columns) & set(resample_max))
-            ele_min = list(set(data_df.columns) & set(resample_min))
-            ele_sum = list(set(data_df.columns) & set(resample_sum))
-            ele_mean = list(set(data_df.columns) & set(resample_mean))
-
+        
             # TODO if element in ['EVP_Penman', 'EVP_taka']:
             data_df = data_df[data_df['Mon'].isin(mon_list)]
-            data_df = data_df.groupby('Station_Id_C').apply(sample)  # 转化为季度数据
-            data_df.reset_index(level=0, drop=True, inplace=True)
+            data_df = data_processing(data_df)
 
             # 下载参考时段的数据
             refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
-            refer_df = data_processing(refer_df)
             refer_df = refer_df[refer_df['Mon'].isin(mon_list)]
-            refer_df = refer_df.groupby('Station_Id_C').apply(sample)  # 转化为季度数据
-            refer_df.reset_index(level=0, drop=True, inplace=True)
+            refer_df = data_processing(refer_df)
 
             # 下载近10年的数据
             nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
-            nearly_df = data_processing(nearly_df)
             nearly_df = nearly_df[nearly_df['Mon'].isin(mon_list)]
-            nearly_df = nearly_df.groupby('Station_Id_C').apply(sample)  # 转化为季度数据
-            nearly_df.reset_index(level=0, drop=True, inplace=True)
+            nearly_df = data_processing(nearly_df)
 
         elif time_freq == 'M1':
             # 下载统计年份的数据
@@ -231,18 +204,18 @@ def statistical_climate_features(data_json):
             years = stats_times[0]
             mon = '01,12'
             data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
-            data_df = data_processing(data_df)
             data_df = data_df[data_df['Mon'].isin(mon_list)]  # 按区间提取月份
+            data_df = data_processing(data_df)
 
             # 下载参考时段的数据
             refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
-            refer_df = data_processing(refer_df)
             refer_df = refer_df[refer_df['Mon'].isin(mon_list)]
+            refer_df = data_processing(refer_df)
 
             # 下载近10年的数据
             nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
-            nearly_df = data_processing(nearly_df)
             nearly_df = nearly_df[nearly_df['Mon'].isin(mon_list)]
+            nearly_df = data_processing(nearly_df)
 
         elif time_freq == 'D1':
             # 下载统计年份的数据
@@ -278,11 +251,15 @@ def statistical_climate_features(data_json):
 
     # 走数据库
     else:
-        conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
+        conn = psycopg2.connect(database=cfg.INFO.DB_NAME, 
+                                user=cfg.INFO.DB_USER, 
+                                password=cfg.INFO.DB_PWD, 
+                                host=cfg.INFO.DB_HOST, 
+                                port=cfg.INFO.DB_PORT)
         cur = conn.cursor()
 
         if time_freq == 'Y':
-            elements = 'Station_Id_C,Station_Name,Datetime,Year,Lon,Lat,Alti,' + element
+            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
             sta_ids = tuple(sta_ids.split(','))
             query = sql.SQL(f"""
                             SELECT {elements}
@@ -300,7 +277,6 @@ def statistical_climate_features(data_json):
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
             data_df = data_processing(data_df)
-            print(data_df.columns)
 
             # 下载参考时段的数据
             start_year = refer_years.split(',')[0]
@@ -321,26 +297,7 @@ def statistical_climate_features(data_json):
             nearly_df = data_processing(nearly_df)
 
         elif time_freq == 'Q':
-
-            def sample(x):
-                '''
-                重采样的applyfunc
-                '''
-                x_info = x[['Station_Id_C', 'Station_Name', 'Lat', 'Lon', 'Year', 'Mon']].resample('1A').first()
-
-                if element in resample_max:
-                    x_res = x[element].resample('1A').max()
-                elif element in resample_min:
-                    x_res = x[element].resample('1A').min()
-                elif element in resample_sum:
-                    x_res = x[element].resample('1A').sum()
-                elif element in resample_mean:
-                    x_res = x[element].resample('1A').mean().round(1)
-
-                x_concat = pd.concat([x_info, x_res], axis=1)
-                return x_concat
-
-            elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,' + element
+            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
             sta_ids = tuple(sta_ids.split(','))
             mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
             mon_ = tuple(mon_list)
@@ -362,8 +319,6 @@ def statistical_climate_features(data_json):
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
             data_df = data_processing(data_df)
-            data_df = data_df.groupby('Station_Id_C').apply(sample)  # 转化为季度数据
-            data_df.reset_index(level=0, drop=True, inplace=True)
 
             # 下载参考时段的数据
             start_year = refer_years.split(',')[0]
@@ -373,8 +328,6 @@ def statistical_climate_features(data_json):
             refer_df = pd.DataFrame(data)
             refer_df.columns = elements.split(',')
             refer_df = data_processing(refer_df)
-            refer_df = refer_df.groupby('Station_Id_C').apply(sample)  # 转化为季度数据
-            refer_df.reset_index(level=0, drop=True, inplace=True)
 
             # 下载近10年的数据
             start_year = nearly_years.split(',')[0]
@@ -384,11 +337,9 @@ def statistical_climate_features(data_json):
             nearly_df = pd.DataFrame(data)
             nearly_df.columns = elements.split(',')
             nearly_df = data_processing(nearly_df)
-            nearly_df = nearly_df.groupby('Station_Id_C').apply(sample)  # 转化为季度数据
-            nearly_df.reset_index(level=0, drop=True, inplace=True)
 
         elif time_freq == 'M1':
-            elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,' + element
+            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
             sta_ids = tuple(sta_ids.split(','))
             query = sql.SQL(f"""
                             SELECT {elements}
@@ -426,7 +377,7 @@ def statistical_climate_features(data_json):
             nearly_df = data_processing(nearly_df)
 
         elif time_freq == 'M2':
-            elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,' + element
+            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
             sta_ids = tuple(sta_ids.split(','))
             mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
             mon_ = tuple(mon_list)
@@ -468,7 +419,7 @@ def statistical_climate_features(data_json):
             nearly_df = data_processing(nearly_df)
 
         elif time_freq == 'D1':
-            elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,Day' + element
+            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day' + element
             sta_ids = tuple(sta_ids.split(','))
             query = sql.SQL(f"""
                             SELECT {elements}
@@ -506,7 +457,7 @@ def statistical_climate_features(data_json):
             nearly_df = data_processing(nearly_df)
 
         elif time_freq == 'D2':
-            elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,Day' + element
+            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day' + element
             sta_ids = tuple(sta_ids.split(','))
             elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,' + element
             query = sql.SQL(f"""
@@ -536,74 +487,77 @@ def statistical_climate_features(data_json):
             nearly_df = pd.DataFrame(data)
             nearly_df.columns = elements.split(',')
             nearly_df = data_processing(nearly_df)
+        
+        # 关闭数据库
+        cur.close()
+        conn.close()
 
     # 开始计算
     # stats_result 展示结果表格
     # post_data_df 统计年份数据，用于后续计算
     # post_refer_df 参考年份数据，用于后续计算
-    stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, time_freq, element, last_year)
+    stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, element, last_year)
     print('1.统计表完成')
+
     # 分布图
-    result, data, gridx, gridy, year = contour_picture(stats_result, data_df, shp_path, interp_method, output_filepath)
+    nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
     print('2.分布图完成')
+
     # 1.统计分析-mk检验
-    mk_result = time_analysis(post_data_df)
+    mk_result = time_analysis(post_data_df, data_dir)
     print('3.mk检验完成')
+
     # 2.统计分析-累积距平
-    anomaly, anomaly_accum = calc_anomaly_cum(post_data_df, post_refer_df)
+    anomaly_result = calc_anomaly_cum(post_data_df, post_refer_df, data_dir)
     print('4.距平完成后')
 
     # 3.统计分析-滑动平均
-    moving_result = calc_moving_avg(post_data_df, 3)
+    moving_result = calc_moving_avg(post_data_df, 3, data_dir)
     print('滑动平均完成')
 
     # 4. 统计分析-小波分析
-    wave_result = wavelet_main(stats_result, output_filepath)
+    wave_result = wavelet_main(stats_result, data_dir)
     print('小波完成')
+
     # 5. 统计分析-相关分析
-    correlation_result = correlation_analysis(post_data_df, output_filepath)
+    correlation_result = correlation_analysis(post_data_df, data_dir)
     print('相关分析完成')
 
     # 6. 统计分析-EOF分析
-    ds = xr.open_dataset(result)
-    eof_path = eof(ds, shp_path, output_filepath)
+    ds = xr.open_dataset(nc_path)
+    eof_path = eof(ds, shp_path, data_dir)
     print('eof完成')
 
     # 7. 统计分析-REOF分析
-    ds = xr.open_dataset(result)
-    reof_path = reof(ds, shp_path, output_filepath)
+    ds = xr.open_dataset(nc_path)
+    reof_path = reof(ds, shp_path, data_dir)
     print('reof完成')
 
     # 8.EEMD分析
-    eemd_result = eemd(stats_result, output_filepath)
+    eemd_result = eemd(stats_result, data_dir)
     print('eemd完成')
 
     # 数据保存
+    result_dict = edict()
+    result_dict['uuid'] = uuid4
 
-    result_dict['表格'] = dict()
-    result_dict['表格'] = stats_result.to_dict()
+    result_dict['表格'] = edict()
+    result_dict['表格'] = stats_result
 
-    result_dict['分布图'] = dict()
-    result_dict['分布图'] = result
+    result_dict['分布图'] = edict()
+    result_dict['分布图'] = nc_path
 
-    result_dict['统计分析'] = dict()
-    result_dict['统计分析']['mk检验'] = mk_result
-    result_dict['统计分析']['累积距平'] = dict()
-    result_dict['统计分析']['累积距平']['距平'] = anomaly.to_dict()
-    result_dict['统计分析']['累积距平']['累积'] = anomaly_accum.to_dict()
-    result_dict['统计分析']['滑动平均'] = moving_result.to_dict()
+    result_dict['统计分析'] = edict()
+    result_dict['统计分析']['MK检验'] = mk_result
+    result_dict['统计分析']['累积距平'] = anomaly_result
+    result_dict['统计分析']['滑动平均'] = moving_result
     result_dict['统计分析']['小波分析'] = wave_result
     result_dict['统计分析']['相关分析'] = correlation_result
     result_dict['统计分析']['EOF分析'] = eof_path
     result_dict['统计分析']['REOF分析'] = reof_path
     result_dict['统计分析']['EEMD分析'] = eemd_result
 
-    # end_time=time.perf_counter()
-    # print(str(round(end_time-start_time,3))+'s')
-
     return result_dict
-
-
 
 if __name__ == '__main__':
     data_json = dict()
@@ -619,7 +573,5 @@ if __name__ == '__main__':
     data_json['interp_method'] = 'ukri'
     data_json['ci'] = 95
     data_json['shp_path'] = r'C:/Users/MJY/Desktop/03-边界矢量/03-边界矢量/03-边界矢量/01-青海省/青海省县级数据.shp'
-    data_json['output_filepath'] = r'c:\Users\MJY\Desktop\result'
-    
     
     result = statistical_climate_features(data_json)

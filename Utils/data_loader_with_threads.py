@@ -25,7 +25,7 @@ def get_cmadaas_yearly_data(years, elements, sta_ids):
         '''
         time_range, elements, sta_ids = vals
         data_code = 'SURF_CHN_MUL_YER'
-        default_elements = 'Station_Id_C,Station_Name,Datetime,Year'
+        default_elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year'
         all_elements = default_elements + ',' + elements
         df = cmadaas_obs_by_time_range_and_id(time_range=time_range, data_code=data_code, elements=all_elements, ranges=ranges, sta_ids=sta_ids)
         return df
@@ -66,7 +66,7 @@ def get_cmadaas_monthly_data(years, mon, elements, sta_ids):
         '''
         time_range, elements, sta_ids = vals
         data_code = 'SURF_CHN_MUL_MON'
-        default_elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon'
+        default_elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon'
         all_elements = default_elements + ',' + elements
         ranges = None
         df = cmadaas_obs_by_time_range_and_id(time_range=time_range, data_code=data_code, elements=all_elements, ranges=ranges, sta_ids=sta_ids)
@@ -110,7 +110,7 @@ def get_cmadaas_daily_data(years, date, elements, sta_ids):
         '''
         time_range, elements, sta_ids = vals
         data_code = 'SURF_CHN_MUL_DAY'
-        default_elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,Day'
+        default_elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day'
         all_elements = default_elements + ',' + elements
         df = cmadaas_obs_by_time_range_and_id(time_range=time_range, data_code=data_code, elements=all_elements, ranges=ranges, sta_ids=sta_ids)
         return df
@@ -153,7 +153,7 @@ def get_cmadaas_daily_period_data(years, date, elements, sta_ids):
         '''
         minYear, maxYear, minMD, maxMD, elements, sta_ids = vals
         data_code = 'SURF_CHN_MUL_DAY'
-        default_elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,Day'
+        default_elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day'
         all_elements = default_elements + ',' + elements
         df = cmadaas_obs_by_period_and_id(minYear, maxYear, minMD, maxMD, data_code=data_code, elements=all_elements, ranges=ranges, sta_ids=sta_ids)
         return df

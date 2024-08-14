@@ -14,10 +14,13 @@ from matplotlib.gridspec import GridSpec
 from scipy.special._ufuncs import gammainc, gamma
 from scipy.optimize import fminbound
 from Utils.data_processing import data_processing
-from Module01.wrapped.table_stats import table_stats
+from Utils.ordered_easydict import OrderedEasyDict as edict
+from Module01.wrapped.func01_table_stats import table_stats
 import os
 import matplotlib
+
 matplotlib.use('Agg')
+
 
 def wavelet(Y, dt, pad=0, dj=-1, s0=-1, J1=-1, mother=-1, param=-1, freq=None):
     n1 = len(Y)
@@ -247,7 +250,6 @@ def chisquare_inv(P, V):
     return X  # end of code
 
 
-
 def chisquare_solve(XGUESS, P, V):
 
     PGUESS = gammainc(V / 2, V * XGUESS / 2)  # incomplete Gamma function
@@ -260,39 +262,41 @@ def chisquare_solve(XGUESS, P, V):
     return PDIFF
 
 
-def wavelet_main(stats_result,output_filepath):
+def wavelet_main(stats_result, output_filepath):
 
     # sst = np.loadtxt(r'C:/Users/MJY/Desktop/小波变换/小波变换/sst_nino3.dat')  # input SST time series
-    df_sta_1=stats_result.T.reset_index()
-    
-    df_sta_1.columns =df_sta_1.iloc[0]
+    df_sta_1 = stats_result.T.reset_index()
+
+    df_sta_1.columns = df_sta_1.iloc[0]
     df_sta_1 = df_sta_1.drop(df_sta_1.index[0])
-    df_sta_1 = df_sta_1.iloc[:-5:,:]
-    
+    df_sta_1 = df_sta_1.iloc[:-5:, :]
+
     # 历年平均值
-    df_sta_2 = df_sta_1.iloc[:,:-10:].T
-    df_sta_2.columns =df_sta_2.iloc[0]
+    df_sta_2 = df_sta_1.iloc[:, :-10:].T
+    df_sta_2.columns = df_sta_2.iloc[0]
     df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
     df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
-    
+
     df_sta_2.index = pd.DatetimeIndex(df_sta_2.index)
     df_sta_3 = df_sta_2.resample('Y').mean()
-    year=df_sta_3.index.year
-    columns=df_sta_3.columns
-    
-    result=dict()
+    year = df_sta_3.index.year
+    columns = df_sta_3.columns.tolist()
+
+    all_result = edict()
     for i in range(len(columns)):
-        dat=df_sta_3.iloc[:,i].values
-        
+        col = columns[i]
+        name = ''.join(col)
+        dat = df_sta_3.iloc[:, i].values
+
         if np.any(np.isnan(dat)):
-            print(f'{columns[i]}存在nan值，时间序列不完整')
+            # print(f'{columns[i]}存在nan值，时间序列不完整')
+            all_result[name] = '该站点的时间序列不完整，不能生成结果'
             continue
-    
+
         sst = dat
         # sst = sst - np.mean(sst)
         variance = np.std(sst, ddof=1)**2
-        
-        # In[]
+
         #----------C-O-M-P-U-T-A-T-I-O-N------S-T-A-R-T-S------H-E-R-E------------------------------------------------------
         # normalize by standard deviation (not necessary, but makes it easier
         # to compare with plot on Interactive Wavelet page, at
@@ -300,33 +304,33 @@ def wavelet_main(stats_result,output_filepath):
         if 1:
             variance = 1.0
             sst = sst / np.std(sst, ddof=1)
-        
+
         n = len(sst)
         dt = 1
         time = np.arange(len(sst)) * dt + year[0]  # construct time array
-        xlim = ([year[0]-1,year[-1]+1])  # plotting range
+        xlim = ([year[0] - 1, year[-1] + 1])  # plotting range
         pad = 1  # pad the time series with zeroes (recommended)
         dj = 0.25  # this will do 4 sub-octaves per octave
         s0 = 0.5  # this says start at a scale of 6 months
         j1 = 7 / dj  # this says do 7 powers-of-two with dj sub-octaves each
         lag1 = 0.72  # lag-1 autocorrelation for red noise background
-        print("lag1 = ", lag1)
+        # print("lag1 = ", lag1)
         mother = 'MORLET'
-        
+
         # Wavelet transform:
         wave, period, scale, coi = wavelet(sst, dt, pad, dj, s0, j1, mother)
         power = (np.abs(wave))**2  # compute wavelet power spectrum
         global_ws = (np.sum(power, axis=1) / n)  # time-average over all times
-        
+
         # Significance levels:
         signif = wave_signif(([variance]), dt=dt, sigtest=0, scale=scale, lag1=lag1, mother=mother)
         sig95 = signif[:, np.newaxis].dot(np.ones(n)[np.newaxis, :])  # expand signif --> (J+1)x(N) array
         sig95 = power / sig95  # where ratio > 1, power is significant
-        
+
         # Global wavelet spectrum & significance levels:
         dof = n - scale  # the -scale corrects for padding at edges
         global_signif = wave_signif(variance, dt=dt, scale=scale, sigtest=1, lag1=lag1, dof=dof, mother=mother)
-        
+
         # Scale-average between El Nino periods of 2--8 years
         avg = np.logical_and(scale >= 2, scale < 8)
         Cdelta = 0.776  # this is for the MORLET wavelet
@@ -334,9 +338,9 @@ def wavelet_main(stats_result,output_filepath):
         scale_avg = power / scale_avg  # [Eqn(24)]
         scale_avg = dj * dt / Cdelta * sum(scale_avg[avg, :])  # [Eqn(24)]
         scaleavg_signif = wave_signif(variance, dt=dt, scale=scale, sigtest=2, lag1=lag1, dof=([2, 7.9]), mother=mother)
-        
+
         #------------------------------------------------------ Plotting
-        
+
         #--- Plot time series
         fig = plt.figure(figsize=(9, 10))
         gs = GridSpec(3, 4, hspace=0.4, wspace=0.75)
@@ -347,7 +351,7 @@ def wavelet_main(stats_result,output_filepath):
         plt.xlabel('Time (year)')
         plt.ylabel('variance')
         plt.title('a) Time Series')
-        
+
         #--- Contour plot wavelet power spectrum
         # plt3 = plt.subplot(3, 1, 2)
         plt3 = plt.subplot(gs[1, 0:3])
@@ -372,9 +376,9 @@ def wavelet_main(stats_result,output_filepath):
         # set up the size and location of the colorbar
         # position=fig.add_axes([0.5,0.36,0.2,0.01])
         # plt.colorbar(im, cax=position, orientation='horizontal') #, fraction=0.05, pad=0.5)
-        
+
         # plt.subplots_adjust(right=0.7, top=0.9)
-        
+
         #--- Plot global wavelet spectrum
         plt4 = plt.subplot(gs[1, -1])
         plt.plot(global_ws, period)
@@ -389,7 +393,7 @@ def wavelet_main(stats_result,output_filepath):
         ax.set_major_formatter(ticker.ScalarFormatter())
         plt4.ticklabel_format(axis='y', style='plain')
         plt4.invert_yaxis()
-        
+
         # --- Plot 2--8 yr scale-average time series
         plt.subplot(gs[2, 0:3])
         plt.plot(time, scale_avg, 'k')
@@ -398,29 +402,28 @@ def wavelet_main(stats_result,output_filepath):
         plt.ylabel('Avg variance')
         plt.title('d) 2-8 yr Scale-average Time Series')
         plt.plot(xlim, scaleavg_signif + [0, 0], '--')
-        
-        result_picture = os.path.join(output_filepath,'wavelet_'+columns[i]+'.png')
-        result[columns[i]]=result_picture
+
+        result_picture = os.path.join(output_filepath, name+'_小波.png')
         fig.savefig(result_picture, dpi=200, bbox_inches='tight')
+        plt.clf()
         plt.close()
-        
-        result['wavelet_'+columns[i]]=result_picture
-        
-    return result
+
+        all_result[name] = result_picture
+
+    return all_result
+
 
 if __name__ == "__main__":
-    
-    output_filepath=r'D:\Project\1'
-    path = r'D:\Project\3_项目\2_气候评估和气候可行性论证\qhkxxlz\Files\test_data\qh_mon.csv'
-
+    path = r'C:/Users/MJY/Desktop/qhkxxlz/app/Files/test_data/qh_mon.csv'
     df = pd.read_csv(path, low_memory=False)
-    df = data_processing(df)
-    data_df = df[df.index.year<=5000]
-    refer_df = df[(df.index.year>2000) & (df.index.year<2020)]
-    nearly_df = df[df.index.year>2011]
+    element = 'TEM_Avg'
+    df = df[['Station_Id_C', 'Station_Name', 'Lat', 'Lon', 'Datetime', 'Year', 'Mon', element]]
+    df = data_processing(df, element)
+    data_df = df[df.index.year <= 2011]
+    refer_df = df[(df.index.year > 2000) & (df.index.year < 2020)]
+    nearly_df = df[df.index.year > 2011]
     last_year = 2023
-    time_freq = 'M1'
-    ele = 'TEM_Avg'
-    stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year)
+    stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, element, last_year)
 
-    result=wavelet_main(stats_result,output_filepath)
+    save_file = r'C:/Users/MJY/Desktop/result'
+    all_result = wavelet_main(stats_result, save_file)

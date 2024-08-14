@@ -18,7 +18,7 @@ import os
 import matplotlib
 from multiprocessing import Pool, Manager
 from matplotlib.path import Path
-from Module01.wrapped.table_stats import table_stats
+from Module01.wrapped.func01_table_stats import table_stats
 from Utils.data_processing import data_processing
 
 matplotlib.use('Agg')
