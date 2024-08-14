@@ -4,7 +4,6 @@ import json
 import numpy as np
 import pandas as pd
 from Utils.config import cfg
-from Utils.cost_time import cost_time
 
 
 def wind_direction_to_symbol(x):

@@ -10,12 +10,10 @@ from tqdm import tqdm
 from dateutil.relativedelta import relativedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from Utils.config import cfg
-from Utils.cost_time import cost_time
 from libs.nmc_met_io.retrieve_cmadaas import cmadaas_obs_by_time_range_and_id
 from libs.nmc_met_io.retrieve_cmadaas import cmadaas_obs_by_period_and_id
 
 
-@cost_time
 def get_cmadaas_yearly_data(years, elements, sta_ids):
     '''
     多线程年值数据下载
@@ -57,7 +55,6 @@ def get_cmadaas_yearly_data(years, elements, sta_ids):
         return pd.concat(dfs, axis=0, ignore_index=True).sort_values(by='Datetime')
 
 
-@cost_time
 def get_cmadaas_monthly_data(years, mon, elements, sta_ids):
     '''
     多线程月值数据下载
@@ -102,7 +99,6 @@ def get_cmadaas_monthly_data(years, mon, elements, sta_ids):
         return pd.concat(dfs, axis=0, ignore_index=True).sort_values(by='Datetime')
 
 
-@cost_time
 def get_cmadaas_daily_data(years, date, elements, sta_ids):
     '''
     多线程日值数据下载
