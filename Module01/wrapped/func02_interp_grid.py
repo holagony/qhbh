@@ -80,6 +80,7 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
     output_filepath_name = os.path.join(output_filepath, 'data.nc')
     data = np.zeros((len(year), len(gridy), len(gridx)))
 
+    year_u=[]
     for i in np.arange(len(year)):
         value_sta = df_sta_3.iloc[i, :].values
 
@@ -96,9 +97,14 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
         lon_clean = data_clean['lon'].values
         lat_clean = data_clean['lat'].values
         value_clean = data_clean['value'].values
-
+        
+        if len(value_clean)==0:
+            continue
+        
+        year_u.append(year[i])
         data[i, :, :] = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, str(year[i]))
 
+    year_u=np.array(year_u)
     nc_file = nc.Dataset(output_filepath_name, 'w', format='NETCDF4', encoding='gbk')
     nc_file.createDimension('lon', gridx.shape[0])
     nc_file.createDimension('lat', gridy.shape[0])
@@ -143,6 +149,11 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
         lon_clean = data_clean['lon'].values
         lat_clean = data_clean['lat'].values
         value_clean = data_clean['value'].values
+        
+        if len(value_clean)==0:
+            i = i + 1
+
+            continue
 
         data2 = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, ele)
 
@@ -176,8 +187,8 @@ if __name__ == "__main__":
     ele = 'TEM_Avg'
     stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year)
 
-    output_filepath = r'D:\Project\1'
+    output_filepath = r'D:\Project\qh\3'
     shp_name = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
-    method = 'idw2'
+    method = 'ukri'
 
     result, data, gridx, gridy, year = contour_picture(stats_result, data_df, shp_name, method, output_filepath)
