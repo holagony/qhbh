@@ -27,17 +27,17 @@ plt.rcParams['axes.unicode_minus'] = False
 
 
     
-path = r'D:\Project\3_项目\2_气候评估和气候可行性论证\qhkxxlz\Files\test_data\qh_mon.csv'
-data_dir = r'D:\Project\1'
-df = pd.read_csv(path, low_memory=False)
-df = data_processing(df)
-data_df = df[df.index.year <= 5000]
-refer_df = df[(df.index.year > 2000) & (df.index.year < 2020)]
-nearly_df = df[df.index.year > 2011]
-last_year = 2023
-time_freq = 'M1'
-ele = 'TEM_Avg'
-stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year)
+# path = r'D:\Project\3_项目\2_气候评估和气候可行性论证\qhkxxlz\Files\test_data\qh_mon.csv'
+# data_dir = r'D:\Project\1'
+# df = pd.read_csv(path, low_memory=False)
+# df = data_processing(df)
+# data_df = df[df.index.year <= 5000]
+# refer_df = df[(df.index.year > 2000) & (df.index.year < 2020)]
+# nearly_df = df[df.index.year > 2011]
+# last_year = 2023
+# time_freq = 'M1'
+# ele = 'TEM_Avg'
+# stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year)
 
 
 def correlation_analysis(post_data_df,output_filepath):

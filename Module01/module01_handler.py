@@ -282,7 +282,7 @@ def statistical_climate_features(data_json):
         cur = conn.cursor()
 
         if time_freq == 'Y':
-            elements = 'Station_Id_C,Station_Name,Datetime,Year,' + element
+            elements = 'Station_Id_C,Station_Name,Datetime,Year,Lon,Lat,Alti,' + element
             sta_ids = tuple(sta_ids.split(','))
             query = sql.SQL(f"""
                             SELECT {elements}
@@ -300,6 +300,7 @@ def statistical_climate_features(data_json):
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
             data_df = data_processing(data_df)
+            print(data_df.columns)
 
             # 下载参考时段的数据
             start_year = refer_years.split(',')[0]
@@ -540,36 +541,42 @@ def statistical_climate_features(data_json):
     # stats_result 展示结果表格
     # post_data_df 统计年份数据，用于后续计算
     # post_refer_df 参考年份数据，用于后续计算
-    stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year)
-
+    stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, time_freq, element, last_year)
+    print('1.统计表完成')
     # 分布图
     result, data, gridx, gridy, year = contour_picture(stats_result, data_df, shp_path, interp_method, output_filepath)
-
+    print('2.分布图完成')
     # 1.统计分析-mk检验
     mk_result = time_analysis(post_data_df)
-
+    print('3.mk检验完成')
     # 2.统计分析-累积距平
     anomaly, anomaly_accum = calc_anomaly_cum(post_data_df, post_refer_df)
+    print('4.距平完成后')
 
     # 3.统计分析-滑动平均
     moving_result = calc_moving_avg(post_data_df, 3)
+    print('滑动平均完成')
 
     # 4. 统计分析-小波分析
     wave_result = wavelet_main(stats_result, output_filepath)
-
+    print('小波完成')
     # 5. 统计分析-相关分析
     correlation_result = correlation_analysis(post_data_df, output_filepath)
+    print('相关分析完成')
 
     # 6. 统计分析-EOF分析
     ds = xr.open_dataset(result)
     eof_path = eof(ds, shp_path, output_filepath)
+    print('eof完成')
 
     # 7. 统计分析-REOF分析
     ds = xr.open_dataset(result)
     reof_path = reof(ds, shp_path, output_filepath)
+    print('reof完成')
 
     # 8.EEMD分析
     eemd_result = eemd(stats_result, output_filepath)
+    print('eemd完成')
 
     # 数据保存
 
@@ -595,3 +602,24 @@ def statistical_climate_features(data_json):
     # print(str(round(end_time-start_time,3))+'s')
 
     return result_dict
+
+
+
+if __name__ == '__main__':
+    data_json = dict()
+    data_json['element'] = 'TEM_Avg'
+    data_json['refer_years'] = '1991,2020'
+    data_json['nearly_years'] = '2014,2023'
+    data_json['time_freq'] = 'Y'
+    data_json['stats_times'] = '1981,2023'
+    data_json['sta_ids'] = '52754,56151,52855,52862,56065,52645,56046,52955,52968,52963,52825,56067,52713, \
+               52943,52877,52633,52866,52737,52745,52957,56018,56033,52657,52765,52972,52868, \
+               56016,52874,51886,56021,52876,56029,56125,52856,52836,52842,56004,52974,52863, \
+               56043,52908,56045,52818,56034,52853,52707,52602,52869,52833,52875,52859,52942,52851'
+    data_json['interp_method'] = 'ukri'
+    data_json['ci'] = 95
+    data_json['shp_path'] = r'C:/Users/MJY/Desktop/03-边界矢量/03-边界矢量/03-边界矢量/01-青海省/青海省县级数据.shp'
+    data_json['output_filepath'] = r'c:\Users\MJY\Desktop\result'
+    
+    
+    result = statistical_climate_features(data_json)
