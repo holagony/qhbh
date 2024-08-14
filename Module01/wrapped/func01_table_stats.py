@@ -97,14 +97,15 @@ def table_stats(data_df, refer_df, nearly_df, ele, last_year):
 
 
 if __name__ == '__main__':
-    path = r'C:/Users/MJY/Desktop/qhkxxlz/app/Files/test_data/qh_mon.csv'
+    path = r'C:/Users/MJY/Desktop/qhkxxlz/app/Files/test_data/qh_year.csv'
     df = pd.read_csv(path, low_memory=False)
     element = 'TEM_Avg'
-    df = df[['Station_Id_C', 'Station_Name', 'Lat', 'Lon', 'Datetime', 'Year', 'Mon', element]]
+    df = df[['Station_Id_C', 'Station_Name', 'Lat', 'Lon', 'Datetime', 'Year', element]]
     df = data_processing(df, element)
+    
 
-    data_df = df[df.index.year <= 2011]
-    refer_df = df[(df.index.year > 2000) & (df.index.year < 2020)]
-    nearly_df = df[df.index.year > 2011]
+    data_df = df[(df.index.year >= 1981) & (df.index.year <= 2023)]
+    refer_df = df[(df.index.year >= 1991) & (df.index.year <= 2020)]
+    nearly_df = df[(df.index.year >= 2014) & (df.index.year <= 2023)]
     last_year = 2023
     stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, element, last_year)

@@ -150,15 +150,15 @@ def statistical_climate_features(data_json):
             # 下载统计年份的数据
             years = stats_times
             data_df = get_cmadaas_yearly_data(years, ele, sta_ids)
-            data_df = data_processing(data_df)
+            data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
             refer_df = get_cmadaas_yearly_data(refer_years, ele, sta_ids)
-            refer_df = data_processing(refer_df)
+            refer_df = data_processing(refer_df, element)
 
             # 下载近10年的数据
             nearly_df = get_cmadaas_yearly_data(nearly_years, ele, sta_ids)
-            nearly_df = data_processing(nearly_df)
+            nearly_df = data_processing(nearly_df, element)
 
         elif time_freq == 'Q':
             # 下载统计年份的数据
@@ -169,17 +169,17 @@ def statistical_climate_features(data_json):
         
             # TODO if element in ['EVP_Penman', 'EVP_taka']:
             data_df = data_df[data_df['Mon'].isin(mon_list)]
-            data_df = data_processing(data_df)
+            data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
             refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
             refer_df = refer_df[refer_df['Mon'].isin(mon_list)]
-            refer_df = data_processing(refer_df)
+            refer_df = data_processing(refer_df, element)
 
             # 下载近10年的数据
             nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
             nearly_df = nearly_df[nearly_df['Mon'].isin(mon_list)]
-            nearly_df = data_processing(nearly_df)
+            nearly_df = data_processing(nearly_df, element)
 
         elif time_freq == 'M1':
             # 下载统计年份的数据
@@ -188,15 +188,15 @@ def statistical_climate_features(data_json):
             years = start_time[:4] + ',' + end_time[:4]
             mon = start_time[4:] + ',' + end_time[4:]
             data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
-            data_df = data_processing(data_df)
+            data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
             refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
-            refer_df = data_processing(refer_df)
+            refer_df = data_processing(refer_df, element)
 
             # 下载近10年的数据
             nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
-            nearly_df = data_processing(nearly_df)
+            nearly_df = data_processing(nearly_df, element)
 
         elif time_freq == 'M2':
             # 下载统计年份的数据
@@ -205,17 +205,17 @@ def statistical_climate_features(data_json):
             mon = '01,12'
             data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
             data_df = data_df[data_df['Mon'].isin(mon_list)]  # 按区间提取月份
-            data_df = data_processing(data_df)
+            data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
             refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
             refer_df = refer_df[refer_df['Mon'].isin(mon_list)]
-            refer_df = data_processing(refer_df)
+            refer_df = data_processing(refer_df, element)
 
             # 下载近10年的数据
             nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
             nearly_df = nearly_df[nearly_df['Mon'].isin(mon_list)]
-            nearly_df = data_processing(nearly_df)
+            nearly_df = data_processing(nearly_df, element)
 
         elif time_freq == 'D1':
             # 下载统计年份的数据
@@ -224,30 +224,30 @@ def statistical_climate_features(data_json):
             years = start_time[:4] + ',' + end_time[:4]
             date = start_time[4:] + ',' + end_time[4:]
             data_df = get_cmadaas_daily_data(years, date, ele, sta_ids)
-            data_df = data_processing(data_df)
+            data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
             refer_df = get_cmadaas_daily_data(refer_years, date, ele, sta_ids)
-            refer_df = data_processing(refer_df)
+            refer_df = data_processing(refer_df, element)
 
             # 下载近10年的数据
             nearly_df = get_cmadaas_daily_data(nearly_years, date, ele, sta_ids)
-            nearly_df = data_processing(nearly_df)
+            nearly_df = data_processing(nearly_df, element)
 
         elif time_freq == 'D2':
             # 下载统计年份的数据
             years = stats_times[0]
             date = stats_times[1]
             data_df = get_cmadaas_daily_period_data(years, date, ele, sta_ids)
-            data_df = data_processing(data_df)
+            data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
             refer_df = get_cmadaas_daily_period_data(refer_years, date, ele, sta_ids)
-            refer_df = data_processing(refer_df)
+            refer_df = data_processing(refer_df, element)
 
             # 下载近10年的数据
             nearly_df = get_cmadaas_daily_period_data(nearly_years, date, ele, sta_ids)
-            nearly_df = data_processing(nearly_df)
+            nearly_df = data_processing(nearly_df, element)
 
     # 走数据库
     else:
@@ -276,7 +276,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
-            data_df = data_processing(data_df)
+            data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
             start_year = refer_years.split(',')[0]
@@ -285,7 +285,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             refer_df = pd.DataFrame(data)
             refer_df.columns = elements.split(',')
-            refer_df = data_processing(refer_df)
+            refer_df = data_processing(refer_df, element)
 
             # 下载近10年的数据
             start_year = nearly_years.split(',')[0]
@@ -294,7 +294,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             nearly_df = pd.DataFrame(data)
             nearly_df.columns = elements.split(',')
-            nearly_df = data_processing(nearly_df)
+            nearly_df = data_processing(nearly_df, element)
 
         elif time_freq == 'Q':
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
@@ -318,7 +318,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
-            data_df = data_processing(data_df)
+            data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
             start_year = refer_years.split(',')[0]
@@ -327,7 +327,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             refer_df = pd.DataFrame(data)
             refer_df.columns = elements.split(',')
-            refer_df = data_processing(refer_df)
+            refer_df = data_processing(refer_df, element)
 
             # 下载近10年的数据
             start_year = nearly_years.split(',')[0]
@@ -336,7 +336,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             nearly_df = pd.DataFrame(data)
             nearly_df.columns = elements.split(',')
-            nearly_df = data_processing(nearly_df)
+            nearly_df = data_processing(nearly_df, element)
 
         elif time_freq == 'M1':
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
@@ -356,7 +356,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
-            data_df = data_processing(data_df)
+            data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
             start_year = refer_years.split(',')[0]
@@ -365,7 +365,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             refer_df = pd.DataFrame(data)
             refer_df.columns = elements.split(',')
-            refer_df = data_processing(refer_df)
+            refer_df = data_processing(refer_df, element)
 
             # 下载近10年的数据
             start_year = nearly_years.split(',')[0]
@@ -374,7 +374,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             nearly_df = pd.DataFrame(data)
             nearly_df.columns = elements.split(',')
-            nearly_df = data_processing(nearly_df)
+            nearly_df = data_processing(nearly_df, element)
 
         elif time_freq == 'M2':
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
@@ -398,7 +398,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
-            data_df = data_processing(data_df)
+            data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
             start_year = refer_years.split(',')[0]
@@ -407,7 +407,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             refer_df = pd.DataFrame(data)
             refer_df.columns = elements.split(',')
-            refer_df = data_processing(refer_df)
+            refer_df = data_processing(refer_df, element)
 
             # 下载近10年的数据
             start_year = nearly_years.split(',')[0]
@@ -416,7 +416,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             nearly_df = pd.DataFrame(data)
             nearly_df.columns = elements.split(',')
-            nearly_df = data_processing(nearly_df)
+            nearly_df = data_processing(nearly_df, element)
 
         elif time_freq == 'D1':
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day' + element
@@ -436,7 +436,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
-            data_df = data_processing(data_df)
+            data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
             start_year = refer_years.split(',')[0]
@@ -445,7 +445,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             refer_df = pd.DataFrame(data)
             refer_df.columns = elements.split(',')
-            refer_df = data_processing(refer_df)
+            refer_df = data_processing(refer_df, element)
 
             # 下载近10年的数据
             start_year = nearly_years.split(',')[0]
@@ -454,7 +454,7 @@ def statistical_climate_features(data_json):
             data = cur.fetchall()
             nearly_df = pd.DataFrame(data)
             nearly_df.columns = elements.split(',')
-            nearly_df = data_processing(nearly_df)
+            nearly_df = data_processing(nearly_df, element)
 
         elif time_freq == 'D2':
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day' + element
