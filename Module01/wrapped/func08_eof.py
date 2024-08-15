@@ -103,7 +103,7 @@ def reof(ds, shp_name, output_filepath):
     path = Path.make_compound_path(*geos_to_path(geo_list))
 
     for i, EOF1 in enumerate(EOFs):
-        print(i, EOF1)
+        # print(i, EOF1)
         ax1 = fig.add_subplot(4, 2, 2 * i + 1, projection=ccrs.PlateCarree())  # 第一个子图带投影
         ax2 = fig.add_subplot(4, 2, 2 * i + 2)
         plot_eof_and_pc(lon, lat, comps[i], scores[i, :], ax1, ax2, EOFs[i], PCs[i], year[0], year[-1], path)  # 第二个子图不带投影
@@ -117,7 +117,6 @@ def reof(ds, shp_name, output_filepath):
 
 
 if __name__ == "__main__":
-
     output_filepath = r'D:\Project\1'
     nc_path = r'D:\Project\1\data.nc'
     shp_name = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'

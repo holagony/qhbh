@@ -262,31 +262,21 @@ def chisquare_solve(XGUESS, P, V):
     return PDIFF
 
 
-def wavelet_main(stats_result, output_filepath):
-
-    # sst = np.loadtxt(r'C:/Users/MJY/Desktop/小波变换/小波变换/sst_nino3.dat')  # input SST time series
-    df_sta_1 = stats_result.T.reset_index()
-
-    df_sta_1.columns = df_sta_1.iloc[0]
-    df_sta_1 = df_sta_1.drop(df_sta_1.index[0])
-    df_sta_1 = df_sta_1.iloc[:-5:, :]
-
-    # 历年平均值
-    df_sta_2 = df_sta_1.iloc[:, :-10:].T
-    df_sta_2.columns = df_sta_2.iloc[0]
-    df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
-    df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
-
-    df_sta_2.index = pd.DatetimeIndex(df_sta_2.index)
-    df_sta_3 = df_sta_2.resample('Y').mean()
-    year = df_sta_3.index.year
-    columns = df_sta_3.columns.tolist()
+def wavelet_main(df, output_filepath):
+    df_new = df.copy()
+    df_new['区域平均'] = df_new.iloc[:, :].mean(axis=1).round(1)
+    df_new['区域最大'] = df_new.iloc[:, :].max(axis=1)
+    df_new['区域最小'] = df_new.iloc[:, :].min(axis=1)
+    
+    columns = df_new.columns.tolist()
+    year = df_new.index.tolist()
+    year = [int(y) for y in year]
 
     all_result = edict()
     for i in range(len(columns)):
         col = columns[i]
         name = ''.join(col)
-        dat = df_sta_3.iloc[:, i].values
+        dat = df_new.iloc[:, i].values
 
         if np.any(np.isnan(dat)):
             # print(f'{columns[i]}存在nan值，时间序列不完整')
@@ -426,4 +416,4 @@ if __name__ == "__main__":
     stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, element, last_year)
 
     save_file = r'C:/Users/MJY/Desktop/result'
-    all_result = wavelet_main(stats_result, save_file)
+    all_result = wavelet_main(post_data_df, save_file)

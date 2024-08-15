@@ -21,7 +21,7 @@ from Module01.wrapped.func06_wavelet_analyse import wavelet_main
 from Module01.wrapped.func07_correlation_analysis import correlation_analysis
 from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
-
+import time
 
 def statistical_climate_features(data_json):
     '''
@@ -497,26 +497,26 @@ def statistical_climate_features(data_json):
     # post_data_df 统计年份数据，用于后续计算
     # post_refer_df 参考年份数据，用于后续计算
     stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, element, last_year)
-    print('1.统计表完成')
+    print('统计表完成')
 
     # 分布图
     nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
-    print('2.分布图完成')
+    print('分布图插值生成nc完成')
 
     # 1.统计分析-mk检验
     mk_result = time_analysis(post_data_df, data_dir)
-    print('3.mk检验完成')
+    print('MK检验完成')
 
     # 2.统计分析-累积距平
     anomaly_result = calc_anomaly_cum(post_data_df, post_refer_df, data_dir)
-    print('4.距平完成后')
+    print('距平完成')
 
     # 3.统计分析-滑动平均
     moving_result = calc_moving_avg(post_data_df, 3, data_dir)
     print('滑动平均完成')
 
     # 4. 统计分析-小波分析
-    wave_result = wavelet_main(stats_result, data_dir)
+    wave_result = wavelet_main(post_data_df, data_dir)
     print('小波完成')
 
     # 5. 统计分析-相关分析
@@ -534,7 +534,7 @@ def statistical_climate_features(data_json):
     print('reof完成')
 
     # 8.EEMD分析
-    eemd_result = eemd(stats_result, data_dir)
+    eemd_result = eemd(post_data_df, data_dir)
     print('eemd完成')
 
     # 数据保存
@@ -560,6 +560,7 @@ def statistical_climate_features(data_json):
     return result_dict
 
 if __name__ == '__main__':
+    t1 = time.time()
     data_json = dict()
     data_json['element'] = 'TEM_Avg'
     data_json['refer_years'] = '1991,2020'
@@ -575,3 +576,5 @@ if __name__ == '__main__':
     data_json['shp_path'] = r'C:/Users/MJY/Desktop/03-边界矢量/03-边界矢量/03-边界矢量/01-青海省/青海省县级数据.shp'
     
     result = statistical_climate_features(data_json)
+    t2 = time.time()
+    print(t2-t1)

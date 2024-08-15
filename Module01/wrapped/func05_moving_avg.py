@@ -39,7 +39,7 @@ def calc_moving_avg(data_df, window, save_file):
         fig.legend(loc="upper right", bbox_to_anchor=(1, 1), bbox_transform=ax1.transAxes)
 
         name = ''.join(col)
-        save_path = os.path.join(save_file, name+'_距平.png')
+        save_path = os.path.join(save_file, name+'_滑动平均.png')
         plt.savefig(save_path, dpi=200, bbox_inches='tight')
         plt.clf()
         plt.close()

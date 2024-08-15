@@ -25,27 +25,31 @@ plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 
 
-def correlation_analysis(post_data_df, output_filepath):
+def correlation_analysis(df, output_filepath):
+    '''
+    计算自相关和偏相关画图
+    '''
+    new_df = df.copy()
+    new_df['区域平均'] = new_df.iloc[:, :].mean(axis=1).round(1)
+    new_df['区域最大'] = new_df.iloc[:, :].max(axis=1)
+    new_df['区域最小'] = new_df.iloc[:, :].min(axis=1)
+    
     num = 10 # 滞后阶数
+    columnsz = new_df.columns.tolist()
     all_result = edict()
-    df_sta_1 = post_data_df.T.reset_index().T
-    df_sta_1.columns = df_sta_1.iloc[0]
-    df_sta_1 = df_sta_1.drop(df_sta_1.index[0])
-    df_sta_1 = df_sta_1.drop(df_sta_1.index[0])
 
-    columnsz = df_sta_1.columns.tolist()
     for columns1 in columnsz:
         name = ''.join(columns1)
         all_result[name] = edict()
 
-        r, q, p = sm.tsa.acf(post_data_df[columns1], nlags=num, fft=True, qstat=True)  # alpha=0.05
+        r, q, p = sm.tsa.acf(new_df[columns1], nlags=num, fft=True, qstat=True)  # alpha=0.05
         data = np.c_[range(1, num+1), r[1:], q, p]
         table = pd.DataFrame(data, columns=['Lag', "AC", "Q", "Prob(>Q)"])
         all_result[name]['自相关'] = table
 
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111)
-        fig = sm.graphics.tsa.plot_acf(post_data_df[columns1], lags=num, ax=ax1)
+        fig = sm.graphics.tsa.plot_acf(new_df[columns1], lags=num, ax=ax1)
         plt.xlabel('滞后阶数')
         plt.ylabel('相关系数')
         plt.title(columns1)
@@ -57,13 +61,13 @@ def correlation_analysis(post_data_df, output_filepath):
         all_result[name]['img'] = result_picture
 
         # 偏自相关
-        r = sm.tsa.pacf(post_data_df[columns1], nlags=num)
+        r = sm.tsa.pacf(new_df[columns1], nlags=num)
         table = pd.DataFrame(r[1:], columns=['Lag'])
         all_result[name]['偏自相关'] = table
 
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111)
-        fig = sm.graphics.tsa.plot_pacf(post_data_df[columns1], lags=num, ax=ax1)
+        fig = sm.graphics.tsa.plot_pacf(new_df[columns1], lags=num, ax=ax1)
         plt.xlabel('滞后阶数')
         plt.ylabel('相关系数')
         plt.title(columns1)
@@ -92,3 +96,4 @@ if __name__ == "__main__":
     # 自相关
     save_file = r'C:/Users/MJY/Desktop/result'
     all_result = correlation_analysis(post_data_df, save_file)
+

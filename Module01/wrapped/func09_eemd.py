@@ -18,7 +18,6 @@ import matplotlib
 from Module01.wrapped.func01_table_stats import table_stats
 from Utils.data_processing import data_processing
 from Utils.ordered_easydict import OrderedEasyDict as edict
-from tqdm import tqdm
 
 matplotlib.use('Agg')
 plt.rcParams['font.sans-serif'] = ['SimHei']
@@ -26,26 +25,19 @@ plt.rcParams['axes.unicode_minus'] = False
 warnings.filterwarnings('ignore')
 
 
-def eemd(stats_result, output_filepath):
-    df_sta_1 = stats_result.T.reset_index()
-    df_sta_1.columns = df_sta_1.iloc[0]
-    df_sta_1 = df_sta_1.drop(df_sta_1.index[0])
-    df_sta_1 = df_sta_1.iloc[:-5:, :]
+def eemd(df, output_filepath):
+    df_new = df.copy()
+    df_new['区域平均'] = df_new.iloc[:, :].mean(axis=1).round(1)
+    df_new['区域最大'] = df_new.iloc[:, :].max(axis=1)
+    df_new['区域最小'] = df_new.iloc[:, :].min(axis=1)
 
-    # 历年平均值
-    df_sta_2 = df_sta_1.iloc[:, :-10:].T
-    df_sta_2.columns = df_sta_2.iloc[0]
-    df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
-    df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
-
-    df_sta_2.index = pd.DatetimeIndex(df_sta_2.index)
-    df_sta_3 = df_sta_2.resample('Y').mean()
-    year = df_sta_3.index.year
-    columns = df_sta_3.columns.tolist()
+    columns = df_new.columns.tolist()
+    year = df_new.index.tolist()
+    year = [int(y) for y in year]
 
     all_result = edict()
-    for i in tqdm(range(len(columns))):
-        dat = df_sta_3.iloc[:, i].values
+    for i in range(len(columns)):
+        dat = df_new.iloc[:, i].values
         col = columns[i]
         name = ''.join(col)
 
@@ -107,4 +99,4 @@ if __name__ == "__main__":
 
     # eemd
     save_file = r'C:/Users/MJY/Desktop/result'
-    all_result = eemd(stats_result, save_file)
+    all_result = eemd(post_data_df, save_file)
