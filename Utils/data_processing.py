@@ -109,7 +109,13 @@ def data_processing(data_in, element):
     # 2.时间转换
     resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max']
     resample_min = ['TEM_Min', 'PRS_Min', 'GST_Min', 'RHU_Min']
-    resample_sum = ['PRE_Time_2020', 'PRE_Days', 'EVP_Big', 'EVP', 'EVP_Taka', 'PMET']
+    resample_sum = ['PRE_Time_2020', 'PRE_Days', 'EVP_Big', 'EVP', 'EVP_Taka', 'PMET','sa','rainstorm','light_snow','snow',
+                    'medium_snow','heavy_snow','severe_snow','Hail_Days','Hail','GaWIN',
+                    'GaWIN_Days','SaSt','SaSt_Days','FlSa','FlSa_Days','FlDu','FlDu_Days',
+                    'Thund','Thund_Days''high_tem','drought','light_drought','medium_drought',
+                    'heavy_drought','severe_drought']
+    
+    
     resample_mean = ['TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 
                      'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 
                      'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg']
@@ -118,7 +124,7 @@ def data_processing(data_in, element):
         '''
         重采样的applyfunc
         '''
-        x_info = x[['Station_Id_C', 'Station_Name', 'Lat', 'Lon', 'Year']].resample('1A').first()
+        x_info = x[['Station_Id_C', 'Station_Name', 'Lat', 'Lon']].resample('1A').first()
 
         if element in resample_max:
             x_res = x[element].resample('1A').max()
