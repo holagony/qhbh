@@ -11,7 +11,7 @@ import requests
 from flask import Blueprint, request, jsonify
 from Utils.config import cfg
 from Utils.ordered_easydict import OrderedEasyDict as edict
-from Module01.module01_handler import statistical_climate_features
+from Module01.pageA_handler import statistical_climate_features
 
 
 def callback(url, result_id, result):
@@ -22,7 +22,7 @@ def callback(url, result_id, result):
     requests.put(url, headers=header, data=json.dumps(_json))
 
 
-class workerAirportWind:
+class workerPageA:
 
     def act(self, json_str):
         data_json = json.loads(json_str)

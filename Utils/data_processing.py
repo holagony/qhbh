@@ -75,7 +75,7 @@ def wind_direction_to_symbol(x):
 def data_processing(data_in, element):
     '''
     年/月/日数据前处理
-    月和日尺度转换为年尺度
+    月（季）数据和日数据，都转换为年尺度
     element: 指定的要素
     '''
     if data_in is None or data_in.empty:
@@ -109,7 +109,7 @@ def data_processing(data_in, element):
     # 2.时间转换
     resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max']
     resample_min = ['TEM_Min', 'PRS_Min', 'GST_Min', 'RHU_Min']
-    resample_sum = ['PRE_Time_2020', 'PRE_Days']
+    resample_sum = ['PRE_Time_2020', 'PRE_Days', 'EVP_Big', 'EVP', 'EVP_Taka', 'PMET']
     resample_mean = ['TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 
                      'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 
                      'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg']

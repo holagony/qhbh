@@ -124,11 +124,6 @@ def statistical_climate_features(data_json):
                          'WIN_S_2mi_Avg', 'WIN_S_Max', 'WIN_S_Inst_Max', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Max', 'GST_Min', 'GST_Avg_5cm', 'GST_Avg_10cm',
                          'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 
                          'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'RHU_Min']
-        resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max']
-        resample_min = ['TEM_Min', 'PRS_Min', 'GST_Min', 'RHU_Min']
-        resample_sum = ['PRE_Time_2020', 'PRE_Days']
-        resample_mean = ['TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 
-                         'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg']
 
         if element in elements_list:
             ele += element
@@ -257,10 +252,10 @@ def statistical_climate_features(data_json):
                                 host=cfg.INFO.DB_HOST, 
                                 port=cfg.INFO.DB_PORT)
         cur = conn.cursor()
-
-        if time_freq == 'Y':
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
+        
+        if time_freq == 'Y': # '%Y,%Y'
             sta_ids = tuple(sta_ids.split(','))
+            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
             query = sql.SQL(f"""
                             SELECT {elements}
                             FROM public.qh_qhbh_cmadaas_year
@@ -296,17 +291,17 @@ def statistical_climate_features(data_json):
             nearly_df.columns = elements.split(',')
             nearly_df = data_processing(nearly_df, element)
 
-        elif time_freq == 'Q':
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
+        elif time_freq == 'Q': # ['%Y,%Y','3,4,5']
             sta_ids = tuple(sta_ids.split(','))
+            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
             mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
             mon_ = tuple(mon_list)
             query = sql.SQL(f"""
                             SELECT {elements}
                             FROM public.qh_qhbh_cmadaas_month
                             WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s
+                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
                                 AND station_id_c IN %s
                             """)
 
@@ -321,9 +316,18 @@ def statistical_climate_features(data_json):
             data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
+            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.qh_qhbh_cmadaas_year
+                            WHERE
+                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND station_id_c IN %s
+                            """)
+                            
             start_year = refer_years.split(',')[0]
             end_year = refer_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, mon_, sta_ids))
+            cur.execute(query, (start_year, end_year, sta_ids))
             data = cur.fetchall()
             refer_df = pd.DataFrame(data)
             refer_df.columns = elements.split(',')
@@ -332,33 +336,46 @@ def statistical_climate_features(data_json):
             # 下载近10年的数据
             start_year = nearly_years.split(',')[0]
             end_year = nearly_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, mon_, sta_ids))
+            cur.execute(query, (start_year, end_year, sta_ids))
             data = cur.fetchall()
             nearly_df = pd.DataFrame(data)
             nearly_df.columns = elements.split(',')
             nearly_df = data_processing(nearly_df, element)
 
-        elif time_freq == 'M1':
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
+        elif time_freq == 'M1': # '%Y%m,%Y%m'
             sta_ids = tuple(sta_ids.split(','))
+            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
             query = sql.SQL(f"""
                             SELECT {elements}
                             FROM public.qh_qhbh_cmadaas_month
                             WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) >= %s)
+                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
+                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) <= %s))
                                 AND station_id_c IN %s
                             """)
 
             # 下载统计年份的数据
-            start_year = stats_times.split(',')[0]
-            end_year = stats_times.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
+            start_year = stats_times.split(',')[0][:4]
+            end_year = stats_times.split(',')[1][:4]
+            start_month = stats_times.split(',')[0][4:]
+            end_month = stats_times.split(',')[1][4:]
+            cur.execute(query, (start_year, start_month, start_year, end_year, end_year, end_month, sta_ids))
             data = cur.fetchall()
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
             data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
+            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.qh_qhbh_cmadaas_year
+                            WHERE
+                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND station_id_c IN %s
+                            """)
+
             start_year = refer_years.split(',')[0]
             end_year = refer_years.split(',')[1]
             cur.execute(query, (start_year, end_year, sta_ids))
@@ -376,7 +393,7 @@ def statistical_climate_features(data_json):
             nearly_df.columns = elements.split(',')
             nearly_df = data_processing(nearly_df, element)
 
-        elif time_freq == 'M2':
+        elif time_freq == 'M2': # ['%Y,%Y','11,12,1,2']
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
             sta_ids = tuple(sta_ids.split(','))
             mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
@@ -385,8 +402,8 @@ def statistical_climate_features(data_json):
                             SELECT {elements}
                             FROM public.qh_qhbh_cmadaas_month
                             WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s
+                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
                                 AND station_id_c IN %s
                             """)
 
@@ -401,9 +418,18 @@ def statistical_climate_features(data_json):
             data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
+            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.qh_qhbh_cmadaas_year
+                            WHERE
+                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND station_id_c IN %s
+                            """)
+
             start_year = refer_years.split(',')[0]
             end_year = refer_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, mon_, sta_ids))
+            cur.execute(query, (start_year, end_year, sta_ids))
             data = cur.fetchall()
             refer_df = pd.DataFrame(data)
             refer_df.columns = elements.split(',')
@@ -412,33 +438,51 @@ def statistical_climate_features(data_json):
             # 下载近10年的数据
             start_year = nearly_years.split(',')[0]
             end_year = nearly_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, mon_, sta_ids))
+            cur.execute(query, (start_year, end_year, sta_ids))
             data = cur.fetchall()
             nearly_df = pd.DataFrame(data)
             nearly_df.columns = elements.split(',')
             nearly_df = data_processing(nearly_df, element)
 
-        elif time_freq == 'D1':
+        elif time_freq == 'D1': # '%Y%m%d,%Y%m%d'
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day' + element
             sta_ids = tuple(sta_ids.split(','))
             query = sql.SQL(f"""
                             SELECT {elements}
                             FROM public.qh_qhbh_cmadaas_day
                             WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
+                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > 2000 AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < 2010)
+                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = 2010 AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = 10 AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= 29))
                                 AND station_id_c IN %s
                             """)
+                            
+            
 
             # 下载统计年份的数据
-            start_year = stats_times.split(',')[0]
-            end_year = stats_times.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
+            start_year = stats_times.split(',')[0][:4]
+            end_year = stats_times.split(',')[1][:4]
+            start_month = stats_times.split(',')[0][4:6]
+            end_month = stats_times.split(',')[1][4:6]
+            start_date = stats_times.split(',')[0][6:]
+            end_date = stats_times.split(',')[1][6:]
+            
+            cur.execute(query, (start_year, start_month, start_date, start_year, end_year, end_year, end_month, end_date))
             data = cur.fetchall()
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
             data_df = data_processing(data_df, element)
 
             # 下载参考时段的数据
+            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.qh_qhbh_cmadaas_year
+                            WHERE
+                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND station_id_c IN %s
+                            """)
+                            
             start_year = refer_years.split(',')[0]
             end_year = refer_years.split(',')[1]
             cur.execute(query, (start_year, end_year, sta_ids))
@@ -456,7 +500,7 @@ def statistical_climate_features(data_json):
             nearly_df.columns = elements.split(',')
             nearly_df = data_processing(nearly_df, element)
 
-        elif time_freq == 'D2':
+        elif time_freq == 'D2': # ['%Y,%Y','%m%d,%m%d']
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day' + element
             sta_ids = tuple(sta_ids.split(','))
             elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,' + element
@@ -464,12 +508,12 @@ def statistical_climate_features(data_json):
                             SELECT {elements}
                             FROM public.qh_qhbh_cmadaas_day
                             WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
                                 AND (
                                     (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
                                     OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) < %s)
                                     OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s)
-                                )
+                                ))
                                 AND station_id_c IN %s
                             """)
 
@@ -482,11 +526,38 @@ def statistical_climate_features(data_json):
             end_mon = dates.split(',')[1][:2]
             start_date = dates.split(',')[0][2:]
             end_date = dates.split(',')[1][2:]
-            cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_date, end_mon, sta_ids))
+            cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_mon, end_date, sta_ids))
             data = cur.fetchall()
             nearly_df = pd.DataFrame(data)
             nearly_df.columns = elements.split(',')
             nearly_df = data_processing(nearly_df)
+            
+            # 下载参考时段的数据
+            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.qh_qhbh_cmadaas_year
+                            WHERE
+                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND station_id_c IN %s
+                            """)
+
+            start_year = refer_years.split(',')[0]
+            end_year = refer_years.split(',')[1]
+            cur.execute(query, (start_year, end_year, sta_ids))
+            data = cur.fetchall()
+            refer_df = pd.DataFrame(data)
+            refer_df.columns = elements.split(',')
+            refer_df = data_processing(refer_df, element)
+
+            # 下载近10年的数据
+            start_year = nearly_years.split(',')[0]
+            end_year = nearly_years.split(',')[1]
+            cur.execute(query, (start_year, end_year, sta_ids))
+            data = cur.fetchall()
+            nearly_df = pd.DataFrame(data)
+            nearly_df.columns = elements.split(',')
+            nearly_df = data_processing(nearly_df, element)
         
         # 关闭数据库
         cur.close()
@@ -565,15 +636,15 @@ if __name__ == '__main__':
     data_json['element'] = 'TEM_Avg'
     data_json['refer_years'] = '1991,2020'
     data_json['nearly_years'] = '2014,2023'
-    data_json['time_freq'] = 'Y'
-    data_json['stats_times'] = '1981,2023'
+    data_json['time_freq'] = 'M1'
+    data_json['stats_times'] = '198105,202009' # '1981,2023'
     data_json['sta_ids'] = '52754,56151,52855,52862,56065,52645,56046,52955,52968,52963,52825,56067,52713, \
                52943,52877,52633,52866,52737,52745,52957,56018,56033,52657,52765,52972,52868, \
                56016,52874,51886,56021,52876,56029,56125,52856,52836,52842,56004,52974,52863, \
                56043,52908,56045,52818,56034,52853,52707,52602,52869,52833,52875,52859,52942,52851'
     data_json['interp_method'] = 'ukri'
     data_json['ci'] = 95
-    data_json['shp_path'] = r'C:/Users/MJY/Desktop/03-边界矢量/03-边界矢量/03-边界矢量/01-青海省/青海省县级数据.shp'
+    data_json['shp_path'] = r'C:\Users\MJY\Desktop\qhbh\文档\03-边界矢量\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
     
     result = statistical_climate_features(data_json)
     t2 = time.time()

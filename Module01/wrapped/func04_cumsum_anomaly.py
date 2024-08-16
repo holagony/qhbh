@@ -55,7 +55,7 @@ def calc_anomaly_cum(data_df, post_refer_df, save_file):
         ax2.plot(range(len(anomaly)), line_data, label='累积距平', color='red', linestyle='--', marker='o',markersize=4)
         ax2.set_ylabel('累积距平')
         plt.grid(ls="--", alpha=0.5)
-        plt.xticks(list(range(0,len(anomaly),2)),labels=anomaly.index.tolist()[::2], rotation=45)
+        plt.xticks(list(range(0,len(anomaly),3)),labels=anomaly.index.tolist()[::3], rotation=45)
         fig.legend(loc="upper right", bbox_to_anchor=(1, 1), bbox_transform=ax1.transAxes)
 
         name = ''.join(col)

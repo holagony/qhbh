@@ -1,7 +1,13 @@
 import json
 import simplejson
 from flask import Blueprint, request, jsonify, current_app
-from Module01.module01_handler import statistical_climate_features
+from Module01.pageA_handler import statistical_climate_features
+# from Module01.page2_handler import 
+# from Module01.page3_handler import 
+# from Module01.page4_handler import 
+# from Module01.page5_handler import 
+# from Module01.page6_handler import 
+
 from tasks.dispatcher_worker import celery_submit, celery_task_status
 
 module01 = Blueprint('module01', __name__)
