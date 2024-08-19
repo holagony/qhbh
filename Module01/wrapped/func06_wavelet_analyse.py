@@ -283,6 +283,11 @@ def wavelet_main(df, output_filepath):
             all_result[name] = '该站点的时间序列不完整，不能生成结果'
             continue
 
+        if np.nanmax(dat)==0 and np.nanmin(dat)==0:
+            # print(f'{columns[i]}存在nan值，时间序列不完整')
+            all_result[name] = '该站点的数据全为0，不能生成结果'
+            continue
+
         sst = dat
         # sst = sst - np.mean(sst)
         variance = np.std(sst, ddof=1)**2

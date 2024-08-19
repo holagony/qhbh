@@ -11,7 +11,7 @@ from sklearn.linear_model import LinearRegression
 from Utils.data_processing import data_processing
 
 
-def table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year):
+def other_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year):
     '''
     data_df 天擎统计时段数据
     refer_df 天擎参考时段数据
@@ -26,17 +26,22 @@ def table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year):
     refer_df = refer_df.pivot_table(index=refer_df.index, columns=['Station_Name', 'Station_Id_C'], values=ele) # 参考时段df
     nearly_df = nearly_df.pivot_table(index=nearly_df.index, columns=['Station_Name', 'Station_Id_C'], values=ele) # 近10年df
 
-    if time_freq in ['Y','Q']:
-        data_df.index = data_df.index.strftime('%Y')
-        refer_df.index = refer_df.index.strftime('%Y')
-        nearly_df.index = nearly_df.index.strftime('%Y')
-        last_df.index = last_df.index.strftime('%Y')
+    # if time_freq in ['Y','Q']:
+    data_df = data_df.resample('Y').sum()
+    refer_df = refer_df.resample('Y').sum()
+    nearly_df = nearly_df.resample('Y').sum()
+    last_df = last_df.resample('Y').sum()
+    
+    data_df.index = data_df.index.strftime('%Y')
+    refer_df.index = refer_df.index.strftime('%Y')
+    nearly_df.index = nearly_df.index.strftime('%Y')
+    last_df.index = last_df.index.strftime('%Y')
 
-    elif time_freq in ['M1','M2']:
-        data_df.index = data_df.index.strftime('%Y-%m')
-        refer_df.index = refer_df.index.strftime('%Y-%m')
-        nearly_df.index = nearly_df.index.strftime('%Y-%m')
-        last_df.index = last_df.index.strftime('%Y-%m')
+    # elif time_freq in ['M1','M2']:
+    #     data_df.index = data_df.index.strftime('%Y-%m')
+    #     refer_df.index = refer_df.index.strftime('%Y-%m')
+    #     nearly_df.index = nearly_df.index.strftime('%Y-%m')
+    #     last_df.index = last_df.index.strftime('%Y-%m')
 
 
     def trend_rate(x):
@@ -78,12 +83,12 @@ def table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year):
     stats_result = pd.concat((stats_result,tmp_df),axis=0)
 
     # index处理
-    if time_freq in ['Y','Q']:
-        stats_result.insert(loc=0, column='时间', value=stats_result.index)
-    elif time_freq in ['M1','M2']:
-        stats_result.insert(loc=0, column='时间', value=stats_result.index)
-    elif time_freq in ['D1','D2']:
-        stats_result.insert(loc=0, column='时间', value=stats_result.index)
+    # if time_freq in ['Y','Q']:
+    stats_result.insert(loc=0, column='时间', value=stats_result.index)
+    # elif time_freq in ['M1','M2']:
+    #     stats_result.insert(loc=0, column='时间', value=stats_result.index)
+    # elif time_freq in ['D1','D2']:
+    #     stats_result.insert(loc=0, column='时间', value=stats_result.index)
         
     stats_result.reset_index(drop=True, inplace=True)
     post_data_df = data_df.copy()

@@ -33,7 +33,7 @@ def persistent_time(df,time_freq):
     return df
                 
 
-def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=None,R_flag=None,RD=None,RD_flag=None,Rxxday=None):
+def pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=None,R_flag=None,RD=None,RD_flag=None,Rxxday=None):
 
     print(RD)
     print(R)
@@ -310,54 +310,54 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=No
       
     if ele in ['RZ','RZD','SDII','R25D','R50D','R10D','R95%D','R95%','R50','R','RD']:
        
-        if time_freq in ['Y','Q']:
+        # if time_freq in ['Y','Q']:
             
-            data_df = data_df.resample('Y').sum()
-            refer_df = refer_df.resample('Y').sum()
-            nearly_df = nearly_df.resample('Y').sum()
-            last_df = last_df.resample('Y').sum()
+        data_df = data_df.resample('Y').sum()
+        refer_df = refer_df.resample('Y').sum()
+        nearly_df = nearly_df.resample('Y').sum()
+        last_df = last_df.resample('Y').sum()
+    
+        data_df.index = data_df.index.strftime('%Y')
+        refer_df.index = refer_df.index.strftime('%Y')
+        nearly_df.index = nearly_df.index.strftime('%Y')
+        last_df.index = last_df.index.strftime('%Y')
         
-            data_df.index = data_df.index.strftime('%Y')
-            refer_df.index = refer_df.index.strftime('%Y')
-            nearly_df.index = nearly_df.index.strftime('%Y')
-            last_df.index = last_df.index.strftime('%Y')
-        
-        elif time_freq in ['M1','M2']:
-            data_df = data_df.resample('M').sum()
-            refer_df = refer_df.resample('M').sum()
-            nearly_df = nearly_df.resample('M').sum()
-            last_df = last_df.resample('M').sum()
+        # elif time_freq in ['M1','M2']:
+        #     data_df = data_df.resample('M').sum()
+        #     refer_df = refer_df.resample('M').sum()
+        #     nearly_df = nearly_df.resample('M').sum()
+        #     last_df = last_df.resample('M').sum()
             
-            data_df.index = data_df.index.strftime('%Y-%m')
-            refer_df.index = refer_df.index.strftime('%Y-%m')
-            nearly_df.index = nearly_df.index.strftime('%Y-%m')
-            last_df.index = last_df.index.strftime('%Y-%m')
+        #     data_df.index = data_df.index.strftime('%Y-%m')
+        #     refer_df.index = refer_df.index.strftime('%Y-%m')
+        #     nearly_df.index = nearly_df.index.strftime('%Y-%m')
+        #     last_df.index = last_df.index.strftime('%Y-%m')
     
     
     elif ele in ['CDD','CWD','Rx1day','Rx5day','Rxxday']:
         
-        if time_freq in ['Y','Q']:
+        # if time_freq in ['Y','Q']:
             
-            data_df = data_df.resample('Y').max()
-            refer_df = refer_df.resample('Y').max()
-            nearly_df = nearly_df.resample('Y').max()
-            last_df = last_df.resample('Y').max()
+        data_df = data_df.resample('Y').max()
+        refer_df = refer_df.resample('Y').max()
+        nearly_df = nearly_df.resample('Y').max()
+        last_df = last_df.resample('Y').max()
+    
+        data_df.index = data_df.index.strftime('%Y')
+        refer_df.index = refer_df.index.strftime('%Y')
+        nearly_df.index = nearly_df.index.strftime('%Y')
+        last_df.index = last_df.index.strftime('%Y')
         
-            data_df.index = data_df.index.strftime('%Y')
-            refer_df.index = refer_df.index.strftime('%Y')
-            nearly_df.index = nearly_df.index.strftime('%Y')
-            last_df.index = last_df.index.strftime('%Y')
-        
-        elif time_freq in ['M1','M2']:
-            data_df = data_df.resample('M').max()
-            refer_df = refer_df.resample('M').max()
-            nearly_df = nearly_df.resample('M').max()
-            last_df = last_df.resample('M').max()
+        # elif time_freq in ['M1','M2']:
+        #     data_df = data_df.resample('M').max()
+        #     refer_df = refer_df.resample('M').max()
+        #     nearly_df = nearly_df.resample('M').max()
+        #     last_df = last_df.resample('M').max()
             
-            data_df.index = data_df.index.strftime('%Y-%m')
-            refer_df.index = refer_df.index.strftime('%Y-%m')
-            nearly_df.index = nearly_df.index.strftime('%Y-%m')
-            last_df.index = last_df.index.strftime('%Y-%m')
+        #     data_df.index = data_df.index.strftime('%Y-%m')
+        #     refer_df.index = refer_df.index.strftime('%Y-%m')
+        #     nearly_df.index = nearly_df.index.strftime('%Y-%m')
+        #     last_df.index = last_df.index.strftime('%Y-%m')
     
     
     def trend_rate(x):
@@ -399,12 +399,12 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=No
     stats_result = pd.concat((stats_result,tmp_df),axis=0)
     
     # index处理
-    if time_freq in ['Y','Q']:
-        stats_result.insert(loc=0, column='时间', value=stats_result.index)
-    elif time_freq in ['M1','M2']:
-        stats_result.insert(loc=0, column='时间', value=stats_result.index)
-    elif time_freq in ['D1','D2']:
-        stats_result.insert(loc=0, column='时间', value=stats_result.index)
+    # if time_freq in ['Y','Q']:
+    stats_result.insert(loc=0, column='时间', value=stats_result.index)
+    # elif time_freq in ['M1','M2']:
+    #     stats_result.insert(loc=0, column='时间', value=stats_result.index)
+    # elif time_freq in ['D1','D2']:
+    #     stats_result.insert(loc=0, column='时间', value=stats_result.index)
         
     stats_result.reset_index(drop=True, inplace=True)
     post_data_df = data_df.copy()

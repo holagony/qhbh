@@ -18,7 +18,7 @@ flag = 'local'
 __C.INFO = edict()
 __C.INFO.HX_NODE = 'HXC1116.localdomain'
 __C.INFO.NUM_THREADS = 20  # 多线程数量
-__C.INFO.IN_DATA_DIR = 'c:/Users/MJY/Desktop/qhbh/data'  # 容器内保存文件夹
+__C.INFO.IN_DATA_DIR = r'D:\Project\qh'  # 容器内保存文件夹
 __C.INFO.OUT_DATA_DIR = '/home/bgdb/dockercp/qhbh/data/' if flag == 'HX' else 'c:/Users/MJY/Desktop/qhbh/data'  # 容器外挂载保存文件夹
 __C.INFO.OUT_DATA_URL = 'http://1.119.169.101:10036/img' if flag == 'HX' else 'http://1.119.169.101:10036/img'
 __C.INFO.REDIS_HOST = '172.17.0.2' if flag == 'HX' else '172.17.0.2'
