@@ -15,8 +15,8 @@ def calc_moving_avg(data_df, window, save_file):
     '''
     计算滑动平均
     '''
-    all_result = edict()
-    all_result['img'] = edict()
+    all_result = dict()
+    all_result['img'] = dict()
     
     new_df = data_df.copy()
     new_df['区域平均'] = new_df.iloc[:, :].mean(axis=1).round(1)
@@ -45,7 +45,7 @@ def calc_moving_avg(data_df, window, save_file):
         all_result['img'][name] = save_path
     
     # 保存
-    moving_result.reset_index(dopr=False,inplace=True)
+    moving_result.reset_index(drop=False,inplace=True)
     all_result['滑动平均'] = moving_result.to_dict(orient='records')
     
     return all_result

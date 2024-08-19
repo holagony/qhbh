@@ -15,8 +15,8 @@ def calc_anomaly_cum(data_df, post_refer_df, save_file):
     '''
     计算累积距平
     '''
-    all_result = edict()
-    all_result['img'] = edict()
+    all_result = dict()
+    all_result['img'] = dict()
     
     new_df = data_df.copy()
     new_df['区域平均'] = new_df.iloc[:, :].mean(axis=1).round(1)
