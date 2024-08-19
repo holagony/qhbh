@@ -136,6 +136,15 @@ def extreme_climate_features(data_json):
     ci = data_json['ci']
     shp_path = data_json['shp_path']
 
+    l_data = data_json.get('l_data')
+    n_data = data_json.get('n_data')
+    R = data_json.get('R')
+    R_flag = data_json.get('R_flag')
+    RD = data_json.get('RD')
+    RD_flag = data_json.get('RD_flag')
+    Rxxday = data_json.get('Rxxday')
+
+
     # 2.参数处理
     last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
     uuid4 = uuid.uuid4().hex
@@ -938,9 +947,9 @@ def extreme_climate_features(data_json):
     # post_data_df 统计年份数据，用于后续计算
     # post_refer_df 参考年份数据，用于后续计算
     if element in tem_table:
-        stats_result, post_data_df, post_refer_df = tem_table_stats(data_df, refer_df, nearly_df, time_freq,element, last_year)
+        stats_result, post_data_df, post_refer_df = tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_data=l_data,n_data=n_data)
     elif element in pre_table:
-        stats_result, post_data_df, post_refer_df = pre_table_stats(data_df, refer_df, nearly_df,time_freq, element, last_year)
+        stats_result, post_data_df, post_refer_df = pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
 
     elif element in other_table:
         stats_result, post_data_df, post_refer_df = other_table_stats(data_df, refer_df, nearly_df, time_freq,element, last_year)
