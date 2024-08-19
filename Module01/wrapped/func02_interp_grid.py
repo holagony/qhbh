@@ -36,12 +36,12 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
     df_shp = pd.DataFrame(points, columns=['Longitude', 'Latitude'])
 
     # 站点经纬度匹配
-    df_sta_1 = stats_result.T.reset_index()
-    df_sta_1.columns = df_sta_1.iloc[0]
-    df_sta_1 = df_sta_1.drop(df_sta_1.index[0])
-    df_sta_1 = df_sta_1.iloc[:-5:, :]
+    # df_sta_1 = stats_result.T.reset_index()
+    # df_sta_1.columns = df_sta_1.iloc[0]
+    # df_sta_1 = df_sta_1.drop(df_sta_1.index[0])
+    df_sta_1 = stats_result.iloc[:,:-5:]
 
-    station_id = np.array(df_sta_1.iloc[:, 1])
+    station_id = np.array(df_sta_1.columns[1::])
     df_sta = pd.DataFrame(columns=['Station_id', 'lon', 'lat'])
 
     df_sta['Station_id'] = station_id
@@ -67,12 +67,14 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
     # result = dict()
 
     # 历年平均值
-    df_sta_2 = df_sta_1.iloc[:, :-10:].T
-    df_sta_2.columns = df_sta_2.iloc[0]
-    df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
-    df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
+    df_sta_2 = df_sta_1.iloc[:-10:,:]
+    # df_sta_2.columns = df_sta_2.iloc[0]
+    # df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
+    # df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
 
-    df_sta_2.index = pd.DatetimeIndex(df_sta_2.index)
+    df_sta_2.index = pd.DatetimeIndex(df_sta_2['时间'])
+    df_sta_2.drop(['时间'], axis=1, inplace=True) 
+
     df_sta_3 = df_sta_2.resample('Y').mean()
     year = df_sta_3.index.year
 
@@ -130,6 +132,10 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
     # 变率、最大值、最小值、距平、距平百分率、气候值、与上一年比较值、近10年均值、与近10年比较值
     ele_choose = ['变率', '最大值', '最小值', '距平', '距平百分率%', '参考时段均值', '与上一年比较值', '近10年均值', '与近10年比较值']
 
+    df_sta_1=df_sta_1.T
+    df_sta_1.columns = df_sta_1.iloc[0]
+    df_sta_1 = df_sta_1.drop(df_sta_1.index[0])
+    
     i = 0
     for ele in ele_choose:
         value_sta = df_sta_1[ele].values

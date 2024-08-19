@@ -38,10 +38,10 @@ def pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=No
     print(RD)
     print(R)
     last_df = nearly_df[nearly_df.index.year==last_year]
-    last_df = last_df.pivot_table(index=last_df.index, columns=['Station_Name', 'Station_Id_C'], values='PRE_Time_2020') # 近1年df
-    data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Name', 'Station_Id_C'], values='PRE_Time_2020') # 统计时段df
-    refer_df = refer_df.pivot_table(index=refer_df.index, columns=['Station_Name', 'Station_Id_C'], values='PRE_Time_2020') # 参考时段df
-    nearly_df = nearly_df.pivot_table(index=nearly_df.index, columns=['Station_Name', 'Station_Id_C'], values='PRE_Time_2020') # 近10年df
+    last_df = last_df.pivot_table(index=last_df.index, columns=['Station_Id_C'], values='PRE_Time_2020') # 近1年df
+    data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Id_C'], values='PRE_Time_2020') # 统计时段df
+    refer_df = refer_df.pivot_table(index=refer_df.index, columns=['Station_Id_C'], values='PRE_Time_2020') # 参考时段df
+    nearly_df = nearly_df.pivot_table(index=nearly_df.index, columns=['Station_Id_C'], values='PRE_Time_2020') # 近10年df
     
     D=dict()
     D['RZD']=0

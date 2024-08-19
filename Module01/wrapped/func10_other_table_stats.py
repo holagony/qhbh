@@ -21,10 +21,10 @@ def other_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year):
     last_year 近1年年份
     '''
     last_df = nearly_df[nearly_df.index.year==last_year]
-    last_df = last_df.pivot_table(index=last_df.index, columns=['Station_Name', 'Station_Id_C'], values=ele) # 近1年df
-    data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Name', 'Station_Id_C'], values=ele) # 统计时段df
-    refer_df = refer_df.pivot_table(index=refer_df.index, columns=['Station_Name', 'Station_Id_C'], values=ele) # 参考时段df
-    nearly_df = nearly_df.pivot_table(index=nearly_df.index, columns=['Station_Name', 'Station_Id_C'], values=ele) # 近10年df
+    last_df = last_df.pivot_table(index=last_df.index, columns=['Station_Id_C'], values=ele) # 近1年df
+    data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Id_C'], values=ele) # 统计时段df
+    refer_df = refer_df.pivot_table(index=refer_df.index, columns=['Station_Id_C'], values=ele) # 参考时段df
+    nearly_df = nearly_df.pivot_table(index=nearly_df.index, columns=['Station_Id_C'], values=ele) # 近10年df
 
     # if time_freq in ['Y','Q']:
     data_df = data_df.resample('Y').sum()

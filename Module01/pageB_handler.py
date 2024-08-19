@@ -996,11 +996,12 @@ def extreme_climate_features(data_json):
     print('eemd完成')
 
     # 数据保存
+
     result_dict = dict()
     result_dict['uuid'] = uuid4
 
     result_dict['表格'] = dict()
-    result_dict['表格'] = stats_result
+    result_dict['表格'] = stats_result.to_dict()
 
     result_dict['分布图'] = dict()
     result_dict['分布图'] = nc_path
@@ -1032,4 +1033,10 @@ if __name__ == '__main__':
     data_json['ci'] = 95
     data_json['shp_path'] =r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
     
-    result = statistical_climate_features(data_json)
+    result = extreme_climate_features(data_json)
+    
+    import simplejson
+
+    return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result['表格']}, ensure_ascii=False, ignore_nan=True)
+
+

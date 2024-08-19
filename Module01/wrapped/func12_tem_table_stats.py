@@ -40,10 +40,10 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
     
     
     last_df = nearly_df[nearly_df.index.year==last_year]
-    last_df = last_df.pivot_table(index=last_df.index, columns=['Station_Name', 'Station_Id_C'], values=ele_ment[ele]) # 近1年df
-    data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Name', 'Station_Id_C'], values=ele_ment[ele]) # 统计时段df
-    refer_df = refer_df.pivot_table(index=refer_df.index, columns=['Station_Name', 'Station_Id_C'], values=ele_ment[ele]) # 参考时段df
-    nearly_df = nearly_df.pivot_table(index=nearly_df.index, columns=['Station_Name', 'Station_Id_C'], values=ele_ment[ele]) # 近10年df
+    last_df = last_df.pivot_table(index=last_df.index, columns=['Station_Id_C'], values=ele_ment[ele]) # 近1年df
+    data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Id_C'], values=ele_ment[ele]) # 统计时段df
+    refer_df = refer_df.pivot_table(index=refer_df.index, columns=['Station_Id_C'], values=ele_ment[ele]) # 参考时段df
+    nearly_df = nearly_df.pivot_table(index=nearly_df.index, columns=['Station_Id_C'], values=ele_ment[ele]) # 近10年df
     
     #%% 要素计算
     # 冷夜日数 TN10p or 冷昼日数 TX10p
