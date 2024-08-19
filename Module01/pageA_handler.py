@@ -452,8 +452,8 @@ def statistical_climate_features(data_json):
                             FROM public.qh_qhbh_cmadaas_day
                             WHERE
                                 ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > 2000 AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < 2010)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = 2010 AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = 10 AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= 29))
+                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
+                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s))
                                 AND station_id_c IN %s
                             """)
                             
@@ -467,7 +467,7 @@ def statistical_climate_features(data_json):
             start_date = stats_times.split(',')[0][6:]
             end_date = stats_times.split(',')[1][6:]
             
-            cur.execute(query, (start_year, start_month, start_date, start_year, end_year, end_year, end_month, end_date))
+            cur.execute(query, (start_year, start_month, start_date, start_year, end_year, end_year, end_month, end_date, sta_ids))
             data = cur.fetchall()
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
@@ -528,9 +528,9 @@ def statistical_climate_features(data_json):
             end_date = dates.split(',')[1][2:]
             cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_mon, end_date, sta_ids))
             data = cur.fetchall()
-            nearly_df = pd.DataFrame(data)
-            nearly_df.columns = elements.split(',')
-            nearly_df = data_processing(nearly_df)
+            data_df = pd.DataFrame(data)
+            data_df.columns = elements.split(',')
+            data_df = data_processing(data_df)
             
             # 下载参考时段的数据
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
@@ -613,7 +613,7 @@ def statistical_climate_features(data_json):
     result_dict['uuid'] = uuid4
 
     result_dict['表格'] = edict()
-    result_dict['表格'] = stats_result
+    result_dict['表格'] = stats_result.to_dict(orient='records')
 
     result_dict['分布图'] = edict()
     result_dict['分布图'] = nc_path
@@ -636,8 +636,8 @@ if __name__ == '__main__':
     data_json['element'] = 'TEM_Avg'
     data_json['refer_years'] = '1991,2020'
     data_json['nearly_years'] = '2014,2023'
-    data_json['time_freq'] = 'M1'
-    data_json['stats_times'] = '198105,202009' # '1981,2023'
+    data_json['time_freq'] = 'Q'
+    data_json['stats_times'] = ['1981,2020','3,4,5']# '198105,202009' # '1981,2023'
     data_json['sta_ids'] = '52754,56151,52855,52862,56065,52645,56046,52955,52968,52963,52825,56067,52713, \
                52943,52877,52633,52866,52737,52745,52957,56018,56033,52657,52765,52972,52868, \
                56016,52874,51886,56021,52876,56029,56125,52856,52836,52842,56004,52974,52863, \

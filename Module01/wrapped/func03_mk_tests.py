@@ -103,7 +103,7 @@ def time_analysis(df, save_file):
         plt.close()
         
         all_result[name] = edict()
-        all_result[name]['mk_info'] = result_out
+        all_result[name]['mk_info'] = result_out.to_dict(orient='records')
         all_result[name]['img'] = save_path
 
     return all_result

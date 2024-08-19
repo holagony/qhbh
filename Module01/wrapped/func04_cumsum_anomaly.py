@@ -15,6 +15,9 @@ def calc_anomaly_cum(data_df, post_refer_df, save_file):
     '''
     计算累积距平
     '''
+    all_result = edict()
+    all_result['img'] = edict()
+    
     new_df = data_df.copy()
     new_df['区域平均'] = new_df.iloc[:, :].mean(axis=1).round(1)
     new_df['区域最大'] = new_df.iloc[:, :].max(axis=1)
@@ -36,10 +39,6 @@ def calc_anomaly_cum(data_df, post_refer_df, save_file):
     anomaly_accum = np.cumsum(anomaly, axis=0) # 累积距平
     anomaly_accum = anomaly_accum.round(2)
     
-    all_result = edict()
-    all_result['img'] = edict()
-    all_result['距平'] = anomaly
-    all_result['累积距平'] = anomaly_accum
     
     # 画图
     for col in anomaly.columns:
@@ -64,6 +63,12 @@ def calc_anomaly_cum(data_df, post_refer_df, save_file):
         plt.clf()
         plt.close()
         all_result['img'][name] = save_path
+    
+    # 保存
+    anomaly.reset_index(drop=False,inplace=True)
+    anomaly_accum.reset_index(drop=False,inplace=True)
+    all_result['距平'] = anomaly.to_dict(orient='records')
+    all_result['累积距平'] = anomaly_accum.to_dict(orient='records')
 
     return all_result
 

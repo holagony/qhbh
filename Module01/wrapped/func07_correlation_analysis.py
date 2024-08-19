@@ -45,7 +45,7 @@ def correlation_analysis(df, output_filepath):
         r, q, p = sm.tsa.acf(new_df[columns1], nlags=num, fft=True, qstat=True)  # alpha=0.05
         data = np.c_[range(1, num+1), r[1:], q, p]
         table = pd.DataFrame(data, columns=['Lag', "AC", "Q", "Prob(>Q)"])
-        all_result[name]['自相关'] = table
+        all_result[name]['自相关'] = table.to_dict(orient='records')
 
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111)
@@ -62,8 +62,9 @@ def correlation_analysis(df, output_filepath):
 
         # 偏自相关
         r = sm.tsa.pacf(new_df[columns1], nlags=num)
-        table = pd.DataFrame(r[1:], columns=['Lag'])
-        all_result[name]['偏自相关'] = table
+        table = pd.DataFrame(r[1:], columns=['相关系数'])
+        table.reset_index(drop=False,inpalce=True)
+        all_result[name]['偏自相关'] = table.to_dict(orient='records')
 
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111)
