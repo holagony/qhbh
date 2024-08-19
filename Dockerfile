@@ -104,4 +104,4 @@ COPY . .
 # use an entrypoint script to insure conda environment is properly activated at runtime
 #ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
 CMD ["supervisord", "-c", "./supervisor/supervisord.conf"]
-EXPOSE 5000
+EXPOSE 5050

@@ -30,7 +30,7 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
             for point in exterior.coords:
                 points.append(point)
         elif polygon.geom_type == 'MultiPolygon':
-            for part in polygon:
+            for part in polygon.geoms:
                 exterior = part.exterior
                 for point in exterior.coords:
                     points.append(point)

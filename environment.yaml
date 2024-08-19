@@ -25,6 +25,7 @@ dependencies:
   - tqdm
   - docxtpl
   - docxcompose
+  - pykrige
   - pip:
     - nmc-met-io
     - redis
