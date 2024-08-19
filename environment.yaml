@@ -9,8 +9,12 @@ dependencies:
   - xarray
   - cnmaps
   - cartopy
-  - transbigdata
-  - pandas=1.5.3
+  - geopandas
+  - scikit-learn
+  - statsmodels
+  - xeofs
+  - pycwt
+  - pandas
   - numpy
   - openpyxl
   - sqlalchemy
@@ -21,11 +25,10 @@ dependencies:
   - tqdm
   - docxtpl
   - docxcompose
-  - jenkspy
   - pip:
     - nmc-met-io
-    - probscale
     - redis
     - gunicorn
     - supervisor
-
+    - gma
+    - emd-signal
