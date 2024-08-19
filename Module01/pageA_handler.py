@@ -23,7 +23,7 @@ from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
 import time
 
-def statistical_climate_features(data_json):
+def climate_features_stats(data_json):
     '''
     获取天擎数据，参数说明
     :param element：对应原型，传入的要素名称
@@ -609,16 +609,16 @@ def statistical_climate_features(data_json):
     print('eemd完成')
 
     # 数据保存
-    result_dict = edict()
+    result_dict = dict()
     result_dict['uuid'] = uuid4
 
-    result_dict['表格'] = edict()
+    result_dict['表格'] = dict()
     result_dict['表格'] = stats_result.to_dict(orient='records')
 
-    result_dict['分布图'] = edict()
+    result_dict['分布图'] = dict()
     result_dict['分布图'] = nc_path
 
-    result_dict['统计分析'] = edict()
+    result_dict['统计分析'] = dict()
     result_dict['统计分析']['MK检验'] = mk_result
     result_dict['统计分析']['累积距平'] = anomaly_result
     result_dict['统计分析']['滑动平均'] = moving_result
@@ -646,6 +646,6 @@ if __name__ == '__main__':
     data_json['ci'] = 95
     data_json['shp_path'] = r'C:\Users\MJY\Desktop\qhbh\文档\03-边界矢量\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
     
-    result = statistical_climate_features(data_json)
+    result = climate_features_stats(data_json)
     t2 = time.time()
     print(t2-t1)
