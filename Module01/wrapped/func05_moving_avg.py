@@ -29,7 +29,7 @@ def calc_moving_avg(data_df, window, save_file):
         origin_data = new_df[col]
         smooth_data = moving_result[col]
         fig, ax1 = plt.subplots(figsize=(8, 6))
-        ax1.set_xlabel('年份',fontname='MicroSoft YaHei', fontsize=10)
+        ax1.set_xlabel('年份', fontsize=10)
         ax1.set_ylabel('要素值')
         ax1.plot(range(len(origin_data)), origin_data, label='origin data', color='orange', linestyle='-', marker='o',markersize=4)
         ax1.plot(range(len(smooth_data)), smooth_data, label='smoothed data', color='blue', linestyle='--')

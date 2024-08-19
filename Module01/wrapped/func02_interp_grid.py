@@ -19,8 +19,7 @@ from Utils.station_to_grid import station_to_grid
 
 
 def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
-    #%% 数据选取
-
+    # 数据选取
     # 插值范围、掩膜
     gdf = gpd.read_file(shp_name)
     points = []
@@ -54,7 +53,7 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
     lon_sta = df_sta['lon'].values
     lat_sta = df_sta['lat'].values
 
-    #%% 插值
+    # 插值
     # 网格参数设置
     start_lon = df_shp['Longitude'].min() - 0.1
     start_lat = df_shp['Latitude'].min() - 0.1
@@ -80,7 +79,7 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
     output_filepath_name = os.path.join(output_filepath, 'data.nc')
     data = np.zeros((len(year), len(gridy), len(gridx)))
 
-    year_u=[]
+    year_u = []
     for i in np.arange(len(year)):
         value_sta = df_sta_3.iloc[i, :].values
 
@@ -97,14 +96,14 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
         lon_clean = data_clean['lon'].values
         lat_clean = data_clean['lat'].values
         value_clean = data_clean['value'].values
-        
-        if len(value_clean)==0:
+
+        if len(value_clean) == 0:
             continue
-        
+
         year_u.append(year[i])
         data[i, :, :] = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, str(year[i]))
 
-    year_u=np.array(year_u)
+    year_u = np.array(year_u)
     nc_file = nc.Dataset(output_filepath_name, 'w', format='NETCDF4', encoding='gbk')
     nc_file.createDimension('lon', gridx.shape[0])
     nc_file.createDimension('lat', gridy.shape[0])
@@ -149,8 +148,8 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
         lon_clean = data_clean['lon'].values
         lat_clean = data_clean['lat'].values
         value_clean = data_clean['value'].values
-        
-        if len(value_clean)==0:
+
+        if len(value_clean) == 0:
             i = i + 1
 
             continue
@@ -174,21 +173,19 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
 
 
 if __name__ == "__main__":
-
-    path = r'D:\Project\3_项目\2_气候评估和气候可行性论证\qhkxxlz\Files\test_data\qh_mon.csv'
-
+    path = r'C:/Users/MJY/Desktop/qhkxxlz/app/Files/test_data/qh_year.csv'
     df = pd.read_csv(path, low_memory=False)
-    df = data_processing(df)
-    data_df = df[df.index.year <= 5000]
-    refer_df = df[(df.index.year > 2000) & (df.index.year < 2020)]
-    nearly_df = df[df.index.year > 2011]
+    element = 'TEM_Avg'
+    df = df[['Station_Id_C', 'Station_Name', 'Lat', 'Lon', 'Datetime', 'Year', element]]
+    df = data_processing(df, element)
+    
+    data_df = df[(df.index.year >= 1981) & (df.index.year <= 2023)]
+    refer_df = df[(df.index.year >= 1991) & (df.index.year <= 2020)]
+    nearly_df = df[(df.index.year >= 2014) & (df.index.year <= 2023)]
     last_year = 2023
-    time_freq = 'M1'
-    ele = 'TEM_Avg'
-    stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year)
+    stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, element, last_year)
 
-    output_filepath = r'D:\Project\qh\3'
-    shp_name = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
+    output_filepath = r'C:/Users/MJY/Desktop/result'
+    shp_name = r'C:\Users\MJY\Desktop\qhbh\zipdata\shp\qh\qh.shp'
     method = 'ukri'
-
     result, data, gridx, gridy, year = contour_picture(stats_result, data_df, shp_name, method, output_filepath)

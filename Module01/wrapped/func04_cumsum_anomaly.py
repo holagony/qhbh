@@ -45,9 +45,9 @@ def calc_anomaly_cum(data_df, post_refer_df, save_file):
         bar_data = anomaly[col]
         line_data = anomaly_accum[col]
         fig, ax1 = plt.subplots(figsize=(8, 6))
-        ax1.bar(range(len(anomaly)), bar_data,  label='距平', color='blue')
+        ax1.bar(range(len(anomaly)), bar_data, label='距平', color='blue')
         ax1.set_ylabel('距平')
-        ax1.set_xlabel('年份',fontname='MicroSoft YaHei', fontsize=10)
+        ax1.set_xlabel('年份', fontsize=10)
         ax1.axhline(0, color='black', linestyle='-')
 
         ax2 = ax1.twinx()

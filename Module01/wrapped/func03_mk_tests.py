@@ -46,7 +46,7 @@ def mann_kendall_mutation_test(df):
     df_out['UFk'] = UFk.round(5)
     df_out['UBk'] = UBk.round(5)
     df_out.drop(columns=df_out.columns[1], axis=1, inplace=True)  # 删除原始要素数据
-    df_out = df_out.droplevel(level=1, axis=1)
+    # df_out = df_out.droplevel(level=1, axis=1)
 
     return df_out, mutation_year
 
@@ -73,8 +73,8 @@ def time_analysis(df, save_file):
         plt.plot(range(len(result_out)), result_out['UFk'],  label='UF', color='blue', marker='s',markersize=4)
         plt.plot(range(len(result_out)), result_out['UBk'], label='UB', color='red', linestyle='--', marker='o',markersize=4)
         ax1 = plt.gca()
-        ax1.set_ylabel('统计量',fontname='MicroSoft YaHei', fontsize=10)
-        ax1.set_xlabel('时间',fontname='MicroSoft YaHei', fontsize=10)
+        ax1.set_ylabel('统计量', fontsize=10)
+        ax1.set_xlabel('时间', fontsize=10)
         plt.xlim(-1,len(result_out))             # 设置x轴、y轴范围
         plt.grid(ls="--", alpha=0.5)
         # plt.ylim(-3,5)
@@ -94,7 +94,7 @@ def time_analysis(df, save_file):
         legend.get_frame().set_edgecolor('black')  # 设置边框颜色为黑色
         for text in legend.get_texts():
             text.set_fontsize(12)  # 设置字体大小
-            text.set_fontfamily('MicroSoft YaHei')  # 设置字体名称
+            # text.set_fontfamily('MicroSoft YaHei')  # 设置字体名称
         
         name = ''.join(col)
         save_path = os.path.join(save_file, name+'_mk检验.png')

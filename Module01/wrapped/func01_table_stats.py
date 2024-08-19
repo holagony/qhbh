@@ -14,10 +14,10 @@ def table_stats(data_df, refer_df, nearly_df, ele, last_year):
     last_year 近1年年份
     '''
     last_df = nearly_df[nearly_df.index.year == last_year]
-    last_df = last_df.pivot_table(index=last_df.index, columns=['Station_Name', 'Station_Id_C'], values=ele)  # 近1年df
-    data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Name', 'Station_Id_C'], values=ele)  # 统计时段df
-    refer_df = refer_df.pivot_table(index=refer_df.index, columns=['Station_Name', 'Station_Id_C'], values=ele)  # 参考时段df
-    nearly_df = nearly_df.pivot_table(index=nearly_df.index, columns=['Station_Name', 'Station_Id_C'], values=ele)  # 近10年df
+    last_df = last_df.pivot_table(index=last_df.index, columns=['Station_Id_C'], values=ele)  # 近1年df
+    data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Id_C'], values=ele)  # 统计时段df
+    refer_df = refer_df.pivot_table(index=refer_df.index, columns=['Station_Id_C'], values=ele)  # 参考时段df
+    nearly_df = nearly_df.pivot_table(index=nearly_df.index, columns=['Station_Id_C'], values=ele)  # 近10年df
     
     data_df.index = data_df.index.strftime('%Y')
     refer_df.index = refer_df.index.strftime('%Y')
@@ -103,7 +103,6 @@ if __name__ == '__main__':
     df = df[['Station_Id_C', 'Station_Name', 'Lat', 'Lon', 'Datetime', 'Year', element]]
     df = data_processing(df, element)
     
-
     data_df = df[(df.index.year >= 1981) & (df.index.year <= 2023)]
     refer_df = df[(df.index.year >= 1991) & (df.index.year <= 2020)]
     nearly_df = df[(df.index.year >= 2014) & (df.index.year <= 2023)]

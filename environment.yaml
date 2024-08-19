@@ -15,7 +15,7 @@ dependencies:
   - xeofs
   - pycwt
   - pandas
-  - numpy
+  - numpy=1.23
   - openpyxl
   - sqlalchemy
   - psycopg2

@@ -62,8 +62,9 @@ def correlation_analysis(df, output_filepath):
 
         # 偏自相关
         r = sm.tsa.pacf(new_df[columns1], nlags=num)
-        table = pd.DataFrame(r[1:], columns=['相关系数'])
+        table = pd.DataFrame(r[1:], columns=['偏相关系数'])
         table.reset_index(drop=False,inplace=True)
+        table.columns = ['Lags','偏相关系数']
         all_result[name]['偏自相关'] = table.to_dict(orient='records')
 
         fig = plt.figure(figsize=(8, 6))
