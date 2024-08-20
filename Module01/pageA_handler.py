@@ -116,6 +116,8 @@ def climate_features_stats(data_json):
         os.makedirs(data_dir)
         os.chmod(data_dir, 0o007 | 0o070 | 0o700)
 
+    shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+
     if not cfg.INFO.READ_LOCAL:
 
         # 3.解析要下载的参数
