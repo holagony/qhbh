@@ -78,7 +78,7 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
     df_sta_3 = df_sta_2.resample('Y').mean()
     year = df_sta_3.index.year
 
-    output_filepath_name = os.path.join(output_filepath, 'data.nc')
+    output_filepath_name = os.path.join(output_filepath, 'grid_data.nc')
     data = np.zeros((len(year), len(gridy), len(gridx)))
 
     year_u = []

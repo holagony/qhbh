@@ -22,7 +22,7 @@ __C.INFO.NUM_THREADS = 20  # 多线程数量
 __C.INFO.IN_UPLOAD_FILE = '/zipdata'
 __C.INFO.OUT_UPLOAD_FILE = '/mnt/PRESKY/project/bgdb/qihou/zipdata' if flag == 'HX' else 'C:/Users/MJY/Desktop/qhbh/zipdata'
 
-__C.INFO.IN_DATA_DIR = '/data'  # 容器内保存文件夹
+__C.INFO.IN_DATA_DIR = '/data' if flag == 'HX' else 'C:/Users/MJY/Desktop/qhbh/data' # 容器内保存文件夹
 __C.INFO.OUT_DATA_DIR = '/mnt/PRESKY/project/bgdb/qihou/zipdata' if flag == 'HX' else 'C:/Users/MJY/Desktop/qhbh/data'  # 容器外挂载保存文件夹
 __C.INFO.OUT_DATA_URL = 'http://1.119.169.101:10036/img' if flag == 'HX' else 'http://1.119.169.101:10036/img'
 
