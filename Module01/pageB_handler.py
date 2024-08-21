@@ -154,6 +154,8 @@ def extreme_climate_features(data_json):
         os.makedirs(data_dir)
         os.chmod(data_dir, 0o007 | 0o070 | 0o700)
         
+    shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+
     # 3. 要素字典
     tem_table=['TN10p','TX10p','TN90p','TX90p','ID','FD','TNx','TXx','TNn','TXn',
                'DTR','WSDI','CSDI','SU','TR','GSL']
@@ -970,7 +972,7 @@ def extreme_climate_features(data_json):
     print('距平完成')
 
     # 3.统计分析-滑动平均
-    moving_result = calc_moving_avg(post_data_df, 3, data_dir)
+    moving_result = calc_moving_avg(post_data_df, 5, data_dir)
     print('滑动平均完成')
 
     # 4. 统计分析-小波分析

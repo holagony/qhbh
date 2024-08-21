@@ -68,43 +68,43 @@ def time_analysis(df, save_file):
         data_tmp.reset_index(drop=True, inplace=True)
         result_out, _ = mann_kendall_mutation_test(data_tmp)  # 调用计算
 
-        # 画图
-        plt.figure(figsize=(8, 6))
-        plt.plot(range(len(result_out)), result_out['UFk'],  label='UF', color='blue', marker='s',markersize=4)
-        plt.plot(range(len(result_out)), result_out['UBk'], label='UB', color='red', linestyle='--', marker='o',markersize=4)
-        ax1 = plt.gca()
-        ax1.set_ylabel('统计量', fontsize=10)
-        ax1.set_xlabel('时间', fontsize=10)
-        plt.xlim(-1,len(result_out))             # 设置x轴、y轴范围
-        plt.grid(ls="--", alpha=0.5)
-        # plt.ylim(-3,5)
+        # # 画图
+        # plt.figure(figsize=(8, 6))
+        # plt.plot(range(len(result_out)), result_out['UFk'],  label='UF', color='blue', marker='s',markersize=4)
+        # plt.plot(range(len(result_out)), result_out['UBk'], label='UB', color='red', linestyle='--', marker='o',markersize=4)
+        # ax1 = plt.gca()
+        # ax1.set_ylabel('统计量', fontsize=10)
+        # ax1.set_xlabel('时间', fontsize=10)
+        # plt.xlim(-1,len(result_out))             # 设置x轴、y轴范围
+        # plt.grid(ls="--", alpha=0.5)
+        # # plt.ylim(-3,5)
 
-        # 添加辅助线
-        x_lim = plt.xlim()
+        # # 添加辅助线
+        # x_lim = plt.xlim()
         
-        # 添加显著水平线和y=0
-        plt.plot(x_lim,[-1.96,-1.96],':',color='green',label='0.05显著性水平')
-        plt.plot(x_lim, [0,0],'-',color='black')
-        plt.plot(x_lim,[1.96,1.96],':',color='green')
-        plt.xticks(list(range(0,len(result_out),2)),labels=result_out['时间'][::2], rotation=45)
+        # # 添加显著水平线和y=0
+        # plt.plot(x_lim,[-1.96,-1.96],':',color='green',label='0.05显著性水平')
+        # plt.plot(x_lim, [0,0],'-',color='black')
+        # plt.plot(x_lim,[1.96,1.96],':',color='green')
+        # plt.xticks(list(range(0,len(result_out),2)),labels=result_out['时间'][::2], rotation=45)
 
-        # 设置图例
-        legend = plt.legend(bbox_to_anchor=(0.3, 0.2))
-        legend.get_frame().set_facecolor('white')  # 设置背景颜色为白色
-        legend.get_frame().set_edgecolor('black')  # 设置边框颜色为黑色
-        for text in legend.get_texts():
-            text.set_fontsize(12)  # 设置字体大小
-            # text.set_fontfamily('MicroSoft YaHei')  # 设置字体名称
+        # # 设置图例
+        # legend = plt.legend(bbox_to_anchor=(0.3, 0.2))
+        # legend.get_frame().set_facecolor('white')  # 设置背景颜色为白色
+        # legend.get_frame().set_edgecolor('black')  # 设置边框颜色为黑色
+        # for text in legend.get_texts():
+        #     text.set_fontsize(12)  # 设置字体大小
+        #     # text.set_fontfamily('MicroSoft YaHei')  # 设置字体名称
         
         name = ''.join(col)
-        save_path = os.path.join(save_file, name+'_mk检验.png')
-        plt.savefig(save_path, dpi=200, bbox_inches='tight')
-        plt.clf()
-        plt.close()
+        # save_path = os.path.join(save_file, name+'_mk检验.png')
+        # plt.savefig(save_path, dpi=200, bbox_inches='tight')
+        # plt.clf()
+        # plt.close()
         
         all_result[name] = edict()
-        all_result[name]['mk_info'] = result_out.to_dict(orient='records')
-        all_result[name]['img'] = save_path
+        all_result[name]['mk_result'] = result_out.to_dict(orient='records')
+        # all_result[name]['img'] = save_path
 
     return all_result
 

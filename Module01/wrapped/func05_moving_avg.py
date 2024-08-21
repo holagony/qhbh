@@ -24,25 +24,25 @@ def calc_moving_avg(data_df, window, save_file):
     new_df['区域最小'] = new_df.iloc[:, :].min(axis=1)
     moving_result = new_df.apply(lambda x: x.rolling(window).mean().round(2))
     
-    # 画图
-    for col in moving_result.columns:
-        origin_data = new_df[col]
-        smooth_data = moving_result[col]
-        fig, ax1 = plt.subplots(figsize=(8, 6))
-        ax1.set_xlabel('年份', fontsize=10)
-        ax1.set_ylabel('要素值')
-        ax1.plot(range(len(origin_data)), origin_data, label='origin data', color='orange', linestyle='-', marker='o',markersize=4)
-        ax1.plot(range(len(smooth_data)), smooth_data, label='smoothed data', color='blue', linestyle='--')
-        plt.grid(ls="--", alpha=0.5)
-        plt.xticks(list(range(0,len(origin_data),2)),labels=origin_data.index.tolist()[::2], rotation=45)
-        fig.legend(loc="upper right", bbox_to_anchor=(1, 1), bbox_transform=ax1.transAxes)
+    # # 画图
+    # for col in moving_result.columns:
+    #     origin_data = new_df[col]
+    #     smooth_data = moving_result[col]
+    #     fig, ax1 = plt.subplots(figsize=(8, 6))
+    #     ax1.set_xlabel('年份', fontsize=10)
+    #     ax1.set_ylabel('要素值')
+    #     ax1.plot(range(len(origin_data)), origin_data, label='origin data', color='orange', linestyle='-', marker='o',markersize=4)
+    #     ax1.plot(range(len(smooth_data)), smooth_data, label='smoothed data', color='blue', linestyle='--')
+    #     plt.grid(ls="--", alpha=0.5)
+    #     plt.xticks(list(range(0,len(origin_data),2)),labels=origin_data.index.tolist()[::2], rotation=45)
+    #     fig.legend(loc="upper right", bbox_to_anchor=(1, 1), bbox_transform=ax1.transAxes)
 
-        name = ''.join(col)
-        save_path = os.path.join(save_file, name+'_滑动平均.png')
-        plt.savefig(save_path, dpi=200, bbox_inches='tight')
-        plt.clf()
-        plt.close()
-        all_result['img'][name] = save_path
+    #     name = ''.join(col)
+    #     save_path = os.path.join(save_file, name+'_滑动平均.png')
+    #     plt.savefig(save_path, dpi=200, bbox_inches='tight')
+    #     plt.clf()
+    #     plt.close()
+    #     all_result['img'][name] = save_path
     
     # 保存
     moving_result.reset_index(drop=False,inplace=True)
