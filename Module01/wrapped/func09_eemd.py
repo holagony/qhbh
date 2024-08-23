@@ -18,6 +18,8 @@ import matplotlib
 from Module01.wrapped.func01_table_stats import table_stats
 from Utils.data_processing import data_processing
 from Utils.ordered_easydict import OrderedEasyDict as edict
+from Utils.config import cfg
+
 
 matplotlib.use('Agg')
 plt.rcParams['font.sans-serif'] = ['SimHei']
@@ -80,6 +82,9 @@ def eemd(df, output_filepath):
         fig.savefig(result_picture, dpi=200, bbox_inches='tight')
         plt.clf()
         plt.close()
+
+        result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+        result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
         all_result[name] = result_picture
 
     return all_result

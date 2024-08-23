@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.mpl.ticker as ctk
 import xeofs as xe
+from Utils.config import cfg
 from matplotlib.path import Path
 from cartopy.io.shapereader import BasicReader
 from cartopy.mpl.patch import geos_to_path
@@ -76,6 +77,9 @@ def eof(ds, shp_name, output_filepath):
     plt.clf()
     plt.close()
 
+    result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+    result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+
     return result_picture
 
 
@@ -112,6 +116,9 @@ def reof(ds, shp_name, output_filepath):
     fig.savefig(result_picture, dpi=200, bbox_inches='tight')
     plt.clf()
     plt.close()
+
+    result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+    result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
 
     return result_picture
 

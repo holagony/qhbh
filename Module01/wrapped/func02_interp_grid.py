@@ -16,6 +16,7 @@ from netCDF4 import Dataset
 from Module01.wrapped.func01_table_stats import table_stats
 from Utils.data_processing import data_processing
 from Utils.station_to_grid import station_to_grid
+from Utils.config import cfg
 
 
 def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
@@ -174,7 +175,8 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
         i = i + 1
 
     # result['data'] = output_filepath_name
-
+    output_filepath_name = output_filepath_name.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+    output_filepath_name = output_filepath_name.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
     return output_filepath_name, data, gridx, gridy, year
 
 

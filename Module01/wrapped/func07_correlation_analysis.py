@@ -78,6 +78,9 @@ def correlation_analysis(df, output_filepath):
         fig.savefig(result_picture, dpi=200, bbox_inches='tight')
         plt.clf()
         plt.close()
+
+        result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+        result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
         all_result[name]['p_img'] = result_picture
 
     return all_result

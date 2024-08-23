@@ -24,7 +24,7 @@ __C.INFO.OUT_UPLOAD_FILE = '/mnt/PRESKY/project/bgdb/qihou/zipdata' if flag == '
 
 __C.INFO.IN_DATA_DIR = '/data' if flag == 'HX' else 'C:/Users/MJY/Desktop/qhbh/data' # 容器内保存文件夹
 __C.INFO.OUT_DATA_DIR = '/mnt/PRESKY/project/bgdb/qihou/zipdata' if flag == 'HX' else 'C:/Users/MJY/Desktop/qhbh/data'  # 容器外挂载保存文件夹
-__C.INFO.OUT_DATA_URL = 'http://1.119.169.101:10036/img' if flag == 'HX' else 'http://1.119.169.101:10036/img'
+__C.INFO.OUT_DATA_URL = 'http://1.119.169.101:10036/qh_climate/result' if flag == 'HX' else 'http://1.119.169.101:10036/qh_climate/result'
 
 __C.INFO.REDIS_HOST = '172.17.0.2' if flag == 'HX' else '172.17.0.2'
 __C.INFO.REDIS_PORT = '6379' if flag == 'HX' else '6379'

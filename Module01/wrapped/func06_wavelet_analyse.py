@@ -18,6 +18,7 @@ from Utils.ordered_easydict import OrderedEasyDict as edict
 from Module01.wrapped.func01_table_stats import table_stats
 import os
 import matplotlib
+from Utils.config import cfg
 
 matplotlib.use('Agg')
 
@@ -403,6 +404,8 @@ def wavelet_main(df, output_filepath):
         plt.clf()
         plt.close()
 
+        result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+        result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
         all_result[name] = result_picture
 
     return all_result
