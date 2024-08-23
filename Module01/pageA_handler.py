@@ -574,6 +574,8 @@ def climate_features_stats(data_json):
 
     # 分布图
     nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
+    nc_path_trans = nc_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+    nc_path_trans = nc_path_trans.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
     print('分布图插值生成nc完成')
 
     # 1.统计分析-mk检验
@@ -618,7 +620,7 @@ def climate_features_stats(data_json):
     result_dict['表格'] = stats_result.to_dict(orient='records')
 
     result_dict['分布图'] = dict()
-    result_dict['分布图'] = nc_path
+    result_dict['分布图'] = nc_path_trans
 
     result_dict['统计分析'] = dict()
     result_dict['统计分析']['MK检验'] = mk_result
