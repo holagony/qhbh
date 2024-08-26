@@ -945,16 +945,29 @@ def extreme_climate_features(data_json):
 
 
     # 开始计算
+    # 首先获取站号对应的站名
+    station_df = pd.DataFrame()
+    station_df['站号'] = [
+        51886, 51991, 52602, 52633, 52645, 52657, 52707, 52713, 52737, 52745, 52754, 52765, 52818, 52825, 52833, 52836, 52842, 52851, 52853, 52855, 52856, 52859, 52862, 52863, 52866, 52868, 52869, 52874, 52875, 52876, 52877, 52908, 52942, 52943,
+        52955, 52957, 52963, 52968, 52972, 52974, 56004, 56015, 56016, 56018, 56021, 56029, 56033, 56034, 56043, 56045, 56046, 56065, 56067, 56125, 56151]
+    station_df['站名'] = [
+        '茫崖国家基准气候站', '那陵格勒国家基准气候站', '冷湖国家基准气候站', '托勒国家基本气象站', '野牛沟国家基准气候站', '祁连国家基本气象站', '小灶火国家基本气象站', '大柴旦国家基准气候站', '德令哈国家基本气象站', '天峻国家基本气象站', '刚察国家基准气候站', '门源国家基本气象站', '格尔木国家基准气候站', '诺木洪国家基准气候站', '乌兰国家基本气象站', '都兰国家基本气象站', '茶卡国家基准气候站', '江西沟国家基本气象站',
+        '海晏国家基本气象站', '湟源国家基本气象站', '共和国家基本气象站', '瓦里关国家基本气象站', '大通国家基本气象站', '互助国家基本气象站', '西宁国家基本气象站', '贵德国家基本气象站', '湟中国家基本气象站', '乐都国家基本气象站', '平安国家基本气象站', '民和国家基准气候站', '化隆国家基本气象站', '五道梁国家基本气象站', '河卡国家基本气象站', '兴海国家基准气候站', '贵南国家基本气象站', '同德国家基本气象站',
+        '尖扎国家基本气象站', '泽库国家基本气象站', '循化国家基本气象站', '同仁国家基本气象站', '沱沱河国家基准气候站', '曲麻河国家基准气候站', '治多国家基本气象站', '杂多国家基准气候站', '曲麻莱国家基本气象站', '玉树国家基本气象站', '玛多国家基准气候站', '清水河国家基本气象站', '玛沁国家基本气象站', '甘德国家基本气象站', '达日国家基准气候站', '河南国家基本气象站', '久治国家基准气候站', '囊谦国家基准气候站',
+        '班玛国家基本气象站']
+    station_df['站号'] = station_df['站号'].map(str)
+    new_station = station_df[ station_df['站号'].isin(sta_ids)]
+
     # stats_result 展示结果表格
     # post_data_df 统计年份数据，用于后续计算
     # post_refer_df 参考年份数据，用于后续计算
     if element in tem_table:
-        stats_result, post_data_df, post_refer_df = tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_data=l_data,n_data=n_data)
+        stats_result, post_data_df, post_refer_df, reg_params = tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_data=l_data,n_data=n_data)
     elif element in pre_table:
-        stats_result, post_data_df, post_refer_df = pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
+        stats_result, post_data_df, post_refer_df, reg_params = pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
 
     elif element in other_table:
-        stats_result, post_data_df, post_refer_df = other_table_stats(data_df, refer_df, nearly_df, time_freq,element, last_year)
+        stats_result, post_data_df, post_refer_df, reg_params = other_table_stats(data_df, refer_df, nearly_df, time_freq,element, last_year)
       
     print('1.统计表完成')
     
@@ -1011,6 +1024,7 @@ def extreme_climate_features(data_json):
     result_dict['分布图'] = nc_path_trans
 
     result_dict['统计分析'] = dict()
+    result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
     result_dict['统计分析']['MK检验'] = mk_result
     result_dict['统计分析']['累积距平'] = anomaly_result
     result_dict['统计分析']['滑动平均'] = moving_result
@@ -1019,6 +1033,8 @@ def extreme_climate_features(data_json):
     result_dict['统计分析']['EOF分析'] = eof_path
     result_dict['统计分析']['REOF分析'] = reof_path
     result_dict['统计分析']['EEMD分析'] = eemd_result
+
+    result_dict['站号'] = new_station.to_dict(orient='records')
 
     return result_dict
 

@@ -10,6 +10,7 @@ df = df[df['Station_Id_C']==52856]
 df = df[df['GroPer_Name_Ten']==91]
 
 
+# In[]
 # AGME_CHN_GRASS_COVER
 path = r'C:/Users/MJY/Desktop/data/TXT_20240801162359.txt'
 df = pd.read_csv(path,encoding='gbk',sep='\t')

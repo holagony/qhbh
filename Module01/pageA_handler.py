@@ -23,6 +23,7 @@ from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
 import time
 
+
 def climate_features_stats(data_json):
     '''
     获取天擎数据，参数说明
@@ -122,10 +123,10 @@ def climate_features_stats(data_json):
 
         # 3.解析要下载的参数
         ele = ''
-        elements_list = ['TEM_Avg', 'TEM_Max', 'TEM_Min', 'PRE_Time_2020', 'PRE_Days', 'PRE_Max_Day', 'PRS_Avg', 'PRS_Max', 'PRS_Min', 
-                         'WIN_S_2mi_Avg', 'WIN_S_Max', 'WIN_S_Inst_Max', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Max', 'GST_Min', 'GST_Avg_5cm', 'GST_Avg_10cm',
-                         'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 
-                         'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'RHU_Min']
+        elements_list = [
+            'TEM_Avg', 'TEM_Max', 'TEM_Min', 'PRE_Time_2020', 'PRE_Days', 'PRE_Max_Day', 'PRS_Avg', 'PRS_Max', 'PRS_Min', 'WIN_S_2mi_Avg', 'WIN_S_Max', 'WIN_S_Inst_Max', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Max', 'GST_Min', 'GST_Avg_5cm', 'GST_Avg_10cm',
+            'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'RHU_Min'
+        ]
 
         if element in elements_list:
             ele += element
@@ -163,7 +164,7 @@ def climate_features_stats(data_json):
             years = stats_times[0]
             mon = '01,12'
             data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
-        
+
             # TODO if element in ['EVP_Penman', 'EVP_taka']:
             data_df = data_df[data_df['Mon'].isin(mon_list)]
             data_df = data_processing(data_df, element)
@@ -248,14 +249,10 @@ def climate_features_stats(data_json):
 
     # 走数据库
     else:
-        conn = psycopg2.connect(database=cfg.INFO.DB_NAME, 
-                                user=cfg.INFO.DB_USER, 
-                                password=cfg.INFO.DB_PWD, 
-                                host=cfg.INFO.DB_HOST, 
-                                port=cfg.INFO.DB_PORT)
+        conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
         cur = conn.cursor()
-        
-        if time_freq == 'Y': # '%Y,%Y'
+
+        if time_freq == 'Y':  # '%Y,%Y'
             sta_ids = tuple(sta_ids.split(','))
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
             query = sql.SQL(f"""
@@ -293,7 +290,7 @@ def climate_features_stats(data_json):
             nearly_df.columns = elements.split(',')
             nearly_df = data_processing(nearly_df, element)
 
-        elif time_freq == 'Q': # ['%Y,%Y','3,4,5']
+        elif time_freq == 'Q':  # ['%Y,%Y','3,4,5']
             sta_ids = tuple(sta_ids.split(','))
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
             mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
@@ -326,7 +323,7 @@ def climate_features_stats(data_json):
                                 CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
                                 AND station_id_c IN %s
                             """)
-                            
+
             start_year = refer_years.split(',')[0]
             end_year = refer_years.split(',')[1]
             cur.execute(query, (start_year, end_year, sta_ids))
@@ -344,7 +341,7 @@ def climate_features_stats(data_json):
             nearly_df.columns = elements.split(',')
             nearly_df = data_processing(nearly_df, element)
 
-        elif time_freq == 'M1': # '%Y%m,%Y%m'
+        elif time_freq == 'M1':  # '%Y%m,%Y%m'
             sta_ids = tuple(sta_ids.split(','))
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
             query = sql.SQL(f"""
@@ -395,7 +392,7 @@ def climate_features_stats(data_json):
             nearly_df.columns = elements.split(',')
             nearly_df = data_processing(nearly_df, element)
 
-        elif time_freq == 'M2': # ['%Y,%Y','11,12,1,2']
+        elif time_freq == 'M2':  # ['%Y,%Y','11,12,1,2']
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
             sta_ids = tuple(sta_ids.split(','))
             mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
@@ -446,7 +443,7 @@ def climate_features_stats(data_json):
             nearly_df.columns = elements.split(',')
             nearly_df = data_processing(nearly_df, element)
 
-        elif time_freq == 'D1': # '%Y%m%d,%Y%m%d'
+        elif time_freq == 'D1':  # '%Y%m%d,%Y%m%d'
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day' + element
             sta_ids = tuple(sta_ids.split(','))
             query = sql.SQL(f"""
@@ -458,8 +455,6 @@ def climate_features_stats(data_json):
                                 OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s))
                                 AND station_id_c IN %s
                             """)
-                            
-            
 
             # 下载统计年份的数据
             start_year = stats_times.split(',')[0][:4]
@@ -468,7 +463,7 @@ def climate_features_stats(data_json):
             end_month = stats_times.split(',')[1][4:6]
             start_date = stats_times.split(',')[0][6:]
             end_date = stats_times.split(',')[1][6:]
-            
+
             cur.execute(query, (start_year, start_month, start_date, start_year, end_year, end_year, end_month, end_date, sta_ids))
             data = cur.fetchall()
             data_df = pd.DataFrame(data)
@@ -484,7 +479,7 @@ def climate_features_stats(data_json):
                                 CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
                                 AND station_id_c IN %s
                             """)
-                            
+
             start_year = refer_years.split(',')[0]
             end_year = refer_years.split(',')[1]
             cur.execute(query, (start_year, end_year, sta_ids))
@@ -502,7 +497,7 @@ def climate_features_stats(data_json):
             nearly_df.columns = elements.split(',')
             nearly_df = data_processing(nearly_df, element)
 
-        elif time_freq == 'D2': # ['%Y,%Y','%m%d,%m%d']
+        elif time_freq == 'D2':  # ['%Y,%Y','%m%d,%m%d']
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day' + element
             sta_ids = tuple(sta_ids.split(','))
             elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,' + element
@@ -533,7 +528,7 @@ def climate_features_stats(data_json):
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
             data_df = data_processing(data_df)
-            
+
             # 下载参考时段的数据
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
             query = sql.SQL(f"""
@@ -560,16 +555,29 @@ def climate_features_stats(data_json):
             nearly_df = pd.DataFrame(data)
             nearly_df.columns = elements.split(',')
             nearly_df = data_processing(nearly_df, element)
-        
+
         # 关闭数据库
         cur.close()
         conn.close()
 
     # 开始计算
+    # 首先获取站号对应的站名
+    station_df = pd.DataFrame()
+    station_df['站号'] = [
+        51886, 51991, 52602, 52633, 52645, 52657, 52707, 52713, 52737, 52745, 52754, 52765, 52818, 52825, 52833, 52836, 52842, 52851, 52853, 52855, 52856, 52859, 52862, 52863, 52866, 52868, 52869, 52874, 52875, 52876, 52877, 52908, 52942, 52943,
+        52955, 52957, 52963, 52968, 52972, 52974, 56004, 56015, 56016, 56018, 56021, 56029, 56033, 56034, 56043, 56045, 56046, 56065, 56067, 56125, 56151]
+    station_df['站名'] = [
+        '茫崖国家基准气候站', '那陵格勒国家基准气候站', '冷湖国家基准气候站', '托勒国家基本气象站', '野牛沟国家基准气候站', '祁连国家基本气象站', '小灶火国家基本气象站', '大柴旦国家基准气候站', '德令哈国家基本气象站', '天峻国家基本气象站', '刚察国家基准气候站', '门源国家基本气象站', '格尔木国家基准气候站', '诺木洪国家基准气候站', '乌兰国家基本气象站', '都兰国家基本气象站', '茶卡国家基准气候站', '江西沟国家基本气象站',
+        '海晏国家基本气象站', '湟源国家基本气象站', '共和国家基本气象站', '瓦里关国家基本气象站', '大通国家基本气象站', '互助国家基本气象站', '西宁国家基本气象站', '贵德国家基本气象站', '湟中国家基本气象站', '乐都国家基本气象站', '平安国家基本气象站', '民和国家基准气候站', '化隆国家基本气象站', '五道梁国家基本气象站', '河卡国家基本气象站', '兴海国家基准气候站', '贵南国家基本气象站', '同德国家基本气象站',
+        '尖扎国家基本气象站', '泽库国家基本气象站', '循化国家基本气象站', '同仁国家基本气象站', '沱沱河国家基准气候站', '曲麻河国家基准气候站', '治多国家基本气象站', '杂多国家基准气候站', '曲麻莱国家基本气象站', '玉树国家基本气象站', '玛多国家基准气候站', '清水河国家基本气象站', '玛沁国家基本气象站', '甘德国家基本气象站', '达日国家基准气候站', '河南国家基本气象站', '久治国家基准气候站', '囊谦国家基准气候站',
+        '班玛国家基本气象站']
+    station_df['站号'] = station_df['站号'].map(str)
+    new_station = station_df[ station_df['站号'].isin(sta_ids)]
+
     # stats_result 展示结果表格
     # post_data_df 统计年份数据，用于后续计算
     # post_refer_df 参考年份数据，用于后续计算
-    stats_result, post_data_df, post_refer_df = table_stats(data_df, refer_df, nearly_df, element, last_year)
+    stats_result, post_data_df, post_refer_df, reg_params = table_stats(data_df, refer_df, nearly_df, element, last_year)
     print('统计表完成')
 
     # 分布图
@@ -623,6 +631,7 @@ def climate_features_stats(data_json):
     result_dict['分布图'] = nc_path_trans
 
     result_dict['统计分析'] = dict()
+    result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
     result_dict['统计分析']['MK检验'] = mk_result
     result_dict['统计分析']['累积距平'] = anomaly_result
     result_dict['统计分析']['滑动平均'] = moving_result
@@ -632,7 +641,10 @@ def climate_features_stats(data_json):
     result_dict['统计分析']['REOF分析'] = reof_path
     result_dict['统计分析']['EEMD分析'] = eemd_result
 
+    result_dict['站号'] = new_station.to_dict(orient='records')
+
     return result_dict
+
 
 if __name__ == '__main__':
     t1 = time.time()
@@ -641,15 +653,16 @@ if __name__ == '__main__':
     data_json['refer_years'] = '1991,2020'
     data_json['nearly_years'] = '2014,2023'
     data_json['time_freq'] = 'Q'
-    data_json['stats_times'] = ['1981,2020','3,4,5']# '198105,202009' # '1981,2023'
+    data_json['stats_times'] = ['1981,2020', '3,4,5']  # '198105,202009' # '1981,2023'
     data_json['sta_ids'] = '52754,56151,52855,52862,56065,52645,56046,52955,52968,52963,52825,56067,52713, \
                52943,52877,52633,52866,52737,52745,52957,56018,56033,52657,52765,52972,52868, \
                56016,52874,51886,56021,52876,56029,56125,52856,52836,52842,56004,52974,52863, \
                56043,52908,56045,52818,56034,52853,52707,52602,52869,52833,52875,52859,52942,52851'
+
     data_json['interp_method'] = 'ukri'
     data_json['ci'] = 95
     data_json['shp_path'] = r'C:\Users\MJY\Desktop\qhbh\文档\03-边界矢量\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
-    
+
     result = climate_features_stats(data_json)
     t2 = time.time()
-    print(t2-t1)
+    print(t2 - t1)
