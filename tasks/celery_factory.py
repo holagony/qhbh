@@ -32,7 +32,7 @@ def get_celery_app_instance(app):
 
 
 def make_celery():
-    celery = Celery('app.name', backend=CELERY_RESULT_BACKEND, broker=CELERY_BROKER_URL)
+    celery = Celery('app.qhbh', backend=CELERY_RESULT_BACKEND, broker=CELERY_BROKER_URL)
     # celery.conf.update(app.config)
     celery.config_from_object('tasks.celery_config')
 

@@ -37,7 +37,7 @@ def callback(url, result_id, result):
     requests.put(url, headers=header, data=json.dumps(_json))
 
 
-@my_celery.task(name='dispatcher_actor')
+@my_celery.task(name='dispatcher_actor_qhbh')
 def celery_submit(actor_class_str, json_str):
     try:
         data_json = json.loads(json_str)

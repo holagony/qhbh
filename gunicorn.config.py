@@ -15,7 +15,7 @@ errorlog = '/logs/error.log'
 monkey.patch_all()
 bind = "0.0.0.0:5050"
 worker_class = "gevent"
-workers = 4
+workers = 2
 timeout = 300
 # workers = multiprocessing.cpu_count() * 2 + 1
 
