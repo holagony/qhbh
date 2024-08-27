@@ -78,8 +78,33 @@ def other_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year):
     stats_result['区域均值'] = stats_result.iloc[:,:].mean(axis=1).round(1)
     stats_result['区域参考时段'] = np.nan
     stats_result['区域距平'] = (stats_result.iloc[:,:].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).round(1)
+    stats_result['区域距平百分率%'] = (stats_result['区域距平']/refer_df.iloc[:, :].mean().mean()).round(1)
     stats_result['区域最大值'] = stats_result.iloc[:,:].max(axis=1)
     stats_result['区域最小值'] = stats_result.iloc[:,:].min(axis=1)
+
+    # 在concat前增加回归方程
+    def lr(x):
+        try:
+            x = x.to_frame()
+            x['num'] = x.index.tolist()
+            x['num'] = x['num'].map(int)
+            x.dropna(how='any', inplace=True)
+            train_x = x.iloc[:, -1].values.reshape(-1, 1)
+            train_y = x.iloc[:, 0].values.reshape(-1, 1)
+            model = LinearRegression(fit_intercept=True).fit(train_x, train_y)
+            weight = model.coef_[0][0].round(3)
+            bias = model.intercept_[0].round(3)
+            return weight, bias
+        except:
+            return np.nan, np.nan
+    
+    reg_params = pd.DataFrame()
+    reg_params = stats_result.apply(lr, axis=0)
+    reg_params = reg_params.T
+    reg_params.reset_index(drop=False,inplace=True)
+    reg_params.columns = ['站号','weight','bias']
+    
+    # concat
     stats_result = pd.concat((stats_result,tmp_df),axis=0)
 
     # index处理
@@ -94,7 +119,7 @@ def other_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year):
     post_data_df = data_df.copy()
     post_refer_df = refer_df.copy()
     
-    return stats_result, post_data_df, post_refer_df
+    return stats_result, post_data_df, post_refer_df, reg_params
 
 
 if __name__ == '__main__':
