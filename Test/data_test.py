@@ -7,8 +7,6 @@ path = r'C:/Users/MJY/Desktop/data/TXT_20240801114250.txt'
 df = pd.read_csv(path,encoding='gbk',sep='\t')
 df.sort_values('Datetime',inplace=True)
 df = df[df['Station_Id_C']==52856]
-df = df[df['GroPer_Name_Ten']==91]
-
 
 # In[]
 # AGME_CHN_GRASS_COVER
@@ -23,9 +21,8 @@ path = r'C:/Users/MJY/Desktop/data/TXT_20240801100828.txt'
 df = pd.read_csv(path,encoding='gbk',sep='\t')
 df.sort_values('Datetime',inplace=True)
 df = df[df['Station_Id_C']==56065]
-df = df[df['Crop_LiStoc_Name']==2020028]
 
-# In[]
+
 # AGME_GRASS_HERBAGE_GROWTH_HEIGHT
 path = r'C:/Users/MJY/Desktop/data/TXT_20240801144127.txt'
 df = pd.read_csv(path,encoding='gbk',sep='\t')
@@ -39,7 +36,7 @@ df = pd.read_csv(path,encoding='gbk',sep='\t')
 df.sort_values('Datetime',inplace=True)
 df = df[df['Station_Id_C']==56065]
 
-
+# In[]
 # OTHE_METE_RIVER_QH
 path = r'C:/Users/MJY/Desktop/data/TXT_20240801165537.txt'
 df = pd.read_csv(path,encoding='gbk',sep='\t')

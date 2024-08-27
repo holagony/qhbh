@@ -1018,7 +1018,7 @@ def extreme_climate_features(data_json):
     result_dict['uuid'] = uuid4
 
     result_dict['表格'] = dict()
-    result_dict['表格'] = stats_result.to_dict()
+    result_dict['表格'] = stats_result.to_dict(orient='records')
 
     result_dict['分布图'] = dict()
     result_dict['分布图'] = nc_path_trans
