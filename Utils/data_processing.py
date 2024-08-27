@@ -105,6 +105,9 @@ def data_processing(data_in, element):
 
     if 'WIN_D_Max_C' in df_data.columns:
         df_data['WIN_D_Max_C'] = df_data['WIN_D_Max_C'].astype(str).apply(wind_direction_to_symbol)
+    
+    if 'Cov' in df_data.columns: # 草地覆盖度
+        df_data['Cov'] = df_data['Cov'].apply(lambda x: np.nan if x > 999 else x)
 
     # 2.时间转换
     resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max']
@@ -118,7 +121,7 @@ def data_processing(data_in, element):
     
     resample_mean = ['TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 
                      'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 
-                     'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg']
+                     'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'Cov']
 
     def sample(x):
         '''
@@ -138,7 +141,8 @@ def data_processing(data_in, element):
         x_concat = pd.concat([x_info, x_res], axis=1)
         return x_concat
     
-    df_data = df_data.groupby('Station_Id_C').apply(sample)  # 转化为季度数据
+    df_data = df_data.groupby('Station_Id_C').apply(sample)  # 月数据和日数据转换为1年一个值
+    df_data = df_data.replace(to_replace='None', value=np.nan).dropna()
     df_data.reset_index(level=0, drop=True, inplace=True)
     
     return df_data
