@@ -399,6 +399,6 @@ if __name__ == '__main__':
     data_json['ci'] = 95
     data_json['shp_path'] = r'C:\Users\MJY\Desktop\qhbh\文档\03-边界矢量\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
 
-    result = climate_features_stats(data_json)
+    # result = climate_features_stats(data_json)
     t2 = time.time()
     print(t2 - t1)
