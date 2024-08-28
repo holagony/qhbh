@@ -5,10 +5,10 @@ from tasks.dispatcher_worker import celery_submit, celery_task_status
 from Module02.pageA_handler import energy_winter_heating
 
 
-module01 = Blueprint('module02', __name__)
+module02 = Blueprint('module02', __name__)
 
 
-@module01.route('/v1/energy_winter_heating', methods=['POST'])
+@module02.route('/v1/energy_winter_heating', methods=['POST'])
 def pagea_stats():
     '''
     查询统计-气候要素接口
