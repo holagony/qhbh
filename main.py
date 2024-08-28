@@ -3,13 +3,14 @@ from flask import Flask, jsonify
 from tasks.dispatcher_worker import bp_tasks
 from tasks.dispatcher_worker import bp_tasks
 from Module01.module01_flask import module01
+from Module02.module02_flask import module02
 
 
 app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
 app.register_blueprint(bp_tasks, url_prefix='/tasks')
 app.register_blueprint(module01, url_prefix='/module01')
-# app.register_blueprint(module02, url_prefix='/module02')
+app.register_blueprint(module02, url_prefix='/module02')
 # app.register_blueprint(module03, url_prefix='/module03')
 # app.register_blueprint(module04, url_prefix='/module04')
 # app.register_blueprint(module05, url_prefix='/module05')

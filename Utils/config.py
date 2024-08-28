@@ -12,7 +12,7 @@ data_file_dir = os.path.join(current_obj, 'Files')
 # 生成字典
 __C = edict()
 cfg = __C
-flag = 'HX'
+flag = 'local'
 
 # 信息配置
 __C.INFO = edict()
@@ -22,7 +22,7 @@ __C.INFO.NUM_THREADS = 20  # 多线程数量
 __C.INFO.IN_UPLOAD_FILE = '/zipdata'
 __C.INFO.OUT_UPLOAD_FILE = '/mnt/PRESKY/project/bgdb/qihou/zipdata' if flag == 'HX' else 'C:/Users/MJY/Desktop/qhbh/zipdata'
 
-__C.INFO.IN_DATA_DIR = '/data' if flag == 'HX' else 'C:/Users/MJY/Desktop/qhbh/data' # 容器内保存文件夹
+__C.INFO.IN_DATA_DIR = r'D:\Project\qh' 
 __C.INFO.OUT_DATA_DIR = '/mnt/PRESKY/project/bgdb/qihou/zipdata' if flag == 'HX' else 'C:/Users/MJY/Desktop/qhbh/data'  # 容器外挂载保存文件夹
 __C.INFO.OUT_DATA_URL = 'http://1.119.169.101:10036/qh_climate/result' if flag == 'HX' else 'http://1.119.169.101:10036/qh_climate/result'
 
@@ -45,3 +45,6 @@ __C.INFO.TILE_PATH = os.path.join(data_file_dir, 'mapbox_tile/') if flag == 'HX'
 # 样例数据文件路径
 __C.FILES = edict()
 __C.FILES.FONT = os.path.join(data_file_dir, 'fonts/simhei.ttf')
+
+# 站点信息
+__C.FILES.STATION = os.path.join(data_file_dir, 'qh_station.csv')
