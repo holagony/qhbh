@@ -106,7 +106,7 @@ def climate_features_stats(data_json):
     sta_ids = data_json['sta_ids']
     interp_method = data_json['interp_method']
     ci = data_json['ci']
-    shp_path = data_json['shp_path']
+    shp_path = data_json.get('shp_path')
 
     # 2.参数处理
     last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
@@ -117,7 +117,8 @@ def climate_features_stats(data_json):
         os.makedirs(data_dir)
         os.chmod(data_dir, 0o007 | 0o070 | 0o700)
 
-    shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+    if shp_path is not None:
+        shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
 
     if not cfg.INFO.READ_LOCAL:
 
@@ -581,11 +582,17 @@ def climate_features_stats(data_json):
     print('统计表完成')
 
     # 分布图
-    nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
-    nc_path_trans = nc_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
-    nc_path_trans = nc_path_trans.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-    print('分布图插值生成nc完成')
+    if shp_path is not None:
+        nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
+        nc_path_trans = nc_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+        nc_path_trans = nc_path_trans.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+        print('分布图插值生成nc完成')
+    else:
+        nc_path = None
+        nc_path_trans = None
+        print('没有shp文件，散点图，生成nc')
 
+    # 测试下来，只有1个值也能出结果，以下所有的暂时不用加异常处理
     # 1.统计分析-mk检验
     mk_result = time_analysis(post_data_df, data_dir)
     print('MK检验完成')
@@ -606,15 +613,17 @@ def climate_features_stats(data_json):
     correlation_result = correlation_analysis(post_data_df, data_dir)
     print('相关分析完成')
 
-    # 6. 统计分析-EOF分析
-    ds = xr.open_dataset(nc_path)
-    eof_path = eof(ds, shp_path, data_dir)
-    print('eof完成')
-
-    # 7. 统计分析-REOF分析
-    ds = xr.open_dataset(nc_path)
-    reof_path = reof(ds, shp_path, data_dir)
-    print('reof完成')
+    # 6/7. 统计分析-EOF分析
+    if nc_path is not None:
+        ds = xr.open_dataset(nc_path)
+        eof_path = eof(ds, shp_path, data_dir)
+        print('eof完成')
+        reof_path = reof(ds, shp_path, data_dir)
+        print('reof完成')
+    else:
+        eof_path = None
+        reof_path = None
+        print('没有插值生成网格文件，无法计算eof/reof')
 
     # 8.EEMD分析
     eemd_result = eemd(post_data_df, data_dir)

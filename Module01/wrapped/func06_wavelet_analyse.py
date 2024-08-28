@@ -273,7 +273,7 @@ def wavelet_main(df, output_filepath):
     year = df_new.index.tolist()
     year = [int(y) for y in year]
 
-    all_result = edict()
+    all_result = dict()
     for i in range(len(columns)):
         col = columns[i]
         name = ''.join(col)

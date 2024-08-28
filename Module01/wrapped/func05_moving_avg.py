@@ -16,7 +16,7 @@ def calc_moving_avg(data_df, window, save_file):
     计算滑动平均
     '''
     all_result = dict()
-    all_result['img'] = dict()
+    # all_result['img'] = dict()
     
     new_df = data_df.copy()
     new_df['区域平均'] = new_df.iloc[:, :].mean(axis=1).round(1)

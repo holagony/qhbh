@@ -34,13 +34,13 @@ def correlation_analysis(df, output_filepath):
     new_df['区域最大'] = new_df.iloc[:, :].max(axis=1)
     new_df['区域最小'] = new_df.iloc[:, :].min(axis=1)
     
-    num = 10 # 滞后阶数
+    num = len(df)//2-1 # 滞后阶数
     columnsz = new_df.columns.tolist()
-    all_result = edict()
+    all_result = dict()
 
     for columns1 in columnsz:
         name = ''.join(columns1)
-        all_result[name] = edict()
+        all_result[name] = dict()
 
         r, q, p = sm.tsa.acf(new_df[columns1], nlags=num, fft=True, qstat=True)  # alpha=0.05
         data = np.c_[range(1, num+1), r[1:], q, p]

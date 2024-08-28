@@ -973,10 +973,15 @@ def extreme_climate_features(data_json):
     
     # return stats_result, post_data_df, post_refer_df
     # 分布图
-    nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
-    nc_path_trans = nc_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
-    nc_path_trans = nc_path_trans.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-    print('分布图插值生成nc完成')
+    if shp_path is not None:
+        nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
+        nc_path_trans = nc_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+        nc_path_trans = nc_path_trans.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+        print('分布图插值生成nc完成')
+    else:
+        nc_path = None
+        nc_path_trans = None
+        print('没有shp文件，散点图，生成nc')
 
     # 1.统计分析-mk检验
     mk_result = time_analysis(post_data_df, data_dir)
@@ -998,22 +1003,23 @@ def extreme_climate_features(data_json):
     correlation_result = correlation_analysis(post_data_df, data_dir)
     print('相关分析完成')
 
-    # 6. 统计分析-EOF分析
-    ds = xr.open_dataset(nc_path)
-    eof_path = eof(ds, shp_path, data_dir)
-    print('eof完成')
-
-    # 7. 统计分析-REOF分析
-    ds = xr.open_dataset(nc_path)
-    reof_path = reof(ds, shp_path, data_dir)
-    print('reof完成')
+    # 6/7. 统计分析-EOF分析
+    if nc_path is not None:
+        ds = xr.open_dataset(nc_path)
+        eof_path = eof(ds, shp_path, data_dir)
+        print('eof完成')
+        reof_path = reof(ds, shp_path, data_dir)
+        print('reof完成')
+    else:
+        eof_path = None
+        reof_path = None
+        print('没有插值生成网格文件，无法计算eof/reof')
 
     # 8.EEMD分析
     eemd_result = eemd(post_data_df, data_dir)
     print('eemd完成')
 
     # 数据保存
-
     result_dict = dict()
     result_dict['uuid'] = uuid4
 

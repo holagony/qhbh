@@ -1,5 +1,6 @@
 import os
 import uuid
+import time
 import pandas as pd
 import xarray as xr
 import psycopg2
@@ -21,7 +22,6 @@ from Module01.wrapped.func06_wavelet_analyse import wavelet_main
 from Module01.wrapped.func07_correlation_analysis import correlation_analysis
 from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
-import time
 
 
 def grass_features_stats(data_json):
@@ -133,7 +133,6 @@ def grass_features_stats(data_json):
 
     if not cfg.INFO.READ_LOCAL:
         pass
-
     else: # 走数据库
         conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
         cur = conn.cursor()

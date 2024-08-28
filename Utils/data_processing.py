@@ -110,8 +110,8 @@ def data_processing(data_in, element):
         df_data['Cov'] = df_data['Cov'].apply(lambda x: np.nan if x > 999 else x)
 
     # 2.时间转换
-    resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max']
-    resample_min = ['TEM_Min', 'PRS_Min', 'GST_Min', 'RHU_Min']
+    resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max', 'huangku']
+    resample_min = ['TEM_Min', 'PRS_Min', 'GST_Min', 'RHU_Min', 'fanqing']
     resample_sum = ['PRE_Time_2020', 'PRE_Days', 'EVP_Big', 'EVP', 'EVP_Taka', 'PMET','sa','rainstorm','light_snow','snow',
                     'medium_snow','heavy_snow','severe_snow','Hail_Days','Hail','GaWIN',
                     'GaWIN_Days','SaSt','SaSt_Days','FlSa','FlSa_Days','FlDu','FlDu_Days',
