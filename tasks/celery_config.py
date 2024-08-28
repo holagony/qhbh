@@ -1,14 +1,23 @@
 from Utils.config import cfg
+from urllib.parse import quote
 
 redis_host = cfg.INFO.REDIS_HOST
 redis_port = cfg.INFO.REDIS_PORT
 redis_pwd = cfg.INFO.REDIS_PWD
+
+PASSWORD = quote(redis_pwd)
+
 redis_info = 'redis://:' + redis_pwd + '@' + redis_host + ':' + redis_port + '/1'
 
 # 参数说明 https://docs.celeryq.dev/en/stable/userguide/configuration.html
 
-broker_url = redis_info
-result_backend = redis_info
+# broker_url = redis_info
+# result_backend = redis_info
+broker_url = f"redis://:{PASSWORD}@{redis_host}:{redis_port}/7"
+result_backend =  f"redis://::{PASSWORD}@{redis_host}:{redis_port}/8"
+
+
+
 timezone = 'Asia/Shanghai'
 enable_utc = True
 task_routes = {'tasks.add': 'low-priority'}
