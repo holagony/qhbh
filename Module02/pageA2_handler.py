@@ -289,9 +289,36 @@ def trend_rate(x):
         return weight
     except:
         return np.nan
+
+def calculate_average_hd(pre_data,ele):
+    # 创建一个字典来存储每个scene_a的HD总和和计数
+    scene_hd_sum_count = {}
+        
+    # 遍历每个insti_a
+    for insti_a, scenes in pre_data.items():
+        # 遍历每个scene_a
+        for scene_a, values in scenes.items():
+            # break
+            # 累加HD值
+            hd_value = values.get(ele, 0)
+            
+            if ele =='HDTIME_NUM':
+                first_line=hd_value.iloc[0,:].to_frame()
+                hd_value = hd_value.drop(hd_value.index[0])
+            scene_hd_sum_count.setdefault(scene_a, [0, 0])
+            scene_hd_sum_count[scene_a][0] += hd_value
+            scene_hd_sum_count[scene_a][1] += 1
+
+    # 计算平均值
+    scene_hd_average = {scene: total / count for scene, (total, count) in scene_hd_sum_count.items()}
+    
+    if ele =='HDTIME_NUM':
+        for insti_a, scenes in scene_hd_average.items():
+            scene_hd_average[insti_a] = pd.concat([first_line.T, scenes]).reset_index(drop=True)
+
+    return scene_hd_average
+
 #%%
-
-
 def energy_winter_heating(data_json):
 
     
@@ -306,8 +333,8 @@ def energy_winter_heating(data_json):
     res = data_json.get('res', '1')
     
     #%% 固定信息
-    # data_dir=r'D:\Project\qh\Evaluate_Energy\data'
-    data_dir='/zipdata'
+    data_dir=r'D:\Project\qh\Evaluate_Energy\data'
+    # data_dir='/zipdata'
 
     res_d=dict()
     res_d['1']='0.01deg'
@@ -385,32 +412,12 @@ def energy_winter_heating(data_json):
             pre_data[insti_a][scene_a]['HDTIME_NUM']=result_start_end_num
     
     #%% 求集合
-    total_hdd18 = 0
-    total_hd = 0
-    total_htime_num = 0
     
-    count = 0
-    
-    # 遍历pre_data字典，累加所有的HDD18值
-    for insti_a in pre_data:
-        for scene_a in pre_data[insti_a]:
-            total_hdd18 += pre_data[insti_a][scene_a]['HDD18']
-            total_hd += pre_data[insti_a][scene_a]['HD']
-            total_htime_num += pre_data[insti_a][scene_a]['HDTIME_NUM'].iloc[1::,:]
-    
-            count += 1  # 每找到一个HDD18值，计数器加1
-    
-    # 计算HDD18的平均值
-    average_hdd18 = total_hdd18 / count if count > 0 else 0
-    average_hd = total_hd / count if count > 0 else 0
-    average_htime_num = total_htime_num / count if count > 0 else 0
-    first_row_df = result_start_end_num.iloc[0,:].to_frame().T  
-    average_htime_num = pd.concat([first_row_df, average_htime_num], ignore_index=True)
-    
-    average_hdd18_z=data_deal_2(average_hdd18,refer_result_hdd18)
-    average_hd_z=data_deal_2(average_hd,refer_result_days)
-    average_htime_num_z=data_deal_num_2(average_htime_num,result_start_end_num)
-    
+    HD=calculate_average_hd(pre_data,'HD')
+    HDD18=calculate_average_hd(pre_data,'HDD18')
+    HDTIME=calculate_average_hd(pre_data,'HDTIME_NUM')
+
+
     #%% 结果保存
     result_df=dict()
     result_df['历史']=dict()
@@ -430,32 +437,37 @@ def energy_winter_heating(data_json):
             result_df['预估'][insti_a][scene_a]['采暖起始日_日序']=data_deal_num_2(pre_data[insti_a][scene_a]['HDTIME_NUM'],result_start_end_num)
     
     result_df['预估']['集合']=dict()
-    result_df['预估']['集合']['采暖日'] = average_hd_z
-    result_df['预估']['集合']['采暖度日'] =average_hdd18_z
-    result_df['预估']['集合']['采暖起始日_日序'] =average_htime_num_z
-
-    
+    for scens in scene:
+        result_df['预估']['集合'][scens]=dict()
+        result_df['预估']['集合'][scens]['采暖日']=data_deal_2(HD[scens],refer_result_days)
+        result_df['预估']['集合'][scens]['采暖度日'] =data_deal_2(HDD18[scens],refer_result_hdd18)
+        result_df['预估']['集合'][scens]['采暖起始日_日序']=data_deal_num_2(HDTIME[scens],result_start_end_num)
+        
+                      
     result_df_dict=dict()
     result_df_dict['历史']=dict()
-    result_df_dict['历史']['采暖日']=refer_result_days_z.to_dict()
-    result_df_dict['历史']['采暖度日']=refer_result_hdd18_z.to_dict()
-    result_df_dict['历史']['采暖起始日_日期']=refer_result_start_end.to_dict()
-    result_df_dict['历史']['采暖起始日_日序']=refer_result_start_end_num_z.to_dict()
+    result_df_dict['历史']['采暖日']=refer_result_days_z.to_dict(orient='records')
+    result_df_dict['历史']['采暖度日']=refer_result_hdd18_z.to_dict(orient='records')
+    result_df_dict['历史']['采暖起始日_日期']=refer_result_start_end.to_dict(orient='records')
+    result_df_dict['历史']['采暖起始日_日序']=refer_result_start_end_num_z.to_dict(orient='records')
     
     result_df_dict['预估']=dict()
     for insti_a in insti:
         result_df_dict['预估'][insti_a]=dict()
         for scene_a in scene:
             result_df_dict['预估'][insti_a][scene_a]=dict()
-            result_df_dict['预估'][insti_a][scene_a]['采暖日']=data_deal_2(pre_data[insti_a][scene_a]['HD'],refer_result_hdd18).to_dict()
-            result_df_dict['预估'][insti_a][scene_a]['采暖度日']=data_deal_2(pre_data[insti_a][scene_a]['HDD18'],refer_result_hdd18).to_dict()
-            result_df_dict['预估'][insti_a][scene_a]['采暖起始日_日期']=pre_data[insti_a][scene_a]['HDTIME'].to_dict()
-            result_df_dict['预估'][insti_a][scene_a]['采暖起始日_日序']=data_deal_num_2(pre_data[insti_a][scene_a]['HDTIME_NUM'],result_start_end_num).to_dict()
+            result_df_dict['预估'][insti_a][scene_a]['采暖日']=data_deal_2(pre_data[insti_a][scene_a]['HD'],refer_result_hdd18).to_dict(orient='records')
+            result_df_dict['预估'][insti_a][scene_a]['采暖度日']=data_deal_2(pre_data[insti_a][scene_a]['HDD18'],refer_result_hdd18).to_dict(orient='records')
+            result_df_dict['预估'][insti_a][scene_a]['采暖起始日_日期']=pre_data[insti_a][scene_a]['HDTIME'].to_dict(orient='records')
+            result_df_dict['预估'][insti_a][scene_a]['采暖起始日_日序']=data_deal_num_2(pre_data[insti_a][scene_a]['HDTIME_NUM'],result_start_end_num).to_dict(orient='records')
 
+   
     result_df_dict['预估']['集合']=dict()
-    result_df_dict['预估']['集合']['采暖日'] = average_hd_z.to_dict()
-    result_df_dict['预估']['集合']['采暖度日'] =average_hdd18_z.to_dict()
-    result_df_dict['预估']['集合']['采暖起始日_日序'] =average_htime_num_z.to_dict()
+    for scens in scene:
+        result_df_dict['预估']['集合'][scens]=dict()
+        result_df_dict['预估']['集合'][scens]['采暖日']=result_df['预估']['集合'][scens]['采暖日'].to_dict(orient='records')
+        result_df_dict['预估']['集合'][scens]['采暖度日']=result_df['预估']['集合'][scens]['采暖度日'].to_dict(orient='records')
+        result_df_dict['预估']['集合'][scens]['采暖起始日_日序']=result_df['预估']['集合'][scens]['采暖起始日_日序'].to_dict(orient='records')
     
     return result_df,result_df_dict
         
@@ -469,7 +481,7 @@ if __name__ == '__main__':
     data_json['sta_ids'] = '52754,56151,52855,52862,56065,52645,56046,52955,52968,52963,52825,56067,52713,52943,52877,52633,52866'
     data_json['data_cource'] = 'original'
     data_json['insti'] = 'BCC-CSM2-MR,CanESM5'
-    data_json['res'] ='1'
+    # data_json['res'] ='1'
     
     result_df,result_df_dict=energy_winter_heating(data_json)
     
