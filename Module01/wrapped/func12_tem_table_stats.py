@@ -347,14 +347,14 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
     # 创建临时下方统计的df
     tmp_df = pd.DataFrame(columns=data_df.columns)
     tmp_df.loc['平均'] = data_df.iloc[:,:].mean(axis=0).round(1)
-    tmp_df.loc['变率'] = data_df.apply(trend_rate,axis=0)
+    tmp_df.loc['变率'] = data_df.apply(trend_rate,axis=0).round(1)
     tmp_df.loc['最大值'] = data_df.iloc[:,:].max(axis=0)
     tmp_df.loc['最小值'] = data_df.iloc[:,:].min(axis=0)
     tmp_df.loc['与上一年比较值'] = (data_df.iloc[:,:].mean(axis=0) - last_df.iloc[:,:].mean(axis=0)).round(1)
     tmp_df.loc['近10年均值'] = nearly_df.iloc[:,:].mean(axis=0).round(1)
     tmp_df.loc['与近10年比较值'] = (data_df.iloc[:,:].mean(axis=0) - nearly_df.iloc[:,:].mean(axis=0)).round(1)
     tmp_df.loc['参考时段均值'] = refer_df.iloc[:,:].mean(axis=0).round(1)
-    tmp_df.loc['距平'] = tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']
+    tmp_df.loc['距平'] = (tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']).round(1)
     tmp_df.loc['距平百分率%'] = ((tmp_df.loc['距平']/tmp_df.loc['参考时段均值'])*100).round(2)
     
     # 合并所有结果
