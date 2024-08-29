@@ -12,13 +12,11 @@ Created on Tue Aug 27 22:18:47 2024
        当5天滑动平均气温高于或等于5℃时5天中的最后一天作为供暖截止日期，即供暖终日。每个供暖季，自供暖初日到供暖终日为供暖期日数（长度）
 """
 
-import netCDF4 as nc
-from datetime import  date,datetime, timedelta
+from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
-from Utils.config import cfg
-from scipy.interpolate import griddata
-from sklearn.linear_model import LinearRegression
+import warnings
+warnings.filterwarnings('ignore')
 
 def winter_heating_his(refer_df):
  

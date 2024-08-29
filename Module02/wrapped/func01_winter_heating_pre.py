@@ -19,6 +19,8 @@ import pandas as pd
 from Utils.config import cfg
 from scipy.interpolate import griddata
 from sklearn.linear_model import LinearRegression
+import warnings
+warnings.filterwarnings('ignore')
 
 def increment_date(start_date, days):
     """
