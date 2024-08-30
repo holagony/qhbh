@@ -962,9 +962,9 @@ def extreme_climate_features(data_json):
     # post_data_df 统计年份数据，用于后续计算
     # post_refer_df 参考年份数据，用于后续计算
     if element in tem_table:
-        stats_result, post_data_df, post_refer_df, reg_params = tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_data=l_data,n_data=n_data)
+        stats_result, post_data_df, post_refer_df, reg_params = tem_table_stats(data_df, refer_df, nearly_df, time_freq, element, last_year,l_data=l_data,n_data=n_data)
     elif element in pre_table:
-        stats_result, post_data_df, post_refer_df, reg_params = pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
+        stats_result, post_data_df, post_refer_df, reg_params = pre_table_stats(data_df, refer_df, nearly_df, time_freq, element, last_year,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
 
     elif element in other_table:
         stats_result, post_data_df, post_refer_df, reg_params = other_table_stats(data_df, refer_df, nearly_df, time_freq,element, last_year)
