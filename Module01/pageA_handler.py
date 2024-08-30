@@ -109,457 +109,205 @@ def climate_features_stats(data_json):
     shp_path = data_json.get('shp_path')
 
     # 2.参数处理
+    if shp_path is not None:
+        shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+
     last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
     uuid4 = uuid.uuid4().hex
-
     data_dir = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
         os.chmod(data_dir, 0o007 | 0o070 | 0o700)
 
-    if shp_path is not None:
-        shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+    # 确定表名
+    table_dict = dict()
+    table_dict['grassland_green_period'] = 'table'
+    table_dict['grassland_yellow_period'] = 'table'
+    table_dict['grassland_growth_period'] = 'table'
+    table_dict['grassland_coverage'] = 'table'
+    table_dict['grass_height'] = 'table'
+    table_dict['grassland_yield'] = 'table'
+    table_dict['vegetation_index'] = 'table'
+    table_dict['vegetation_pri_productivity'] = 'table'
+    table_dict['vegetation_coverage'] = 'table'
+    table_dict['vegetation_carbon'] = 'table'
+    table_dict['wet_vegetation_carbon'] = 'table'
+    table_dict['desert_level'] = 'table'
+    table_dict['desert_area'] = 'table'
+    table_name = table_dict[element]
 
-    if not cfg.INFO.READ_LOCAL:
+    # 确定要素
+    element_dict = dict()
+    element_dict['grassland_green_period'] = 'ele'
+    element_dict['grassland_yellow_period'] = 'ele'
+    element_dict['grassland_growth_period'] = 'ele'
+    element_dict['grassland_coverage'] = 'ele'
+    element_dict['grass_height'] = 'ele'
+    element_dict['grassland_yield'] = 'ele'
+    element_dict['vegetation_index'] = 'ele'
+    element_dict['vegetation_pri_productivity'] = 'ele'
+    element_dict['vegetation_coverage'] = 'ele'
+    element_dict['vegetation_carbon'] = 'ele'
+    element_dict['wet_vegetation_carbon'] = 'ele'
+    element_dict['desert_level'] = 'ele'
+    element_dict['desert_area'] = 'ele'
+    element_str = element_dict[element]
 
-        # 3.解析要下载的参数
-        ele = ''
-        elements_list = [
-            'TEM_Avg', 'TEM_Max', 'TEM_Min', 'PRE_Time_2020', 'PRE_Days', 'PRE_Max_Day', 'PRS_Avg', 'PRS_Max', 'PRS_Min', 'WIN_S_2mi_Avg', 'WIN_S_Max', 'WIN_S_Inst_Max', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Max', 'GST_Min', 'GST_Avg_5cm', 'GST_Avg_10cm',
-            'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'RHU_Min'
-        ]
+    # 从数据库截数据
+    conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
+    cur = conn.cursor()
+    sta_ids = tuple(sta_ids.split(','))
+    elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,Year,Mon,Day,' + element_str
 
-        if element in elements_list:
-            ele += element
+    if time_freq == 'Y':  # '%Y,%Y'
+        query = sql.SQL(f"""
+                        SELECT {elements}
+                        FROM public.{table_name}
+                        WHERE
+                            CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                            AND station_id_c IN %s
+                        """)
 
-        elif element == 'WIND':
-            if time_freq in ['D1', 'D2']:
-                ele += 'WIN_D_S_Max'
-            else:
-                ele += 'WIN_D_S_Max_C'
+        # 根据sql获取统计年份data
+        start_year = stats_times.split(',')[0]
+        end_year = stats_times.split(',')[1]
+        cur.execute(query, (start_year, end_year, sta_ids))
+        data = cur.fetchall()
 
-        elif element == 'EVP_Taka':
-            ele += 'PRE_Time_2020,TEM_Avg'
+    elif time_freq == 'Q':  # ['%Y,%Y','3,4,5']
+        mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
+        mon_ = tuple(mon_list)
+        query = sql.SQL(f"""
+                        SELECT {elements}
+                        FROM public.{table_name}
+                        WHERE
+                            (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                            AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
+                            AND station_id_c IN %s
+                        """)
 
-        elif element == 'EVP_Penman':
-            ele += 'PRS_Avg,WIN_S_2mi_Avg,TEM_Max,TEM_Min,RHU_Avg,SSH'
+        years = stats_times[0]
+        start_year = years.split(',')[0]
+        end_year = years.split(',')[1]
+        cur.execute(query, (start_year, end_year, mon_, sta_ids))
+        data = cur.fetchall()
 
-        # 4.下载 and 后处理
-        if time_freq == 'Y':
-            # 下载统计年份的数据
-            years = stats_times
-            data_df = get_cmadaas_yearly_data(years, ele, sta_ids)
-            data_df = data_processing(data_df, element)
+    elif time_freq == 'M1':  # '%Y%m,%Y%m'
+        query = sql.SQL(f"""
+                        SELECT {elements}
+                        FROM public.{table_name}
+                        WHERE
+                            ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) >= %s)
+                            OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
+                            OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) <= %s))
+                            AND station_id_c IN %s
+                        """)
 
-            # 下载参考时段的数据
-            refer_df = get_cmadaas_yearly_data(refer_years, ele, sta_ids)
-            refer_df = data_processing(refer_df, element)
+        start_year = stats_times.split(',')[0][:4]
+        end_year = stats_times.split(',')[1][:4]
+        start_month = stats_times.split(',')[0][4:]
+        end_month = stats_times.split(',')[1][4:]
+        cur.execute(query, (start_year, start_month, start_year, end_year, end_year, end_month, sta_ids))
+        data = cur.fetchall()
 
-            # 下载近10年的数据
-            nearly_df = get_cmadaas_yearly_data(nearly_years, ele, sta_ids)
-            nearly_df = data_processing(nearly_df, element)
+    elif time_freq == 'M2':  # ['%Y,%Y','11,12,1,2']
+        mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
+        mon_ = tuple(mon_list)
+        query = sql.SQL(f"""
+                        SELECT {elements}
+                        FROM public.{table_name}
+                        WHERE
+                            (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                            AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
+                            AND station_id_c IN %s
+                        """)
 
-        elif time_freq == 'Q':
-            # 下载统计年份的数据
-            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
-            years = stats_times[0]
-            mon = '01,12'
-            data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
+        years = stats_times[0]
+        start_year = years.split(',')[0]
+        end_year = years.split(',')[1]
+        cur.execute(query, (start_year, end_year, mon_, sta_ids))
+        data = cur.fetchall()
 
-            # TODO if element in ['EVP_Penman', 'EVP_taka']:
-            data_df = data_df[data_df['Mon'].isin(mon_list)]
-            data_df = data_processing(data_df, element)
+    elif time_freq == 'D1':  # '%Y%m%d,%Y%m%d'
+        query = sql.SQL(f"""
+                        SELECT {elements}
+                        FROM public.{table_name}
+                        WHERE
+                            ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
+                            OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
+                            OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s))
+                            AND station_id_c IN %s
+                        """)
 
-            # 下载参考时段的数据
-            refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
-            refer_df = refer_df[refer_df['Mon'].isin(mon_list)]
-            refer_df = data_processing(refer_df, element)
+        start_year = stats_times.split(',')[0][:4]
+        end_year = stats_times.split(',')[1][:4]
+        start_month = stats_times.split(',')[0][4:6]
+        end_month = stats_times.split(',')[1][4:6]
+        start_date = stats_times.split(',')[0][6:]
+        end_date = stats_times.split(',')[1][6:]
+        cur.execute(query, (start_year, start_month, start_date, start_year, end_year, end_year, end_month, end_date, sta_ids))
+        data = cur.fetchall()
 
-            # 下载近10年的数据
-            nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
-            nearly_df = nearly_df[nearly_df['Mon'].isin(mon_list)]
-            nearly_df = data_processing(nearly_df, element)
+    elif time_freq == 'D2':  # ['%Y,%Y','%m%d,%m%d']
+        query = sql.SQL(f"""
+                        SELECT {elements}
+                        FROM public.{table_name}
+                        WHERE
+                            (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                            AND (
+                                (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
+                                OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) < %s)
+                                OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s)
+                            ))
+                            AND station_id_c IN %s
+                        """)
 
-        elif time_freq == 'M1':
-            # 下载统计年份的数据
-            start_time = stats_times.split(',')[0]
-            end_time = stats_times.split(',')[1]
-            years = start_time[:4] + ',' + end_time[:4]
-            mon = start_time[4:] + ',' + end_time[4:]
-            data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
-            data_df = data_processing(data_df, element)
+        years = stats_times[0]
+        dates = stats_times[1]
+        start_year = years.split(',')[0]
+        end_year = years.split(',')[1]
+        start_mon = dates.split(',')[0][:2]
+        end_mon = dates.split(',')[1][:2]
+        start_date = dates.split(',')[0][2:]
+        end_date = dates.split(',')[1][2:]
+        cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_mon, end_date, sta_ids))
+        data = cur.fetchall()
 
-            # 下载参考时段的数据
-            refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
-            refer_df = data_processing(refer_df, element)
+    # 统计年份数据处理为df
+    data_df = pd.DataFrame(data)
+    data_df.columns = elements.split(',')
+    data_df = data_processing(data_df, element)
+    
+    # 下载参考时段的数据
+    query = sql.SQL(f"""
+                    SELECT {elements}
+                    FROM public.{table_name}
+                    WHERE
+                        CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                        AND station_id_c IN %s
+                    """)
 
-            # 下载近10年的数据
-            nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
-            nearly_df = data_processing(nearly_df, element)
+    start_year = refer_years.split(',')[0]
+    end_year = refer_years.split(',')[1]
+    cur.execute(query, (start_year, end_year, sta_ids))
+    data = cur.fetchall()
+    refer_df = pd.DataFrame(data)
+    refer_df.columns = elements.split(',')
+    refer_df = data_processing(refer_df, element)
 
-        elif time_freq == 'M2':
-            # 下载统计年份的数据
-            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]
-            years = stats_times[0]
-            mon = '01,12'
-            data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
-            data_df = data_df[data_df['Mon'].isin(mon_list)]  # 按区间提取月份
-            data_df = data_processing(data_df, element)
+    # 下载近10年的数据
+    start_year = nearly_years.split(',')[0]
+    end_year = nearly_years.split(',')[1]
+    cur.execute(query, (start_year, end_year, sta_ids))
+    data = cur.fetchall()
+    nearly_df = pd.DataFrame(data)
+    nearly_df.columns = elements.split(',')
+    nearly_df = data_processing(nearly_df, element)
 
-            # 下载参考时段的数据
-            refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
-            refer_df = refer_df[refer_df['Mon'].isin(mon_list)]
-            refer_df = data_processing(refer_df, element)
+    # 关闭数据库
+    cur.close()
+    conn.close()
 
-            # 下载近10年的数据
-            nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
-            nearly_df = nearly_df[nearly_df['Mon'].isin(mon_list)]
-            nearly_df = data_processing(nearly_df, element)
-
-        elif time_freq == 'D1':
-            # 下载统计年份的数据
-            start_time = stats_times.split(',')[0]
-            end_time = stats_times.split(',')[1]
-            years = start_time[:4] + ',' + end_time[:4]
-            date = start_time[4:] + ',' + end_time[4:]
-            data_df = get_cmadaas_daily_data(years, date, ele, sta_ids)
-            data_df = data_processing(data_df, element)
-
-            # 下载参考时段的数据
-            refer_df = get_cmadaas_daily_data(refer_years, date, ele, sta_ids)
-            refer_df = data_processing(refer_df, element)
-
-            # 下载近10年的数据
-            nearly_df = get_cmadaas_daily_data(nearly_years, date, ele, sta_ids)
-            nearly_df = data_processing(nearly_df, element)
-
-        elif time_freq == 'D2':
-            # 下载统计年份的数据
-            years = stats_times[0]
-            date = stats_times[1]
-            data_df = get_cmadaas_daily_period_data(years, date, ele, sta_ids)
-            data_df = data_processing(data_df, element)
-
-            # 下载参考时段的数据
-            refer_df = get_cmadaas_daily_period_data(refer_years, date, ele, sta_ids)
-            refer_df = data_processing(refer_df, element)
-
-            # 下载近10年的数据
-            nearly_df = get_cmadaas_daily_period_data(nearly_years, date, ele, sta_ids)
-            nearly_df = data_processing(nearly_df, element)
-
-    # 走数据库
-    else:
-        conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
-        cur = conn.cursor()
-
-        if time_freq == 'Y':  # '%Y,%Y'
-            sta_ids = tuple(sta_ids.split(','))
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.qh_qhbh_cmadaas_year
-                            WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND station_id_c IN %s
-                            """)
-
-            # 下载统计年份的数据
-            start_year = stats_times.split(',')[0]
-            end_year = stats_times.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            data_df = pd.DataFrame(data)
-            data_df.columns = elements.split(',')
-            data_df = data_processing(data_df, element)
-
-            # 下载参考时段的数据
-            start_year = refer_years.split(',')[0]
-            end_year = refer_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            refer_df = pd.DataFrame(data)
-            refer_df.columns = elements.split(',')
-            refer_df = data_processing(refer_df, element)
-
-            # 下载近10年的数据
-            start_year = nearly_years.split(',')[0]
-            end_year = nearly_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            nearly_df = pd.DataFrame(data)
-            nearly_df.columns = elements.split(',')
-            nearly_df = data_processing(nearly_df, element)
-
-        elif time_freq == 'Q':  # ['%Y,%Y','3,4,5']
-            sta_ids = tuple(sta_ids.split(','))
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
-            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
-            mon_ = tuple(mon_list)
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.qh_qhbh_cmadaas_month
-                            WHERE
-                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
-                                AND station_id_c IN %s
-                            """)
-
-            # 下载统计年份的数据
-            years = stats_times[0]
-            start_year = years.split(',')[0]
-            end_year = years.split(',')[1]
-            cur.execute(query, (start_year, end_year, mon_, sta_ids))
-            data = cur.fetchall()
-            data_df = pd.DataFrame(data)
-            data_df.columns = elements.split(',')
-            data_df = data_processing(data_df, element)
-
-            # 下载参考时段的数据
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.qh_qhbh_cmadaas_year
-                            WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND station_id_c IN %s
-                            """)
-
-            start_year = refer_years.split(',')[0]
-            end_year = refer_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            refer_df = pd.DataFrame(data)
-            refer_df.columns = elements.split(',')
-            refer_df = data_processing(refer_df, element)
-
-            # 下载近10年的数据
-            start_year = nearly_years.split(',')[0]
-            end_year = nearly_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            nearly_df = pd.DataFrame(data)
-            nearly_df.columns = elements.split(',')
-            nearly_df = data_processing(nearly_df, element)
-
-        elif time_freq == 'M1':  # '%Y%m,%Y%m'
-            sta_ids = tuple(sta_ids.split(','))
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.qh_qhbh_cmadaas_month
-                            WHERE
-                                ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) >= %s)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) <= %s))
-                                AND station_id_c IN %s
-                            """)
-
-            # 下载统计年份的数据
-            start_year = stats_times.split(',')[0][:4]
-            end_year = stats_times.split(',')[1][:4]
-            start_month = stats_times.split(',')[0][4:]
-            end_month = stats_times.split(',')[1][4:]
-            cur.execute(query, (start_year, start_month, start_year, end_year, end_year, end_month, sta_ids))
-            data = cur.fetchall()
-            data_df = pd.DataFrame(data)
-            data_df.columns = elements.split(',')
-            data_df = data_processing(data_df, element)
-
-            # 下载参考时段的数据
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.qh_qhbh_cmadaas_year
-                            WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND station_id_c IN %s
-                            """)
-
-            start_year = refer_years.split(',')[0]
-            end_year = refer_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            refer_df = pd.DataFrame(data)
-            refer_df.columns = elements.split(',')
-            refer_df = data_processing(refer_df, element)
-
-            # 下载近10年的数据
-            start_year = nearly_years.split(',')[0]
-            end_year = nearly_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            nearly_df = pd.DataFrame(data)
-            nearly_df.columns = elements.split(',')
-            nearly_df = data_processing(nearly_df, element)
-
-        elif time_freq == 'M2':  # ['%Y,%Y','11,12,1,2']
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,' + element
-            sta_ids = tuple(sta_ids.split(','))
-            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
-            mon_ = tuple(mon_list)
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.qh_qhbh_cmadaas_month
-                            WHERE
-                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
-                                AND station_id_c IN %s
-                            """)
-
-            # 下载统计年份的数据
-            years = stats_times[0]
-            start_year = years.split(',')[0]
-            end_year = years.split(',')[1]
-            cur.execute(query, (start_year, end_year, mon_, sta_ids))
-            data = cur.fetchall()
-            data_df = pd.DataFrame(data)
-            data_df.columns = elements.split(',')
-            data_df = data_processing(data_df, element)
-
-            # 下载参考时段的数据
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.qh_qhbh_cmadaas_year
-                            WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND station_id_c IN %s
-                            """)
-
-            start_year = refer_years.split(',')[0]
-            end_year = refer_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            refer_df = pd.DataFrame(data)
-            refer_df.columns = elements.split(',')
-            refer_df = data_processing(refer_df, element)
-
-            # 下载近10年的数据
-            start_year = nearly_years.split(',')[0]
-            end_year = nearly_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            nearly_df = pd.DataFrame(data)
-            nearly_df.columns = elements.split(',')
-            nearly_df = data_processing(nearly_df, element)
-
-        elif time_freq == 'D1':  # '%Y%m%d,%Y%m%d'
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day' + element
-            sta_ids = tuple(sta_ids.split(','))
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.qh_qhbh_cmadaas_day
-                            WHERE
-                                ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s))
-                                AND station_id_c IN %s
-                            """)
-
-            # 下载统计年份的数据
-            start_year = stats_times.split(',')[0][:4]
-            end_year = stats_times.split(',')[1][:4]
-            start_month = stats_times.split(',')[0][4:6]
-            end_month = stats_times.split(',')[1][4:6]
-            start_date = stats_times.split(',')[0][6:]
-            end_date = stats_times.split(',')[1][6:]
-
-            cur.execute(query, (start_year, start_month, start_date, start_year, end_year, end_year, end_month, end_date, sta_ids))
-            data = cur.fetchall()
-            data_df = pd.DataFrame(data)
-            data_df.columns = elements.split(',')
-            data_df = data_processing(data_df, element)
-
-            # 下载参考时段的数据
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.qh_qhbh_cmadaas_year
-                            WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND station_id_c IN %s
-                            """)
-
-            start_year = refer_years.split(',')[0]
-            end_year = refer_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            refer_df = pd.DataFrame(data)
-            refer_df.columns = elements.split(',')
-            refer_df = data_processing(refer_df, element)
-
-            # 下载近10年的数据
-            start_year = nearly_years.split(',')[0]
-            end_year = nearly_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            nearly_df = pd.DataFrame(data)
-            nearly_df.columns = elements.split(',')
-            nearly_df = data_processing(nearly_df, element)
-
-        elif time_freq == 'D2':  # ['%Y,%Y','%m%d,%m%d']
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day' + element
-            sta_ids = tuple(sta_ids.split(','))
-            elements = 'Station_Id_C,Station_Name,Datetime,Year,Mon,' + element
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.qh_qhbh_cmadaas_day
-                            WHERE
-                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND (
-                                    (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
-                                    OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) < %s)
-                                    OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s)
-                                ))
-                                AND station_id_c IN %s
-                            """)
-
-            # 下载统计年份的数据 ['%Y,%Y','%m%d,%m%d']
-            years = stats_times[0]
-            dates = stats_times[1]
-            start_year = years.split(',')[0]
-            end_year = years.split(',')[1]
-            start_mon = dates.split(',')[0][:2]
-            end_mon = dates.split(',')[1][:2]
-            start_date = dates.split(',')[0][2:]
-            end_date = dates.split(',')[1][2:]
-            cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_mon, end_date, sta_ids))
-            data = cur.fetchall()
-            data_df = pd.DataFrame(data)
-            data_df.columns = elements.split(',')
-            data_df = data_processing(data_df)
-
-            # 下载参考时段的数据
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,' + element
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.qh_qhbh_cmadaas_year
-                            WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND station_id_c IN %s
-                            """)
-
-            start_year = refer_years.split(',')[0]
-            end_year = refer_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            refer_df = pd.DataFrame(data)
-            refer_df.columns = elements.split(',')
-            refer_df = data_processing(refer_df, element)
-
-            # 下载近10年的数据
-            start_year = nearly_years.split(',')[0]
-            end_year = nearly_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            nearly_df = pd.DataFrame(data)
-            nearly_df.columns = elements.split(',')
-            nearly_df = data_processing(nearly_df, element)
-
-        # 关闭数据库
-        cur.close()
-        conn.close()
 
     # 开始计算
     # 首先获取站号对应的站名
