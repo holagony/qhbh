@@ -50,6 +50,8 @@ from Module02.wrapped.func00_function import data_deal_num
 from Module02.wrapped.func00_function import data_deal_2
 from Module02.wrapped.func00_function import data_deal_num_2
 from Module02.wrapped.func00_function import calculate_average_hd
+from Module02.wrapped.func00_function import percentile_std
+from Module02.wrapped.func00_function import percentile_std_time
 
 from Module02.wrapped.func01_winter_heating_pre import winter_heating_pre
 from Module02.wrapped.func02_winter_heating_his import winter_heating_his
@@ -89,6 +91,12 @@ def energy_winter_heating(data_json):
     
     # 时间频率
     time_scale='daily'
+    
+    elem_info=['采暖度日','采暖日','采暖起始日_日序']
+    elem_dict=dict()
+    elem_dict['采暖日']='HD'
+    elem_dict['采暖日采暖度日']='HDD18'
+    elem_dict['采暖起始日_日序']='HDTIME_NUM'
     
     #%% 统计计算模块
     
@@ -152,57 +160,87 @@ def energy_winter_heating(data_json):
     HDD18=calculate_average_hd(pre_data,'HDD18')
     HDTIME=calculate_average_hd(pre_data,'HDTIME_NUM')
 
+#%% 基准期    
+    base_p=pd.DataFrame(columns=refer_result_days_z.columns[1:-3:])
+    base_p.loc[0,:]=refer_result_days_z[refer_result_days_z['时间'] == '平均'][1::-3].iloc[0, :]
+    base_p.loc[1,:]=refer_result_hdd18_z[refer_result_hdd18_z['时间'] == '平均'][1::-3].iloc[0, :]
+    base_p.loc[2,:]=refer_result_start_end_num_z[refer_result_start_end_num_z['时间'] == '平均'][1::-3].iloc[0, :]
+    base_p.insert(0, '要素', ['采暖日','采暖度日','采暖起始日_日序'])
+    
+#%% 单模式距平和距平百分率
 
-    #%% 结果保存
+    pre_data_result=dict()
+    for i in insti:
+        pre_data_result[i]=dict()
+        for j in scene:
+            pre_data_result[i][j]=dict()
+            for ele_a in elem_info:
+                if ele_a in ['采暖度日','采暖日']:
+                    pre_data_result[i][j][ele_a]=data_deal_2(pre_data[i][j][elem_dict[ele_a]],refer_result_days,2)
+                else:
+                    pre_data_result[i][j][ele_a]=data_deal_num_2(pre_data[i][j][elem_dict[ele_a]],refer_result_days,2)
+
+#%% 结果保存
     result_df=dict()
-    result_df['历史']=dict()
-    result_df['历史']['采暖日']=refer_result_days_z
-    result_df['历史']['采暖度日']=refer_result_hdd18_z
-    result_df['历史']['采暖起始日_日期']=refer_result_start_end
-    result_df['历史']['采暖起始日_日序']=refer_result_start_end_num_z
-    
-    result_df['预估']=dict()
-    for insti_a in insti:
-        result_df['预估'][insti_a]=dict()
-        for scene_a in scene:
-            result_df['预估'][insti_a][scene_a]=dict()
-            result_df['预估'][insti_a][scene_a]['采暖日']=data_deal_2(pre_data[insti_a][scene_a]['HD'],refer_result_hdd18)
-            result_df['预估'][insti_a][scene_a]['采暖度日']=data_deal_2(pre_data[insti_a][scene_a]['HDD18'],refer_result_hdd18)
-            result_df['预估'][insti_a][scene_a]['采暖起始日_日期']=pre_data[insti_a][scene_a]['HDTIME']
-            result_df['预估'][insti_a][scene_a]['采暖起始日_日序']=data_deal_num_2(pre_data[insti_a][scene_a]['HDTIME_NUM'],result_start_end_num)
-    
-    result_df['预估']['集合']=dict()
-    for scens in scene:
-        result_df['预估']['集合'][scens]=dict()
-        result_df['预估']['集合'][scens]['采暖日']=data_deal_2(HD[scens],refer_result_days)
-        result_df['预估']['集合'][scens]['采暖度日'] =data_deal_2(HDD18[scens],refer_result_hdd18)
-        result_df['预估']['集合'][scens]['采暖起始日_日序']=data_deal_num_2(HDTIME[scens],result_start_end_num)
-        
-                      
-    result_df_dict=dict()
-    result_df_dict['历史']=dict()
-    result_df_dict['历史']['采暖日']=refer_result_days_z.to_dict(orient='records')
-    result_df_dict['历史']['采暖度日']=refer_result_hdd18_z.to_dict(orient='records')
-    result_df_dict['历史']['采暖起始日_日期']=refer_result_start_end.to_dict(orient='records')
-    result_df_dict['历史']['采暖起始日_日序']=refer_result_start_end_num_z.to_dict(orient='records')
-    
-    result_df_dict['预估']=dict()
-    for insti_a in insti:
-        result_df_dict['预估'][insti_a]=dict()
-        for scene_a in scene:
-            result_df_dict['预估'][insti_a][scene_a]=dict()
-            result_df_dict['预估'][insti_a][scene_a]['采暖日']=data_deal_2(pre_data[insti_a][scene_a]['HD'],refer_result_hdd18).to_dict(orient='records')
-            result_df_dict['预估'][insti_a][scene_a]['采暖度日']=data_deal_2(pre_data[insti_a][scene_a]['HDD18'],refer_result_hdd18).to_dict(orient='records')
-            result_df_dict['预估'][insti_a][scene_a]['采暖起始日_日期']=pre_data[insti_a][scene_a]['HDTIME'].to_dict(orient='records')
-            result_df_dict['预估'][insti_a][scene_a]['采暖起始日_日序']=data_deal_num_2(pre_data[insti_a][scene_a]['HDTIME_NUM'],result_start_end_num).to_dict(orient='records')
+    result_df['表格']=dict()
 
-   
-    result_df_dict['预估']['集合']=dict()
+    result_df['表格']['历史']=dict()
+    result_df['表格']['历史']['采暖日']=refer_result_days_z
+    result_df['表格']['历史']['采暖度日']=refer_result_hdd18_z
+    result_df['表格']['历史']['采暖起始日_日期']=refer_result_start_end
+    result_df['表格']['历史']['采暖起始日_日序']=refer_result_start_end_num_z
+    
+    result_df['表格']['预估']=dict()
+    for insti_a in insti:
+        result_df['表格']['预估'][insti_a]=dict()
+        for scene_a in scene:
+            result_df['表格']['预估'][insti_a][scene_a]=dict()
+            result_df['表格']['预估'][insti_a][scene_a]['采暖日']=data_deal_2(pre_data[insti_a][scene_a]['HD'],refer_result_days,1)
+            result_df['表格']['预估'][insti_a][scene_a]['采暖度日']=data_deal_2(pre_data[insti_a][scene_a]['HDD18'],refer_result_hdd18,1)
+            result_df['表格']['预估'][insti_a][scene_a]['采暖起始日_日期']=pre_data[insti_a][scene_a]['HDTIME']
+            result_df['表格']['预估'][insti_a][scene_a]['采暖起始日_日序']=data_deal_num_2(pre_data[insti_a][scene_a]['HDTIME_NUM'],result_start_end_num,1)
+    
+    result_df['表格']['预估']['集合']=dict()
     for scens in scene:
-        result_df_dict['预估']['集合'][scens]=dict()
-        result_df_dict['预估']['集合'][scens]['采暖日']=result_df['预估']['集合'][scens]['采暖日'].to_dict(orient='records')
-        result_df_dict['预估']['集合'][scens]['采暖度日']=result_df['预估']['集合'][scens]['采暖度日'].to_dict(orient='records')
-        result_df_dict['预估']['集合'][scens]['采暖起始日_日序']=result_df['预估']['集合'][scens]['采暖起始日_日序'].to_dict(orient='records')
+        result_df['表格']['预估']['集合'][scens]=dict()
+        result_df['表格']['预估']['集合'][scens]['采暖日']=data_deal_2(HD[scens],refer_result_days,1)
+        result_df['表格']['预估']['集合'][scens]['采暖度日'] =data_deal_2(HDD18[scens],refer_result_hdd18,1)
+        result_df['表格']['预估']['集合'][scens]['采暖起始日_日序']=data_deal_num_2(HDTIME[scens],result_start_end_num,1)
+        
+    result_df['时序图']=dict()
+    result_df['时序图']['集合_多模式' ]=dict()
+    result_df['时序图']['集合_多模式' ]['采暖日']=percentile_std(scene,insti,pre_data,'HD',refer_result_days)
+    result_df['时序图']['集合_多模式' ]['采暖度日']=percentile_std(scene,insti,pre_data,'HDD18',refer_result_hdd18)
+    result_df['时序图']['集合_多模式' ]['采暖起始日_日序']=percentile_std_time(scene,insti,pre_data,result_start_end_num)
+    
+    result_df['时序图']['单模式' ]=pre_data_result.copy()
+    result_df['时序图']['单模式' ]['基准期']=base_p.copy()
+
+    result_df_dict=dict()
+    result_df_dict['表格']=dict()
+
+    result_df_dict['表格']['历史']=dict()
+    result_df_dict['表格']['历史']['采暖日']=refer_result_days_z.to_dict(orient='records')
+    result_df_dict['表格']['历史']['采暖度日']=refer_result_hdd18_z.to_dict(orient='records')
+    result_df_dict['表格']['历史']['采暖起始日_日期']=refer_result_start_end.to_dict(orient='records')
+    result_df_dict['表格']['历史']['采暖起始日_日序']=refer_result_start_end_num_z.to_dict(orient='records')
+    
+    result_df_dict['表格']['预估']=dict()
+    for insti_a in insti:
+        result_df_dict['表格']['预估'][insti_a]=dict()
+        for scene_a in scene:
+            result_df_dict['表格']['预估'][insti_a][scene_a]=dict()
+            result_df_dict['表格']['预估'][insti_a][scene_a]['采暖日']=data_deal_2(pre_data[insti_a][scene_a]['HD'],refer_result_days,1).to_dict(orient='records')
+            result_df_dict['表格']['预估'][insti_a][scene_a]['采暖度日']=data_deal_2(pre_data[insti_a][scene_a]['HDD18'],refer_result_hdd18,1).to_dict(orient='records')
+            result_df_dict['表格']['预估'][insti_a][scene_a]['采暖起始日_日期']=pre_data[insti_a][scene_a]['HDTIME'].to_dict(orient='records')
+            result_df_dict['表格']['预估'][insti_a][scene_a]['采暖起始日_日序']=data_deal_num_2(pre_data[insti_a][scene_a]['HDTIME_NUM'],result_start_end_num,1).to_dict(orient='records')
+
+    result_df_dict['表格']['预估']['集合']=dict()
+    for scens in scene:
+        result_df_dict['表格']['预估']['集合'][scens]=dict()
+        result_df_dict['表格']['预估']['集合'][scens]['采暖日']=data_deal_2(HD[scens],refer_result_days,1).to_dict(orient='records')
+        result_df_dict['表格']['预估']['集合'][scens]['采暖度日']=data_deal_2(HDD18[scens],refer_result_hdd18,1).to_dict(orient='records')
+        result_df_dict['表格']['预估']['集合'][scens]['采暖起始日_日序']=data_deal_num_2(HDTIME[scens],result_start_end_num,1).to_dict(orient='records')
     
     return result_df,result_df_dict
         

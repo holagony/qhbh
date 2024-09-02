@@ -12,7 +12,7 @@ data_file_dir = os.path.join(current_obj, 'Files')
 # 生成字典
 __C = edict()
 cfg = __C
-flag = 'HX'
+flag = 'local'
 
 # 信息配置
 __C.INFO = edict()
@@ -49,3 +49,6 @@ __C.FILES.FONT = os.path.join(data_file_dir, 'fonts/simhei.ttf')
 
 # 站点信息
 __C.FILES.STATION = os.path.join(data_file_dir, 'qh_station.csv')
+
+__C.FILES.IDW_W = os.path.join(data_file_dir, 'idw/idw.dll')
+__C.FILES.IDW_L = os.path.join(data_file_dir, 'idw/libidw.so')
