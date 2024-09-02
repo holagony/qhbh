@@ -11,6 +11,7 @@ from pykrige.ok import OrdinaryKriging
 from pykrige.uk import UniversalKriging
 from scipy.interpolate import griddata
 import os
+from Utils.config import cfg
 
 
 def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
@@ -38,7 +39,7 @@ def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
         ukrig = UniversalKriging(lon_sta, lat_sta, value_sta, variogram_model=variogram_model, verbose=False, enable_plotting=False)
         data, ss3d = ukrig.execute("grid", gridx, gridy)
 
-    elif method == 'idw':
+    elif method == 'idw3':
 
         #%% idw
 
@@ -101,6 +102,53 @@ def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
         offset = 1e-9
         data = idw_interpolation(point_xy, point_z, grid_xy, leafsize, k, p, eps, offset)
         data = data.astype(float)
+        
+    elif method == 'idw':
+        
+        import ctypes  
+
+        def IDW_cppDll(x, y, z, xi, yi):
+            # 加载动态库  
+            if os.name == 'nt':
+                idw_path=cfg.FILES.IDW_W
+            elif os.name == 'posix':
+                idw_path=cfg.FILES.IDW_L
+            else:
+                idw_path   =cfg.FILES.IDW_L
+                
+            lib = ctypes.CDLL(idw_path) 
+            
+            # 设置参数类型  
+            lib.IDW_C_Interface.argtypes = [  
+                ctypes.POINTER(ctypes.c_double),  # x  
+                ctypes.POINTER(ctypes.c_double),  # y  
+                ctypes.POINTER(ctypes.c_double),  # z  
+                ctypes.c_size_t,                  # dataSize  
+                ctypes.POINTER(ctypes.c_double),  # xi  
+                ctypes.POINTER(ctypes.c_double),  # yi  
+                ctypes.c_size_t,                  # interpSize  
+                ctypes.POINTER(ctypes.c_double)   # results  
+            ]  
+
+            dataSize = len(z)
+            interpSize = len(xi)
+          
+            x = (ctypes.c_double * dataSize)(*x)  
+            y = (ctypes.c_double * dataSize)(*y)  
+            z = (ctypes.c_double * dataSize)(*z)  
+            xi = (ctypes.c_double * interpSize)(*xi)  
+            yi = (ctypes.c_double * interpSize)(*yi)  
+            results = (ctypes.c_double * (interpSize * 3))()  # 分配结果数组的空间  
+            
+            lib.IDW_C_Interface(x, y, z, dataSize, xi, yi, interpSize, results)  
+            results = np.array(results).reshape(-1,3)
+            return results
+        
+        wsp_idw = IDW_cppDll(lon_sta, lat_sta, value_sta, lon.flatten(), lat.flatten())
+        wsp_idw = np.array(wsp_idw)
+        data = np.reshape(wsp_idw[:,2], lon.shape) 
+        
+        
         #%% griddata
     elif method == 'griddata':
         data_points = np.column_stack([lon_sta, lat_sta])
@@ -114,7 +162,7 @@ def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
         data = result.reshape(lon.shape)
 
     #%% 画图看结果自测使用
-    '''
+
     import matplotlib.pyplot as plt
     import cartopy.crs as ccrs
     from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
@@ -142,10 +190,10 @@ def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
     g1.yformatter=LATITUDE_FORMATTER
     g1.rotate_labels=False
     
-    result_picture = os.path.join(r'D:\Project\1',name+'.png')
+    result_picture = os.path.join(r'D:\Project\qh',name+'.png')
     fig.savefig(result_picture, dpi=200, bbox_inches='tight')
     plt.cla()
-    '''
+
 
     return data
 
