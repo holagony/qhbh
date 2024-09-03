@@ -62,6 +62,7 @@ def climate_features_stats(data_json):
         彭曼蒸发	EVP_Penman
         平均相对湿度	RHU_Avg
         最小相对湿度	RHU_Min
+        积温    Accum_Tem
 
     :param refer_years: 对应原型的参考时段，只和气候值统计有关，传参：'%Y,%Y'
 
@@ -107,6 +108,7 @@ def climate_features_stats(data_json):
     interp_method = data_json['interp_method']
     ci = data_json['ci']
     shp_path = data_json.get('shp_path')
+    degree = data_json.get('degree')
 
     # 2.参数处理
     if shp_path is not None:
@@ -118,46 +120,35 @@ def climate_features_stats(data_json):
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
         os.chmod(data_dir, 0o007 | 0o070 | 0o700)
-
+    
     # 确定表名
-    table_dict = dict()
-    table_dict['grassland_green_period'] = 'table'
-    table_dict['grassland_yellow_period'] = 'table'
-    table_dict['grassland_growth_period'] = 'table'
-    table_dict['grassland_coverage'] = 'table'
-    table_dict['grass_height'] = 'table'
-    table_dict['grassland_yield'] = 'table'
-    table_dict['vegetation_index'] = 'table'
-    table_dict['vegetation_pri_productivity'] = 'table'
-    table_dict['vegetation_coverage'] = 'table'
-    table_dict['vegetation_carbon'] = 'table'
-    table_dict['wet_vegetation_carbon'] = 'table'
-    table_dict['desert_level'] = 'table'
-    table_dict['desert_area'] = 'table'
-    table_name = table_dict[element]
-
-    # 确定要素
-    element_dict = dict()
-    element_dict['grassland_green_period'] = 'ele'
-    element_dict['grassland_yellow_period'] = 'ele'
-    element_dict['grassland_growth_period'] = 'ele'
-    element_dict['grassland_coverage'] = 'ele'
-    element_dict['grass_height'] = 'ele'
-    element_dict['grassland_yield'] = 'ele'
-    element_dict['vegetation_index'] = 'ele'
-    element_dict['vegetation_pri_productivity'] = 'ele'
-    element_dict['vegetation_coverage'] = 'ele'
-    element_dict['vegetation_carbon'] = 'ele'
-    element_dict['wet_vegetation_carbon'] = 'ele'
-    element_dict['desert_level'] = 'ele'
-    element_dict['desert_area'] = 'ele'
-    element_str = element_dict[element]
+    if time_freq == 'Y':
+        table_name = 'qh_qhbh_cmadaas_year'
+    elif time_freq in ['Q', 'M1', 'M2']:
+        table_name = 'qh_qhbh_cmadaas_month'
+    elif time_freq in ['D1', 'D2']:
+        table_name = 'qh_qhbh_cmadaas_day'
+    element_str = element
+    
+    if element == 'EVP_Penman' and time_freq == 'Y':
+        table_name = 'qh_qhbh_calc_elements_year'
+        element_str = 'pmet'
+    elif element == 'EVP_Penman' and time_freq in ['Q', 'M1', 'M2']:
+        table_name = 'qh_qhbh_calc_elements_month'
+        element_str = 'pmet'
+    elif element == 'EVP_Penman' and time_freq in ['D1', 'D2']:
+        table_name = 'qh_qhbh_calc_elements_day'
+        element_str = 'pmet'
+    
+    if element == 'Accum_Tem': # 积温
+        table_name = 'qh_qhbh_cmadaas_day'
+        element_str = 'TEM_Avg'
 
     # 从数据库截数据
     conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
     cur = conn.cursor()
     sta_ids = tuple(sta_ids.split(','))
-    elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,Year,Mon,Day,' + element_str
+    elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,' + element_str
 
     if time_freq == 'Y':  # '%Y,%Y'
         query = sql.SQL(f"""
@@ -276,7 +267,7 @@ def climate_features_stats(data_json):
     # 统计年份数据处理为df
     data_df = pd.DataFrame(data)
     data_df.columns = elements.split(',')
-    data_df = data_processing(data_df, element)
+    data_df = data_processing(data_df, element_str, degree)
     
     # 下载参考时段的数据
     query = sql.SQL(f"""
@@ -293,7 +284,7 @@ def climate_features_stats(data_json):
     data = cur.fetchall()
     refer_df = pd.DataFrame(data)
     refer_df.columns = elements.split(',')
-    refer_df = data_processing(refer_df, element)
+    refer_df = data_processing(refer_df, element_str, degree)
 
     # 下载近10年的数据
     start_year = nearly_years.split(',')[0]
@@ -302,12 +293,11 @@ def climate_features_stats(data_json):
     data = cur.fetchall()
     nearly_df = pd.DataFrame(data)
     nearly_df.columns = elements.split(',')
-    nearly_df = data_processing(nearly_df, element)
+    nearly_df = data_processing(nearly_df, element_str, degree)
 
     # 关闭数据库
     cur.close()
     conn.close()
-
 
     # 开始计算
     # 首先获取站号对应的站名
@@ -326,7 +316,12 @@ def climate_features_stats(data_json):
     # stats_result 展示结果表格
     # post_data_df 统计年份数据，用于后续计算
     # post_refer_df 参考年份数据，用于后续计算
-    stats_result, post_data_df, post_refer_df, reg_params = table_stats(data_df, refer_df, nearly_df, element, last_year)
+
+    # 如果是积温，此时的element_str是TEM_Avg，需要修改为Accum_Tem
+    if element == 'Accum_Tem':
+        element_str = 'Accum_Tem'
+
+    stats_result, post_data_df, post_refer_df, reg_params = table_stats(data_df, refer_df, nearly_df, element_str, last_year)
     print('统计表完成')
 
     # 分布图
@@ -405,7 +400,7 @@ def climate_features_stats(data_json):
 if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
-    data_json['element'] = 'TEM_Avg'
+    data_json['element'] = 'Accum_Tem'
     data_json['refer_years'] = '1991,2020'
     data_json['nearly_years'] = '2014,2023'
     data_json['time_freq'] = 'Q'
@@ -414,7 +409,8 @@ if __name__ == '__main__':
     data_json['interp_method'] = 'ukri'
     data_json['ci'] = 95
     data_json['shp_path'] = r'C:\Users\MJY\Desktop\qhbh\文档\03-边界矢量\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
-
+    data_json['degree'] = 10
+    
     result = climate_features_stats(data_json)
     t2 = time.time()
     print(t2 - t1)
