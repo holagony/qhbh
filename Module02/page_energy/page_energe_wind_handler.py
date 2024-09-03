@@ -272,5 +272,5 @@ if __name__ == '__main__':
     data_json['insti'] = 'BCC-CSM2-MR,CanESM5'
     # data_json['res'] ='1'
     
-    result_df=energy_winter_heating(data_json)
+    result_df=energy_wind_power(data_json)
     

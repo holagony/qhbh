@@ -25,7 +25,7 @@ def pagea_stats():
     return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result_dict}, ensure_ascii=False, ignore_nan=True)
     return return_data
 
-@module02.route('/v1/energy_winter_wind', methods=['POST'])
+@module02.route('/v1/energy_wind', methods=['POST'])
 def pagea_wind():
     '''
     重点领域与行业预估-能源影响预估-风能
