@@ -278,7 +278,7 @@ def winter_heating_pre(tas_paths,station_id,time_freq,stats_times):
                 result_days.at[n,'年']=year
     
                 # 采暖度日
-                result_hdd18.at[n,name]=(18-data_year.loc[first_index_z:last_index_z,'tas'].mean())*183
+                result_hdd18.at[n,name]=np.round((18-data_year.loc[first_index_z:last_index_z,'tas'].mean())*183,2)
                 result_hdd18.at[n,'年']=year
     
                 # 采暖起始日

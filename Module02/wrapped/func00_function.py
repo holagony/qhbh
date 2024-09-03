@@ -124,14 +124,14 @@ def data_deal(result_days):
     result_days.drop(['年'], axis=1, inplace=True) 
     
     tmp_days_df = pd.DataFrame(columns=result_days.columns)
-    tmp_days_df.loc['平均'] = result_days.iloc[:, :].mean(axis=0).round(1)
-    tmp_days_df.loc['变率'] = result_days.apply(trend_rate, axis=0)
+    tmp_days_df.loc['平均'] = np.round(result_days.iloc[:, :].mean(axis=0).astype(float),2)
+    tmp_days_df.loc['变率'] = np.round(result_days.apply(trend_rate, axis=0),2)
     tmp_days_df.loc['最大值'] = result_days.iloc[:, :].max(axis=0)
     tmp_days_df.loc['最小值'] = result_days.iloc[:, :].min(axis=0)
     
     # 合并所有结果
     stats_days_result = result_days.copy()
-    stats_days_result['区域均值'] = result_days.iloc[:, :].mean(axis=1).round(1)
+    stats_days_result['区域均值'] = np.round(result_days.iloc[:, :].mean(axis=1).astype(float),2)
     stats_days_result['区域最大值'] = result_days.iloc[:, :].max(axis=1)
     stats_days_result['区域最小值'] = result_days.iloc[:, :].min(axis=1)
     
@@ -147,15 +147,15 @@ def data_deal_num(result_days):
     result_days.drop(['年'], axis=1, inplace=True) 
     
     tmp_days_df = pd.DataFrame(columns=result_days.columns)
-    tmp_days_df.loc['平均'] = result_days.iloc[1:, :].mean(axis=0).round(1)
-    tmp_days_df.loc['变率'] = result_days.iloc[1:, :].apply(trend_rate, axis=0)
+    tmp_days_df.loc['平均'] = np.round(result_days.iloc[1:, :].mean(axis=0).astype(float),2)
+    tmp_days_df.loc['变率'] = np.round(result_days.iloc[1:, :].apply(trend_rate, axis=0),2)
     tmp_days_df.loc['最大值'] = result_days.iloc[1:, :].max(axis=0)
     tmp_days_df.loc['最小值'] = result_days.iloc[1:, :].min(axis=0)
     
     # 合并所有结果
     stats_days_result = result_days.copy()
-    stats_days_result['区域均值1'] = result_days.iloc[1:, 0::2].mean(axis=1).round(1)
-    stats_days_result['区域均值2'] = result_days.iloc[1:, 1::2].mean(axis=1).round(1)
+    stats_days_result['区域均值1'] = np.round(result_days.iloc[1:, 0::2].mean(axis=1).astype(float),2)
+    stats_days_result['区域均值2'] = np.round(result_days.iloc[1:, 1::2].mean(axis=1).astype(float),2)
     
     stats_days_result['区域最大值1'] = result_days.iloc[1:, 0::2].max(axis=1)
     stats_days_result['区域最大值2'] = result_days.iloc[1:, 1::2].max(axis=1)
@@ -183,34 +183,34 @@ def data_deal_2(data_df,refer_df,flag):
 
     if flag==1:
         tmp_df = pd.DataFrame(columns=data_df.columns)
-        tmp_df.loc['平均'] = data_df.iloc[:, :].mean(axis=0).round(1)
-        tmp_df.loc['变率'] = data_df.apply(trend_rate, axis=0)
+        tmp_df.loc['平均'] = np.round(data_df.iloc[:, :].mean(axis=0).astype(float),2)
+        tmp_df.loc['变率'] = np.round(data_df.apply(trend_rate, axis=0),2)
         tmp_df.loc['最大值'] = data_df.iloc[:, :].max(axis=0)
         tmp_df.loc['最小值'] = data_df.iloc[:, :].min(axis=0)
-        tmp_df.loc['参考时段均值'] = refer_df.iloc[:, 1:].mean(axis=0).round(1)
-        tmp_df.loc['距平'] = tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']
-        tmp_df.loc['距平百分率%'] = ((tmp_df.loc['距平'] / tmp_df.loc['参考时段均值']) * 100).round(2)
+        tmp_df.loc['参考时段均值'] =  np.round(refer_df.iloc[:, 1:].mean(axis=0).astype(float),2)
+        tmp_df.loc['距平'] =  np.round((tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']).astype(float),2)
+        tmp_df.loc['距平百分率%'] =  np.round(((tmp_df.loc['距平'] / tmp_df.loc['参考时段均值']) * 100).astype(float),2)
     
         # 合并所有结果
         stats_result = data_df.copy()
-        stats_result['区域均值'] = data_df.iloc[:, :].mean(axis=1).round(1)
-        stats_result['区域距平'] = (data_df.iloc[:, :].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).round(1)
-        stats_result['区域距平百分率%'] = ((stats_result['区域距平']/refer_df.iloc[:, :].mean().mean())*100).round(2)
+        stats_result['区域均值'] = np.round(data_df.iloc[:, :].mean(axis=1).astype(float),2)
+        stats_result['区域距平'] = np.round((data_df.iloc[:, :].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).astype(float),2)
+        stats_result['区域距平百分率%'] = np.round(((stats_result['区域距平']/refer_df.iloc[:, :].mean().mean())*100).astype(float),2)
         stats_result['区域最大值'] = data_df.iloc[:, :].max(axis=1)
         stats_result['区域最小值'] = data_df.iloc[:, :].min(axis=1)
     
         stats_days_result = pd.concat((stats_result, tmp_df), axis=0)
     elif flag==2:
         tmp_df = pd.DataFrame(columns=data_df.columns)
-        tmp_df.loc['平均'] = data_df.iloc[:, :].mean(axis=0).round(1)
-        tmp_df.loc['参考时段均值'] = refer_df.iloc[:, 1:].mean(axis=0).round(1)
-        tmp_df.loc['距平'] = tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']
-        tmp_df.loc['距平百分率%'] = ((tmp_df.loc['距平'] / tmp_df.loc['参考时段均值']) * 100).round(2)
+        tmp_df.loc['平均'] = np.round(data_df.iloc[:, :].mean(axis=0).astype(float),2)
+        tmp_df.loc['参考时段均值'] = np.round(refer_df.iloc[:, 1:].mean(axis=0).astype(float),2)
+        tmp_df.loc['距平'] = np.round((tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']).astype(float),2)
+        tmp_df.loc['距平百分率%'] =  np.round(((tmp_df.loc['距平'] / tmp_df.loc['参考时段均值']) * 100).astype(float),2)
     
         # 合并所有结果
         stats_result = data_df.copy()
-        stats_result['区域距平'] = (data_df.iloc[:, :].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).round(1)
-        stats_result['区域距平百分率%'] = ((stats_result['区域距平']/refer_df.iloc[:, :].mean().mean())*100).round(2)
+        stats_result['区域距平'] =  np.round((data_df.iloc[:, :].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).astype(float),2)
+        stats_result['区域距平百分率%'] =  np.round(((stats_result['区域距平']/refer_df.iloc[:, :].mean().mean())*100).astype(float),2)
     
         stats_days_result = stats_result
     
@@ -229,18 +229,18 @@ def data_deal_num_2(data_df,refer_df,flag):
 
     if flag==1:
         tmp_df = pd.DataFrame(columns=data_df.columns)
-        tmp_df.loc['平均'] = data_df.iloc[1:, :].mean(axis=0).round(1)
-        tmp_df.loc['变率'] = data_df.iloc[1:, :].apply(trend_rate, axis=0)
+        tmp_df.loc['平均'] = data_df.iloc[1:, :].mean(axis=0).astype(float).round(2)
+        tmp_df.loc['变率'] = np.round(data_df.iloc[1:, :].apply(trend_rate, axis=0),2)
         tmp_df.loc['最大值'] = data_df.iloc[1:, :].max(axis=0)
         tmp_df.loc['最小值'] = data_df.iloc[1:, :].min(axis=0)
-        tmp_df.loc['参考时段均值'] = refer_df.iloc[1:, :].mean(axis=0).round(1)
-        tmp_df.loc['距平'] = tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']
-        tmp_df.loc['距平百分率%'] = ((tmp_df.loc['距平'] / tmp_df.loc['参考时段均值']) * 100).round(2)
+        tmp_df.loc['参考时段均值'] = refer_df.iloc[1:, :].mean(axis=0).astype(float).round(2)
+        tmp_df.loc['距平'] = (tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']).astype(float).round(2)
+        tmp_df.loc['距平百分率%'] = ((tmp_df.loc['距平'] / tmp_df.loc['参考时段均值']) * 100).astype(float).round(2)
     
         # 合并所有结果
         stats_result = data_df.copy()
-        stats_result['区域均值1'] = data_df.iloc[1:, 0::2].mean(axis=1).round(1)
-        stats_result['区域均值2'] = data_df.iloc[1:, 1::2].mean(axis=1).round(1)
+        stats_result['区域均值1'] = np.round(data_df.iloc[1:, 0::2].mean(axis=1).astype(float),2)
+        stats_result['区域均值2'] = np.round(data_df.iloc[1:, 1::2].mean(axis=1).astype(float),2)
     
         stats_result['区域最大值1'] = data_df.iloc[1:, 0::2].max(axis=1)
         stats_result['区域最大值2'] = data_df.iloc[1:, 1::2].max(axis=1)
@@ -248,11 +248,11 @@ def data_deal_num_2(data_df,refer_df,flag):
         stats_result['区域最小值1'] = data_df.iloc[1:, 0::2].min(axis=1)
         stats_result['区域最小值2'] = data_df.iloc[1:, 1::2].min(axis=1)
     
-        stats_result['区域距平1'] = (data_df.iloc[1:, 0::2].mean(axis=1) - tmp_df.loc['参考时段均值'].iloc[0::2].mean()).round(1)
-        stats_result['区域距平2'] = (data_df.iloc[1:, 1::2].mean(axis=1) - tmp_df.loc['参考时段均值'].iloc[1::2].mean()).round(1)
+        stats_result['区域距平1'] = np.round((data_df.iloc[1:, 0::2].mean(axis=1) - tmp_df.loc['参考时段均值'].iloc[0::2].mean()).astype(float),2)
+        stats_result['区域距平2'] = np.round((data_df.iloc[1:, 1::2].mean(axis=1) - tmp_df.loc['参考时段均值'].iloc[1::2].mean()).astype(float),2)
     
-        stats_result['区域距平百分率%1'] = ((stats_result['区域距平1']/refer_df.iloc[1:, 0::2].mean().mean())*100).round(2)
-        stats_result['区域距平百分率%2'] = ((stats_result['区域距平2']/refer_df.iloc[1:, 1::2].mean().mean())*100).round(2)
+        stats_result['区域距平百分率%1'] = np.round(((stats_result['区域距平1']/refer_df.iloc[1:, 0::2].mean().mean())*100).astype(float),2)
+        stats_result['区域距平百分率%2'] = np.round(((stats_result['区域距平2']/refer_df.iloc[1:, 1::2].mean().mean())*100).astype(float),2)
     
     
         stats_result = pd.concat((stats_result, tmp_df), axis=0)
@@ -272,18 +272,18 @@ def data_deal_num_2(data_df,refer_df,flag):
         
     else:
         tmp_df = pd.DataFrame(columns=data_df.columns)
-        tmp_df.loc['平均'] = data_df.iloc[1:, :].mean(axis=0).round(1)
-        tmp_df.loc['参考时段均值'] = refer_df.iloc[1:, :].mean(axis=0).round(1)
-        tmp_df.loc['距平'] = tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']
-        tmp_df.loc['距平百分率%'] = ((tmp_df.loc['距平'] / tmp_df.loc['参考时段均值']) * 100).round(2)
+        tmp_df.loc['平均'] = np.round(data_df.iloc[1:, :].mean(axis=0).astype(float),2)
+        tmp_df.loc['参考时段均值'] = np.round(refer_df.iloc[1:, :].mean(axis=0).astype(float),2)
+        tmp_df.loc['距平'] = np.round((tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']).astype(float),2)
+        tmp_df.loc['距平百分率%'] =np.round(((tmp_df.loc['距平'] / tmp_df.loc['参考时段均值']) * 100).astype(float),2)
     
         # 合并所有结果
         stats_result = data_df.copy()
-        stats_result['区域距平1'] = (data_df.iloc[1:, 0::2].mean(axis=1) - tmp_df.loc['参考时段均值'].iloc[0::2].mean()).round(1)
-        stats_result['区域距平2'] = (data_df.iloc[1:, 1::2].mean(axis=1) - tmp_df.loc['参考时段均值'].iloc[1::2].mean()).round(1)
+        stats_result['区域距平1'] = np.round((data_df.iloc[1:, 0::2].mean(axis=1) - tmp_df.loc['参考时段均值'].iloc[0::2].mean()).astype(float),2)
+        stats_result['区域距平2'] = np.round((data_df.iloc[1:, 1::2].mean(axis=1) - tmp_df.loc['参考时段均值'].iloc[1::2].mean()).astype(float),2)
     
-        stats_result['区域距平百分率%1'] = ((stats_result['区域距平1']/refer_df.iloc[1:, 0::2].mean().mean())*100).round(2)
-        stats_result['区域距平百分率%2'] = ((stats_result['区域距平2']/refer_df.iloc[1:, 1::2].mean().mean())*100).round(2)
+        stats_result['区域距平百分率%1'] = np.round(((stats_result['区域距平1']/refer_df.iloc[1:, 0::2].mean().mean())*100).astype(float),2)
+        stats_result['区域距平百分率%2'] = np.round(((stats_result['区域距平2']/refer_df.iloc[1:, 1::2].mean().mean())*100).astype(float),2)
     
     
         stats_result = stats_result
@@ -350,22 +350,22 @@ def percentile_std(scene,insti,df,ele,refer_data):
         result[scene[j]]=dict()
         
         df_example.iloc[:,1:]=np.mean(data[:,j,:,:], axis=0)
-        result[scene[j]]['data'] =df_example.copy()
+        result[scene[j]]['data'] =df_example.round(2).copy().to_dict(orient='records')
 
         df_example.iloc[:,1:]=np.percentile(data[:,j,:,:], 25, axis=0)
-        result[scene[j]]['p25'] =df_example.copy()
+        result[scene[j]]['p25'] =df_example.round(2).copy().to_dict(orient='records')
         
         df_example.iloc[:,1:]=np.percentile(data[:,j,:,:], 75, axis=0)
-        result[scene[j]]['p75'] = df_example.copy()
+        result[scene[j]]['p75'] = df_example.round(2).copy().to_dict(orient='records')
         
         df_example.iloc[:,1:]=np.std(np.array(data[:,j,:,:]).astype(float), axis=0)
-        result[scene[j]]['std'] = df_example.copy()
+        result[scene[j]]['std'] = df_example.round(2).copy().to_dict(orient='records')
 
         df_example.iloc[:,1:]=np.mean(data[:,j,:,:], axis=0)+np.std(np.array(data[:,j,:,:]).astype(float), axis=0)
-        result[scene[j]]['std_upper'] = df_example.copy()
+        result[scene[j]]['std_upper'] = df_example.round(2).copy().to_dict(orient='records')
         
         df_example.iloc[:,1:]=np.mean(data[:,j,:,:], axis=0)+np.std(np.array(data[:,j,:,:]).astype(float), axis=0)
-        result[scene[j]]['std_lower'] = df_example.copy()
+        result[scene[j]]['std_lower'] = df_example.round(2).copy().to_dict(orient='records')
 
     return result
 
@@ -409,43 +409,43 @@ def percentile_std_time(scene,insti,df,refer_data):
         result[scene[j]]['开始时间']=dict()
 
         selected_columns.iloc[:,1:]=np.mean(data[:,j,:,0::2], axis=0)
-        result[scene[j]]['开始时间']['data'] =selected_columns.copy()
+        result[scene[j]]['开始时间']['data'] =selected_columns.round(2).copy().to_dict(orient='records')
 
         selected_columns.iloc[:,1:]=np.percentile(data[:,j,:,0::2], 25, axis=0)
-        result[scene[j]]['开始时间']['p25'] =selected_columns.copy()
+        result[scene[j]]['开始时间']['p25'] =selected_columns.round(2).copy().to_dict(orient='records')
         
         selected_columns.iloc[:,1:]=np.percentile(data[:,j,:,0::2], 75, axis=0)
-        result[scene[j]]['开始时间']['p75'] = selected_columns.copy()
+        result[scene[j]]['开始时间']['p75'] = selected_columns.round(2).copy().to_dict(orient='records')
         
         selected_columns.iloc[:,1:]=np.std(np.array(data[:,j,:,0::2]).astype(float), axis=0)
-        result[scene[j]]['开始时间']['std'] = selected_columns.copy()
+        result[scene[j]]['开始时间']['std'] = selected_columns.round(2).copy().to_dict(orient='records')
 
         selected_columns.iloc[:,1:]=np.mean(data[:,j,:,0::2], axis=0)+np.std(np.array(data[:,j,:,0::2]).astype(float), axis=0)
-        result[scene[j]]['开始时间']['std_upper'] = selected_columns.copy()
+        result[scene[j]]['开始时间']['std_upper'] = selected_columns.round(2).copy().to_dict(orient='records')
         
         selected_columns.iloc[:,1:]=np.mean(data[:,j,:,0::2], axis=0)+np.std(np.array(data[:,j,:,0::2]).astype(float), axis=0)
-        result[scene[j]]['开始时间']['std_lower'] = selected_columns.copy()
+        result[scene[j]]['开始时间']['std_lower'] = selected_columns.round(2).copy().to_dict(orient='records')
         
         # 结束时间
         result[scene[j]]['结束时间']=dict()
 
         selected_columns.iloc[:,1:]=np.mean(data[:,j,:,1::2], axis=0)
-        result[scene[j]]['结束时间']['data'] =selected_columns.copy()
+        result[scene[j]]['结束时间']['data'] =selected_columns.round(2).copy().to_dict(orient='records')
 
         selected_columns.iloc[:,1:]=np.percentile(data[:,j,:,1::2], 25, axis=0)
-        result[scene[j]]['结束时间']['p25'] =selected_columns.copy()
+        result[scene[j]]['结束时间']['p25'] =selected_columns.round(2).copy().to_dict(orient='records')
         
         selected_columns.iloc[:,1:]=np.percentile(data[:,j,:,1::2], 75, axis=0)
-        result[scene[j]]['结束时间']['p75'] = selected_columns.copy()
+        result[scene[j]]['结束时间']['p75'] = selected_columns.round(2).copy().to_dict(orient='records')
         
         selected_columns.iloc[:,1:]=np.std(np.array(data[:,j,:,1::2]).astype(float), axis=0)
-        result[scene[j]]['结束时间']['std'] = selected_columns.copy()
+        result[scene[j]]['结束时间']['std'] = selected_columns.round(2).copy().to_dict(orient='records')
 
         selected_columns.iloc[:,1:]=np.mean(data[:,j,:,1::2], axis=0)+np.std(np.array(data[:,j,:,1::2]).astype(float), axis=0)
-        result[scene[j]]['结束时间']['std_upper'] = selected_columns.copy()
+        result[scene[j]]['结束时间']['std_upper'] = selected_columns.round(2).copy().to_dict(orient='records')
         
         selected_columns.iloc[:,1:]=np.mean(data[:,j,:,1::2], axis=0)+np.std(np.array(data[:,j,:,1::2]).astype(float), axis=0)
-        result[scene[j]]['结束时间']['std_lower'] = selected_columns.copy()
+        result[scene[j]]['结束时间']['std_lower'] = selected_columns.round(2).copy().to_dict(orient='records')
         
     return result
 
