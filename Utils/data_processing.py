@@ -72,7 +72,7 @@ def wind_direction_to_symbol(x):
 
     return x
 
-def data_processing(data_in, element):
+def data_processing(data_in, element, degree=None):
     '''
     年/月/日数据前处理
     月（季）数据和日数据，都转换为年尺度
@@ -109,6 +109,13 @@ def data_processing(data_in, element):
     if 'Cov' in df_data.columns: # 草地覆盖度
         df_data['Cov'] = df_data['Cov'].apply(lambda x: np.nan if x > 999 else x)
 
+    # 计算积温
+    if degree is not None:
+        assert element == 'TEM_Avg', '计算积温要素错误，不是日平均气温'
+        df_data['TEM_Avg'] = np.where(df_data['TEM_Avg']<degree,np.nan,df_data['TEM_Avg'])
+        df_data.rename(columns={'TEM_Avg': 'Accum_Tem'}, inplace=True)
+        element = 'Accum_Tem'
+
     # 2.时间转换
     resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max', 'huangku']
     resample_min = ['TEM_Min', 'PRS_Min', 'GST_Min', 'RHU_Min', 'fanqing']
@@ -116,19 +123,18 @@ def data_processing(data_in, element):
                     'medium_snow','heavy_snow','severe_snow','Hail_Days','Hail','GaWIN',
                     'GaWIN_Days','SaSt','SaSt_Days','FlSa','FlSa_Days','FlDu','FlDu_Days',
                     'Thund','Thund_Days''high_tem','drought','light_drought','medium_drought',
-                    'heavy_drought','severe_drought']
+                    'heavy_drought','severe_drought','Accum_Tem']
     
     
     resample_mean = ['TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 
                      'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 
-                     'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'Cov']
+                     'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'Cov', 'pmet']
 
     def sample(x):
         '''
         重采样的applyfunc
         '''
         x_info = x[['Station_Id_C', 'Station_Name', 'Lat', 'Lon']].resample('1A').first()
-
         if element in resample_max:
             x_res = x[element].resample('1A').max()
         elif element in resample_min:
