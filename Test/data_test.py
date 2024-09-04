@@ -28,6 +28,8 @@ df1 = df[df['GroPer_Name_Ten'].isin([21])]
 df1 = df1[~df1.index.duplicated()]
 df1['fanqing'] = df1.index.dayofyear
 
+
+# In[]
 # 黄枯期
 df2 = df[df['GroPer_Name_Ten'].isin([91])]
 df2 = df2[~df2.index.duplicated()]

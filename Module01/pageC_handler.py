@@ -88,6 +88,7 @@ def grass_features_stats(data_json):
     shp_path = data_json['shp_path']
 
     # 2.参数处理
+    degree = None
     shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
     last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
 
@@ -99,25 +100,25 @@ def grass_features_stats(data_json):
 
     # 确定表名
     table_dict = dict()
-    table_dict['grassland_green_period'] = 'table'
-    table_dict['grassland_yellow_period'] = 'table'
-    table_dict['grassland_growth_period'] = 'table'
-    table_dict['grassland_coverage'] = 'table'
-    table_dict['grass_height'] = 'table'
-    table_dict['grassland_yield'] = 'table'
-    table_dict['vegetation_index'] = 'table'
-    table_dict['vegetation_pri_productivity'] = 'table'
-    table_dict['vegetation_coverage'] = 'table'
-    table_dict['vegetation_carbon'] = 'table'
-    table_dict['wet_vegetation_carbon'] = 'table'
-    table_dict['desert_level'] = 'table'
-    table_dict['desert_area'] = 'table'
+    table_dict['grassland_green_period'] = 'qh_climate_crop_growth'
+    table_dict['grassland_yellow_period'] = 'qh_climate_crop_growth'
+    table_dict['grassland_growth_period'] = '待定'
+    table_dict['grassland_coverage'] = 'qh_climate_grass_cover'
+    table_dict['grass_height'] = 'qh_climate_grass_height'
+    table_dict['grassland_yield'] = 'qh_climate_grass_yield'
+    table_dict['vegetation_index'] = '待定'
+    table_dict['vegetation_pri_productivity'] = '待定'
+    table_dict['vegetation_coverage'] = '待定'
+    table_dict['vegetation_carbon'] = '待定'
+    table_dict['wet_vegetation_carbon'] = '待定'
+    table_dict['desert_level'] = '待定'
+    table_dict['desert_area'] = '待定'
     table_name = table_dict[element]
 
     # 确定要素
     element_dict = dict()
-    element_dict['grassland_green_period'] = 'ele'
-    element_dict['grassland_yellow_period'] = 'ele'
+    element_dict['grassland_green_period'] = 'Crop_Name,GroPer_Name_Ten'
+    element_dict['grassland_yellow_period'] = 'Crop_Name,GroPer_Name_Ten'
     element_dict['grassland_growth_period'] = 'ele'
     element_dict['grassland_coverage'] = 'ele'
     element_dict['grass_height'] = 'ele'
@@ -137,7 +138,7 @@ def grass_features_stats(data_json):
         conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
         cur = conn.cursor()
         sta_ids = tuple(sta_ids.split(','))
-        elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,Year,Mon,Day,' + element_str
+        elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,' + element_str
 
         if time_freq == 'Y':  # '%Y,%Y'
             query = sql.SQL(f"""
@@ -256,7 +257,6 @@ def grass_features_stats(data_json):
         # 统计年份数据处理为df
         data_df = pd.DataFrame(data)
         data_df.columns = elements.split(',')
-        data_df = data_processing(data_df, element)
         
         # 下载参考时段的数据
         query = sql.SQL(f"""
@@ -273,7 +273,6 @@ def grass_features_stats(data_json):
         data = cur.fetchall()
         refer_df = pd.DataFrame(data)
         refer_df.columns = elements.split(',')
-        refer_df = data_processing(refer_df, element)
 
         # 下载近10年的数据
         start_year = nearly_years.split(',')[0]
@@ -282,23 +281,76 @@ def grass_features_stats(data_json):
         data = cur.fetchall()
         nearly_df = pd.DataFrame(data)
         nearly_df.columns = elements.split(',')
-        nearly_df = data_processing(nearly_df, element)
+
+        # 数据处理
+        if element == 'grassland_green_period':
+            # 一年一个记录，应该不用resample('1A')
+            data_df['Crop_Name'] = data_df['Crop_Name'].map(int)
+            data_df['Datetime'] = pd.to_datetime(data_df['Datetime'])
+            data_df.set_index('Datetime', inplace=True, drop=False)
+            data_df = data_df[data_df['Crop_Name'].isin([10101,10201,10202,10203,10301,10401,10501,10601,10701,19999])]
+            data_df = data_df[data_df['GroPer_Name_Ten'].isin(['21'])] # 21是返青
+            data_df = data_df[~data_df.index.duplicated()]
+            data_df['fanqing'] = data_df.index.dayofyear
+            data_df['fanqing_date'] = data_df.index.year
+            
+            refer_df['Crop_Name'] = refer_df['Crop_Name'].map(int)
+            refer_df['Datetime'] = pd.to_datetime(refer_df['Datetime'])
+            refer_df.set_index('Datetime', inplace=True, drop=False)
+            refer_df = refer_df[refer_df['Crop_Name'].isin([10101,10201,10202,10203,10301,10401,10501,10601,10701,19999])]
+            refer_df = refer_df[refer_df['GroPer_Name_Ten'].isin(['21'])] # 21是返青
+            refer_df = refer_df[~refer_df.index.duplicated()]
+            refer_df['fanqing'] = refer_df.index.dayofyear
+            refer_df['fanqing_date'] = refer_df.index.year
+
+            nearly_df['Crop_Name'] = nearly_df['Crop_Name'].map(int)
+            nearly_df['Datetime'] = pd.to_datetime(nearly_df['Datetime'])
+            nearly_df.set_index('Datetime', inplace=True, drop=False)
+            nearly_df = nearly_df[nearly_df['Crop_Name'].isin([10101,10201,10202,10203,10301,10401,10501,10601,10701,19999])]
+            nearly_df = nearly_df[nearly_df['GroPer_Name_Ten'].isin(['21'])] # 21是返青
+            nearly_df = nearly_df[~nearly_df.index.duplicated()]
+            nearly_df['fanqing'] = nearly_df.index.dayofyear
+            nearly_df['fanqing_date'] = nearly_df.index.year
+            element_str = 'fanqing'
+        
+        elif element == 'grassland_yellow_period':
+            # 一年一个记录，应该不用resample('1A')
+            data_df['Crop_Name'] = data_df['Crop_Name'].map(int)
+            data_df['Datetime'] = pd.to_datetime(data_df['Datetime'])
+            data_df.set_index('Datetime', inplace=True, drop=False)
+            data_df = data_df[data_df['Crop_Name'].isin([10101,10201,10202,10203,10301,10401,10501,10601,10701,19999])]
+            data_df = data_df[data_df['GroPer_Name_Ten'].isin(['91'])] # 21是返青
+            data_df = data_df[~data_df.index.duplicated()]
+            data_df['huangku'] = data_df.index.dayofyear
+            data_df['huangku_date'] = data_df.index.year
+            
+            refer_df['Crop_Name'] = refer_df['Crop_Name'].map(int)
+            refer_df['Datetime'] = pd.to_datetime(refer_df['Datetime'])
+            refer_df.set_index('Datetime', inplace=True, drop=False)
+            refer_df = refer_df[refer_df['Crop_Name'].isin([10101,10201,10202,10203,10301,10401,10501,10601,10701,19999])]
+            refer_df = refer_df[refer_df['GroPer_Name_Ten'].isin(['91'])] # 21是返青
+            refer_df = refer_df[~refer_df.index.duplicated()]
+            refer_df['huangku'] = refer_df.index.dayofyear
+            refer_df['huangku_date'] = refer_df.index.year
+
+            nearly_df['Crop_Name'] = nearly_df['Crop_Name'].map(int)
+            nearly_df['Datetime'] = pd.to_datetime(nearly_df['Datetime'])
+            nearly_df.set_index('Datetime', inplace=True, drop=False)
+            nearly_df = nearly_df[nearly_df['Crop_Name'].isin([10101,10201,10202,10203,10301,10401,10501,10601,10701,19999])]
+            nearly_df = nearly_df[nearly_df['GroPer_Name_Ten'].isin(['91'])] # 21是返青
+            nearly_df = nearly_df[~nearly_df.index.duplicated()]
+            nearly_df['huangku'] = nearly_df.index.dayofyear
+            nearly_df['huangku_date'] = nearly_df.index.year
+            element_str = 'huangku'
+
+        else:
+            data_df = data_processing(data_df, element_str, degree)
+            refer_df = data_processing(refer_df, element_str, degree)
+            nearly_df = data_processing(nearly_df, element_str, degree)
 
         # 关闭数据库
         cur.close()
         conn.close()
-
-
-    # test AGME_CHN_GRASS_COVER
-    path = r'C:/Users/MJY/Desktop/data/TXT_20240801162359.txt'
-    data_df = pd.read_csv(path,encoding='gbk',sep='\t')
-    data_df = data_df[['Station_Id_C', 'Station_Name', 'Lat', 'Lon', 'Datetime','Year', 'Mon', 'Day', 'Cov']]
-    data_df = data_processing(data_df, 'Cov')
-    
-    # refer_df = 
-    # nearly_df = 
-
-
 
     # 开始计算
     # 首先获取站号对应的站名
@@ -312,19 +364,44 @@ def grass_features_stats(data_json):
         '尖扎国家基本气象站', '泽库国家基本气象站', '循化国家基本气象站', '同仁国家基本气象站', '沱沱河国家基准气候站', '曲麻河国家基准气候站', '治多国家基本气象站', '杂多国家基准气候站', '曲麻莱国家基本气象站', '玉树国家基本气象站', '玛多国家基准气候站', '清水河国家基本气象站', '玛沁国家基本气象站', '甘德国家基本气象站', '达日国家基准气候站', '河南国家基本气象站', '久治国家基准气候站', '囊谦国家基准气候站',
         '班玛国家基本气象站']
     station_df['站号'] = station_df['站号'].map(str)
-    new_station = station_df[ station_df['站号'].isin(sta_ids)]
+    new_station = station_df[station_df['站号'].isin(sta_ids)]
+
+    result_dict = dict()
+    result_dict['uuid'] = uuid4
+    result_dict['表格'] = dict()
+    result_dict['分布图'] = dict()
+    result_dict['统计分析'] = dict()
 
     # stats_result 展示结果表格
     # post_data_df 统计年份数据，用于后续计算
     # post_refer_df 参考年份数据，用于后续计算
-    stats_result, post_data_df, post_refer_df, reg_params = table_stats(data_df, refer_df, nearly_df, element, last_year)
+    stats_result, post_data_df, post_refer_df, reg_params = table_stats(data_df, refer_df, nearly_df, element_str, last_year)
+    result_dict['表格'] = stats_result#.to_dict(orient='records')
     print('统计表完成')
 
-    # 分布图
-    nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
-    nc_path_trans = nc_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
-    nc_path_trans = nc_path_trans.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-    print('分布图插值生成nc完成')
+    try:
+        # 分布图
+        nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
+        nc_path_trans = nc_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+        nc_path_trans = nc_path_trans.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+        result_dict['分布图'] = nc_path_trans
+        print('分布图插值生成nc完成')
+
+        # 6. 统计分析-EOF分析
+        ds = xr.open_dataset(nc_path)
+        eof_path = eof(ds, shp_path, data_dir)
+        result_dict['统计分析']['EOF分析'] = eof_path
+        print('eof完成')
+
+        # 7. 统计分析-REOF分析
+        ds = xr.open_dataset(nc_path)
+        reof_path = reof(ds, shp_path, data_dir)
+        result_dict['统计分析']['REOF分析'] = reof_path
+        print('reof完成')
+    except:
+        result_dict['分布图'] = None
+        result_dict['统计分析']['EOF分析'] = None
+        result_dict['统计分析']['REOF分析'] = None
 
     # 1.统计分析-mk检验
     mk_result = time_analysis(post_data_df, data_dir)
@@ -346,39 +423,17 @@ def grass_features_stats(data_json):
     correlation_result = correlation_analysis(post_data_df, data_dir)
     print('相关分析完成')
 
-    # 6. 统计分析-EOF分析
-    ds = xr.open_dataset(nc_path)
-    eof_path = eof(ds, shp_path, data_dir)
-    print('eof完成')
-
-    # 7. 统计分析-REOF分析
-    ds = xr.open_dataset(nc_path)
-    reof_path = reof(ds, shp_path, data_dir)
-    print('reof完成')
-
     # 8.EEMD分析
     eemd_result = eemd(post_data_df, data_dir)
     print('eemd完成')
 
     # 数据保存
-    result_dict = dict()
-    result_dict['uuid'] = uuid4
-
-    result_dict['表格'] = dict()
-    result_dict['表格'] = stats_result.to_dict(orient='records')
-
-    result_dict['分布图'] = dict()
-    result_dict['分布图'] = nc_path_trans
-
-    result_dict['统计分析'] = dict()
     result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
     result_dict['统计分析']['MK检验'] = mk_result
     result_dict['统计分析']['累积距平'] = anomaly_result
     result_dict['统计分析']['滑动平均'] = moving_result
     result_dict['统计分析']['小波分析'] = wave_result
     result_dict['统计分析']['相关分析'] = correlation_result
-    result_dict['统计分析']['EOF分析'] = eof_path
-    result_dict['统计分析']['REOF分析'] = reof_path
     result_dict['统计分析']['EEMD分析'] = eemd_result
     result_dict['站号'] = new_station.to_dict(orient='records')
 
@@ -388,16 +443,16 @@ def grass_features_stats(data_json):
 if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
-    data_json['element'] = 'TEM_Avg'
+    data_json['element'] = 'grassland_yellow_period'
     data_json['refer_years'] = '1991,2020'
     data_json['nearly_years'] = '2014,2023'
-    data_json['time_freq'] = 'Q'
-    data_json['stats_times'] = ['1981,2020', '3,4,5']  # '198105,202009' # '1981,2023'
+    data_json['time_freq'] = 'Y'
+    data_json['stats_times'] = '1981,2023'
     data_json['sta_ids'] = '52754,56151,52855,52862,56065,52645,56046,52955,52968,52963,52825,56067,52713,52943,52877,52633,52866,52737,52745,52957,56018,56033,52657,52765,52972,52868,56016,52874,51886,56021,52876,56029,56125,52856,52836,52842,56004,52974,52863,56043,52908,56045,52818,56034,52853,52707,52602,52869,52833,52875,52859,52942,52851'
     data_json['interp_method'] = 'ukri'
     data_json['ci'] = 95
     data_json['shp_path'] = r'C:\Users\MJY\Desktop\qhbh\文档\03-边界矢量\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
 
-    # result = climate_features_stats(data_json)
+    result = grass_features_stats(data_json)
     t2 = time.time()
     print(t2 - t1)
