@@ -61,6 +61,8 @@ def time_analysis(df, save_file):
     df['区域最大'] = df.iloc[:, :].max(axis=1)
     df['区域最小'] = df.iloc[:, :].min(axis=1)
 
+    df = df.replace({None: np.nan})
+    
     all_result = dict()
     for col in df.columns:
         data_tmp = df[col].to_frame()

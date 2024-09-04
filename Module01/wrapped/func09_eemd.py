@@ -33,6 +33,8 @@ def eemd(df, output_filepath):
     df_new['区域最大'] = df_new.iloc[:, :].max(axis=1)
     df_new['区域最小'] = df_new.iloc[:, :].min(axis=1)
 
+    df_new = df_new.replace({None: np.nan})
+
     columns = df_new.columns.tolist()
     year = df_new.index.tolist()
     year = [int(y) for y in year]

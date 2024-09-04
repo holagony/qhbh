@@ -162,7 +162,7 @@ def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
         data = result.reshape(lon.shape)
 
     #%% 画图看结果自测使用
-
+    '''
     import matplotlib.pyplot as plt
     import cartopy.crs as ccrs
     from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
@@ -193,7 +193,7 @@ def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
     result_picture = os.path.join(r'D:\Project\qh',name+'.png')
     fig.savefig(result_picture, dpi=200, bbox_inches='tight')
     plt.cla()
-
+    '''
 
     return data
 

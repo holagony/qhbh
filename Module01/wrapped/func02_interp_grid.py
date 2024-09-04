@@ -72,7 +72,7 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
     # df_sta_2.columns = df_sta_2.iloc[0]
     # df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
     # df_sta_2 = df_sta_2.drop(df_sta_2.index[0])
-
+    df_sta_2['时间'] = pd.to_datetime(df_sta_2['时间'], format='%Y')
     df_sta_2.index = pd.DatetimeIndex(df_sta_2['时间'])
     df_sta_2.drop(['时间'], axis=1, inplace=True) 
 

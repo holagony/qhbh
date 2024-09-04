@@ -26,7 +26,14 @@ def calc_anomaly_cum(data_df, post_refer_df, save_file):
     post_refer_df['区域平均'] = post_refer_df.iloc[:, :].mean(axis=1).round(1)
     post_refer_df['区域最大'] = post_refer_df.iloc[:, :].max(axis=1)
     post_refer_df['区域最小'] = post_refer_df.iloc[:, :].min(axis=1)
+    
+    
+    new_df = new_df.replace({None: np.nan})
+    post_refer_df = post_refer_df.replace({None: np.nan})
+    
     refer_mean = post_refer_df.mean(axis=0).to_frame().T
+
+
 
     anomaly = []
     for col in new_df.columns:
