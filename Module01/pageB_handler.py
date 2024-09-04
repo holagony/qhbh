@@ -143,6 +143,7 @@ def extreme_climate_features(data_json):
     RD = data_json.get('RD')
     RD_flag = data_json.get('RD_flag')
     Rxxday = data_json.get('Rxxday')
+    degree = data_json.get('degree')
 
 
     # 2.参数处理
@@ -273,15 +274,15 @@ def extreme_climate_features(data_json):
             # 下载统计年份的数据
             years = stats_times
             data_df = get_cmadaas_yearly_data(years, ele, sta_ids)
-            data_df = data_processing(data_df, element)
+            data_df = data_processing(data_df, element,degree)
 
             # 下载参考时段的数据
             refer_df = get_cmadaas_yearly_data(refer_years, ele, sta_ids)
-            refer_df = data_processing(refer_df, element)
+            refer_df = data_processing(refer_df, element,degree)
 
             # 下载近10年的数据
             nearly_df = get_cmadaas_yearly_data(nearly_years, ele, sta_ids)
-            nearly_df = data_processing(nearly_df, element)
+            nearly_df = data_processing(nearly_df, element,degree)
 
         elif time_freq == 'Q':
             # 下载统计年份的数据
@@ -292,17 +293,17 @@ def extreme_climate_features(data_json):
         
             # TODO if element in ['EVP_Penman', 'EVP_taka']:
             data_df = data_df[data_df['Mon'].isin(mon_list)]
-            data_df = data_processing(data_df, element)
+            data_df = data_processing(data_df, element,degree)
 
             # 下载参考时段的数据
             refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
             refer_df = refer_df[refer_df['Mon'].isin(mon_list)]
-            refer_df = data_processing(refer_df, element)
+            refer_df = data_processing(refer_df, element,degree)
 
             # 下载近10年的数据
             nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
             nearly_df = nearly_df[nearly_df['Mon'].isin(mon_list)]
-            nearly_df = data_processing(nearly_df, element)
+            nearly_df = data_processing(nearly_df, element,degree)
 
         elif time_freq == 'M1':
             # 下载统计年份的数据
@@ -311,15 +312,15 @@ def extreme_climate_features(data_json):
             years = start_time[:4] + ',' + end_time[:4]
             mon = start_time[4:] + ',' + end_time[4:]
             data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
-            data_df = data_processing(data_df, element)
+            data_df = data_processing(data_df, element,degree)
 
             # 下载参考时段的数据
             refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
-            refer_df = data_processing(refer_df, element)
+            refer_df = data_processing(refer_df, element,degree)
 
             # 下载近10年的数据
             nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
-            nearly_df = data_processing(nearly_df, element)
+            nearly_df = data_processing(nearly_df, element,degree)
 
         elif time_freq == 'M2':
             # 下载统计年份的数据
@@ -328,17 +329,17 @@ def extreme_climate_features(data_json):
             mon = '01,12'
             data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
             data_df = data_df[data_df['Mon'].isin(mon_list)]  # 按区间提取月份
-            data_df = data_processing(data_df, element)
+            data_df = data_processing(data_df, element,degree)
 
             # 下载参考时段的数据
             refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
             refer_df = refer_df[refer_df['Mon'].isin(mon_list)]
-            refer_df = data_processing(refer_df, element)
+            refer_df = data_processing(refer_df, element,degree)
 
             # 下载近10年的数据
             nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
             nearly_df = nearly_df[nearly_df['Mon'].isin(mon_list)]
-            nearly_df = data_processing(nearly_df, element)
+            nearly_df = data_processing(nearly_df, element,degree)
 
         elif time_freq == 'D1':
             # 下载统计年份的数据
@@ -347,30 +348,30 @@ def extreme_climate_features(data_json):
             years = start_time[:4] + ',' + end_time[:4]
             date = start_time[4:] + ',' + end_time[4:]
             data_df = get_cmadaas_daily_data(years, date, ele, sta_ids)
-            data_df = data_processing(data_df, element)
+            data_df = data_processing(data_df, element,degree)
 
             # 下载参考时段的数据
             refer_df = get_cmadaas_daily_data(refer_years, date, ele, sta_ids)
-            refer_df = data_processing(refer_df, element)
+            refer_df = data_processing(refer_df, element,degree)
 
             # 下载近10年的数据
             nearly_df = get_cmadaas_daily_data(nearly_years, date, ele, sta_ids)
-            nearly_df = data_processing(nearly_df, element)
+            nearly_df = data_processing(nearly_df, element,degree)
 
         elif time_freq == 'D2':
             # 下载统计年份的数据
             years = stats_times[0]
             date = stats_times[1]
             data_df = get_cmadaas_daily_period_data(years, date, ele, sta_ids)
-            data_df = data_processing(data_df, element)
+            data_df = data_processing(data_df, element,degree)
 
             # 下载参考时段的数据
             refer_df = get_cmadaas_daily_period_data(refer_years, date, ele, sta_ids)
-            refer_df = data_processing(refer_df, element)
+            refer_df = data_processing(refer_df, element,degree)
 
             # 下载近10年的数据
             nearly_df = get_cmadaas_daily_period_data(nearly_years, date, ele, sta_ids)
-            nearly_df = data_processing(nearly_df, element)
+            nearly_df = data_processing(nearly_df, element,degree)
 
     # 走数据库
     else:
@@ -410,7 +411,7 @@ def extreme_climate_features(data_json):
             data_df.columns = elements.split(',')
             
             if element in other_table:
-                data_df = data_processing(data_df, ele_dict[element])
+                data_df = data_processing(data_df, ele_dict[element],degree)
             else:
                 data_df.set_index('Datetime', inplace=True)
                 data_df.index = pd.DatetimeIndex(data_df.index)
@@ -428,7 +429,7 @@ def extreme_climate_features(data_json):
             refer_df.columns = elements.split(',')
             
             if element in other_table:
-                refer_df = data_processing(refer_df, ele_dict[element])
+                refer_df = data_processing(refer_df, ele_dict[element],degree)
             else:
                 refer_df.set_index('Datetime', inplace=True)
                 refer_df.index = pd.DatetimeIndex(refer_df.index)
@@ -445,7 +446,7 @@ def extreme_climate_features(data_json):
             nearly_df.columns = elements.split(',')
                                   
             if element in other_table:
-                nearly_df = data_processing(nearly_df, ele_dict[element])
+                nearly_df = data_processing(nearly_df, ele_dict[element],degree)
             else:
                 nearly_df.set_index('Datetime', inplace=True)
                 nearly_df.index = pd.DatetimeIndex(nearly_df.index)
@@ -491,7 +492,7 @@ def extreme_climate_features(data_json):
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
             if element in other_table:
-                data_df = data_processing(data_df, ele_dict[element])
+                data_df = data_processing(data_df, ele_dict[element],degree)
             else:
                 data_df.set_index('Datetime', inplace=True)
                 data_df.index = pd.DatetimeIndex(data_df.index)
@@ -526,7 +527,7 @@ def extreme_climate_features(data_json):
             refer_df.columns = elements.split(',')
             
             if element in other_table:
-                refer_df = data_processing(refer_df, ele_dict[element])
+                refer_df = data_processing(refer_df, ele_dict[element],degree)
             else:
                 refer_df.set_index('Datetime', inplace=True)
                 refer_df.index = pd.DatetimeIndex(refer_df.index)
@@ -544,7 +545,7 @@ def extreme_climate_features(data_json):
             nearly_df.columns = elements.split(',')
                       
             if element in other_table:
-                nearly_df = data_processing(nearly_df, ele_dict[element])
+                nearly_df = data_processing(nearly_df, ele_dict[element],degree)
             else:
                 nearly_df.set_index('Datetime', inplace=True)
                 nearly_df.index = pd.DatetimeIndex(nearly_df.index)
@@ -586,7 +587,7 @@ def extreme_climate_features(data_json):
             data_df.columns = elements.split(',')
             
             if element in other_table:
-                data_df = data_processing(data_df, ele_dict[element])
+                data_df = data_processing(data_df, ele_dict[element],degree)
             else:
                 data_df.set_index('Datetime', inplace=True)
                 data_df.index = pd.DatetimeIndex(data_df.index)
@@ -621,7 +622,7 @@ def extreme_climate_features(data_json):
             refer_df.columns = elements.split(',')
             
             if element in other_table:
-                refer_df = data_processing(refer_df, ele_dict[element])
+                refer_df = data_processing(refer_df, ele_dict[element],degree)
             else:
                 refer_df.set_index('Datetime', inplace=True)
                 refer_df.index = pd.DatetimeIndex(refer_df.index)
@@ -639,7 +640,7 @@ def extreme_climate_features(data_json):
             nearly_df.columns = elements.split(',')
                       
             if element in other_table:
-                nearly_df = data_processing(nearly_df, ele_dict[element])
+                nearly_df = data_processing(nearly_df, ele_dict[element],degree)
             else:
                 nearly_df.set_index('Datetime', inplace=True)
                 nearly_df.index = pd.DatetimeIndex(nearly_df.index)
@@ -680,7 +681,7 @@ def extreme_climate_features(data_json):
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
             if element not in other_table:
-                data_df = data_processing(data_df, ele_dict[element])
+                data_df = data_processing(data_df, ele_dict[element],degree)
             else:
                 data_df.set_index('Datetime', inplace=True)
                 data_df.index = pd.DatetimeIndex(data_df.index)
@@ -714,7 +715,7 @@ def extreme_climate_features(data_json):
             refer_df.columns = elements.split(',')
             
             if element in other_table:
-                refer_df = data_processing(refer_df, ele_dict[element])
+                refer_df = data_processing(refer_df, ele_dict[element],degree)
             else:
                 refer_df.set_index('Datetime', inplace=True)
                 refer_df.index = pd.DatetimeIndex(refer_df.index)
@@ -731,7 +732,7 @@ def extreme_climate_features(data_json):
             nearly_df.columns = elements.split(',')
                       
             if element in other_table:
-                nearly_df = data_processing(nearly_df, ele_dict[element])
+                nearly_df = data_processing(nearly_df, ele_dict[element],degree)
             else:
                 nearly_df.set_index('Datetime', inplace=True)
                 nearly_df.index = pd.DatetimeIndex(nearly_df.index)
@@ -776,7 +777,7 @@ def extreme_climate_features(data_json):
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
             if element in other_table:
-                data_df = data_processing(data_df, ele_dict[element])
+                data_df = data_processing(data_df, ele_dict[element],degree)
             else:
                 data_df.set_index('Datetime', inplace=True)
                 data_df.index = pd.DatetimeIndex(data_df.index)
@@ -811,7 +812,7 @@ def extreme_climate_features(data_json):
             refer_df.columns = elements.split(',')
             
             if element in other_table:
-                refer_df = data_processing(refer_df, ele_dict[element])
+                refer_df = data_processing(refer_df, ele_dict[element],degree)
             else:
                 refer_df.set_index('Datetime', inplace=True)
                 refer_df.index = pd.DatetimeIndex(refer_df.index)
@@ -828,7 +829,7 @@ def extreme_climate_features(data_json):
             nearly_df.columns = elements.split(',')
                       
             if element in other_table:
-                nearly_df = data_processing(nearly_df, ele_dict[element])
+                nearly_df = data_processing(nearly_df, ele_dict[element],degree)
             else:
                 nearly_df.set_index('Datetime', inplace=True)
                 nearly_df.index = pd.DatetimeIndex(nearly_df.index)
@@ -877,7 +878,7 @@ def extreme_climate_features(data_json):
             data_df.columns = elements.split(',')
             
             if element in other_table:
-                data_df = data_processing(data_df, ele_dict[element])
+                data_df = data_processing(data_df, ele_dict[element],degree)
             else:
                 data_df.set_index('Datetime', inplace=True)
                 data_df.index = pd.DatetimeIndex(data_df.index)
@@ -912,7 +913,7 @@ def extreme_climate_features(data_json):
             refer_df.columns = elements.split(',')
             
             if element in other_table:
-                refer_df = data_processing(refer_df, ele_dict[element])
+                refer_df = data_processing(refer_df, ele_dict[element],degree)
             else:
                 refer_df.set_index('Datetime', inplace=True)
                 refer_df.index = pd.DatetimeIndex(refer_df.index)
@@ -930,7 +931,7 @@ def extreme_climate_features(data_json):
             nearly_df.columns = elements.split(',')
                       
             if element in other_table:
-                nearly_df = data_processing(nearly_df, ele_dict[element])
+                nearly_df = data_processing(nearly_df, ele_dict[element],degree)
             else:
                 nearly_df.set_index('Datetime', inplace=True)
                 nearly_df.index = pd.DatetimeIndex(nearly_df.index)
