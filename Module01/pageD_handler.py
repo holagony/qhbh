@@ -195,9 +195,9 @@ def climate_features_stats(data_json):
                         SELECT {elements}
                         FROM public.{table_name}
                         WHERE
-                            ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
+                            ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) >= %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
                             OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
-                            OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s))
+                            OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) <= %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s))
                             AND station_id_c IN %s
                         """)
 
@@ -402,7 +402,7 @@ def climate_features_stats(data_json):
 if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
-    data_json['element'] = 'SNOW_DAYS'
+    data_json['element'] = 'FRS_DEPTH'
     data_json['refer_years'] = '2021,2022'
     data_json['nearly_years'] = '2021,2022'
     data_json['time_freq'] = 'Y'
