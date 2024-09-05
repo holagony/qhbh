@@ -1,5 +1,6 @@
 import os
 import uuid
+import numpy as np
 import pandas as pd
 import xarray as xr
 import psycopg2
@@ -143,6 +144,11 @@ def climate_features_stats(data_json):
     if element == 'Accum_Tem': # 积温
         table_name = 'qh_qhbh_cmadaas_day'
         element_str = 'TEM_Avg'
+    
+    if element == 'EVP_Taka':
+        table_name = 'qh_qhbh_cmadaas_month'
+        element_str = 'TEM_Avg,PRE_Time_2020'
+
 
     # 从数据库截数据
     conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
@@ -267,7 +273,6 @@ def climate_features_stats(data_json):
     # 统计年份数据处理为df
     data_df = pd.DataFrame(data)
     data_df.columns = elements.split(',')
-    data_df = data_processing(data_df, element_str, degree)
     
     # 下载参考时段的数据
     query = sql.SQL(f"""
@@ -284,7 +289,6 @@ def climate_features_stats(data_json):
     data = cur.fetchall()
     refer_df = pd.DataFrame(data)
     refer_df.columns = elements.split(',')
-    refer_df = data_processing(refer_df, element_str, degree)
 
     # 下载近10年的数据
     start_year = nearly_years.split(',')[0]
@@ -293,6 +297,16 @@ def climate_features_stats(data_json):
     data = cur.fetchall()
     nearly_df = pd.DataFrame(data)
     nearly_df.columns = elements.split(',')
+
+    # 数据处理
+    if element == 'EVP_Taka':
+        data_df['EVP_Taka'] = 3100*data_df['TEM_Avg']/(3100+1.8*(data_df['PRE_Time_2020']**2)*np.exp((-34.4*data_df['TEM_Avg'])/(235+data_df['TEM_Avg'])))
+        refer_df['EVP_Taka'] = 3100*refer_df['TEM_Avg']/(3100+1.8*(refer_df['PRE_Time_2020']**2)*np.exp((-34.4*refer_df['TEM_Avg'])/(235+refer_df['TEM_Avg'])))
+        nearly_df['EVP_Taka'] = 3100*nearly_df['TEM_Avg']/(3100+1.8*(nearly_df['PRE_Time_2020']**2)*np.exp((-34.4*nearly_df['TEM_Avg'])/(235+nearly_df['TEM_Avg'])))
+        element_str = 'EVP_Taka'
+
+    data_df = data_processing(data_df, element_str, degree)
+    refer_df = data_processing(refer_df, element_str, degree)
     nearly_df = data_processing(nearly_df, element_str, degree)
 
     # 关闭数据库
@@ -400,7 +414,7 @@ def climate_features_stats(data_json):
 if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
-    data_json['element'] = 'Accum_Tem'
+    data_json['element'] = 'EVP_Taka'
     data_json['refer_years'] = '1991,2020'
     data_json['nearly_years'] = '2014,2023'
     data_json['time_freq'] = 'Q'
@@ -409,7 +423,7 @@ if __name__ == '__main__':
     data_json['interp_method'] = 'ukri'
     data_json['ci'] = 95
     data_json['shp_path'] = r'C:\Users\MJY\Desktop\qhbh\文档\03-边界矢量\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
-    data_json['degree'] = 10
+    data_json['degree'] = None
     
     result = climate_features_stats(data_json)
     t2 = time.time()
