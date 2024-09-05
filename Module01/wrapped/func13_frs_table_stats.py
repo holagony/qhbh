@@ -25,14 +25,17 @@ def frs_processing(element,df):
         df = df.pivot_table(index=df.index, columns=['Station_Id_C'], values=ele)  # 参考时段df
         df.replace(999999, np.nan, inplace=True)
     
-        df = df.resample('Y').max()
+        # df = df.resample('Y').max()
+        df = df.resample(rule='AS-SEP').max()
+
         df.index = df.index.strftime('%Y')
         result_df=df.copy()
 
         return result_df
+    
     if element in ['FRS_START','FRS_END','FRS_TIME']:
 
-        df["时间分组"] = df.index.year - (df.index.month < 6)
+        df["时间分组"] = df.index.year - (df.index.month < 9)
         grouped = df.groupby(["Station_Id_C", "时间分组"])
         start_times = grouped.apply(lambda x: x[x["frs_state"] == 2].index.min())
         end_times = grouped.apply(lambda x: x[x["frs_state"] == 2].index.max())
