@@ -68,7 +68,10 @@ def time_analysis(df, save_file):
         data_tmp = df[col].to_frame()
         data_tmp.insert(loc=0, column='时间', value=data_tmp.index)
         data_tmp.reset_index(drop=True, inplace=True)
-        result_out, _ = mann_kendall_mutation_test(data_tmp)  # 调用计算
+        try:
+            result_out, _ = mann_kendall_mutation_test(data_tmp)  # 调用计算
+        except:
+            result_out = None
 
         # # 画图
         # plt.figure(figsize=(8, 6))

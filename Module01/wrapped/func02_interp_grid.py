@@ -60,7 +60,7 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
     start_lat = df_shp['Latitude'].min() - 1
     end_lon = df_shp['Longitude'].max() + 1
     end_lat = df_shp['Latitude'].max() + 1
-    resolution = 1
+    resolution = 0.25
 
     gridx = np.arange(start_lon, end_lon + resolution, resolution)
     gridy = np.arange(start_lat, end_lat + resolution, resolution)
@@ -84,27 +84,30 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
 
     year_u = []
     for i in np.arange(len(year)):
-        value_sta = df_sta_3.iloc[i, :].values
+        try:
+            value_sta = df_sta_3.iloc[i, :].values
 
-        # 数据清洗
-        data_uclean = pd.DataFrame({'lon': lon_sta, 'lat': lat_sta, 'value': value_sta})
+            # 数据清洗
+            data_uclean = pd.DataFrame({'lon': lon_sta, 'lat': lat_sta, 'value': value_sta})
 
-        # 将inf值替换为NaN
-        data_uclean.replace([np.inf, -np.inf], np.nan, inplace=True)
+            # 将inf值替换为NaN
+            data_uclean.replace([np.inf, -np.inf], np.nan, inplace=True)
 
-        # 移除包含NaN值的行
-        data_clean = data_uclean.dropna()
+            # 移除包含NaN值的行
+            data_clean = data_uclean.dropna()
 
-        # 从清洗后的DataFrame中提取经度、纬度和值
-        lon_clean = data_clean['lon'].values
-        lat_clean = data_clean['lat'].values
-        value_clean = data_clean['value'].values
+            # 从清洗后的DataFrame中提取经度、纬度和值
+            lon_clean = data_clean['lon'].values
+            lat_clean = data_clean['lat'].values
+            value_clean = data_clean['value'].values
 
-        if len(value_clean) == 0:
-            continue
+            if len(value_clean) == 0:
+                continue
 
-        year_u.append(year[i])
-        data[i, :, :] = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, str(year[i]))
+            year_u.append(year[i])
+            data[i, :, :] = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, str(year[i]))
+        except:
+            data[i, :, :] = np.nan
 
     year_u = np.array(year_u)
     nc_file = nc.Dataset(output_filepath_name, 'w', format='NETCDF4', encoding='gbk')
@@ -158,7 +161,6 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
 
         if len(value_clean) == 0:
             i = i + 1
-
             continue
 
         data2 = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, ele)

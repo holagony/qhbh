@@ -22,6 +22,10 @@ def calc_moving_avg(data_df, window, save_file):
     new_df['区域平均'] = new_df.iloc[:, :].mean(axis=1).round(1)
     new_df['区域最大'] = new_df.iloc[:, :].max(axis=1)
     new_df['区域最小'] = new_df.iloc[:, :].min(axis=1)
+
+
+    if len(new_df) <= window:
+        window = 1
     moving_result = new_df.apply(lambda x: x.rolling(window).mean().round(2))
     
     # # 画图
