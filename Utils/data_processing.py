@@ -81,8 +81,13 @@ def data_processing(data_in, element, degree=None):
     if data_in is None or data_in.empty:
         return data_in
     df_data = data_in.copy()
+    
+    try:
+        df_data['Datetime'] = pd.to_datetime(df_data['Datetime'])
+    except:
+        df_data['Datetime'] = pd.to_datetime(df_data['Datetime'], format='%Y%m%d%H')
+        
     df_data.set_index('Datetime', inplace=True)
-    df_data.index = pd.DatetimeIndex(df_data.index)
     df_data['Station_Id_C'] = df_data['Station_Id_C'].astype(str)
 
     if 'Unnamed: 0' in df_data.columns:
@@ -108,6 +113,15 @@ def data_processing(data_in, element, degree=None):
     
     if 'Cov' in df_data.columns: # 草地覆盖度
         df_data['Cov'] = df_data['Cov'].apply(lambda x: np.nan if x > 999 else x)
+    
+    if 'dwei' in df_data.columns:
+        df_data['dwei'] = df_data['dwei'].apply(lambda x: np.nan if x > 999 else x)
+
+    if 'fwei' in df_data.columns:
+        df_data['fwei'] = df_data['fwei'].apply(lambda x: np.nan if x > 999 else x)
+    
+    if 'V14311' in df_data.columns:
+        df_data['V14311'] = df_data['V14311'].apply(lambda x: np.nan if x > 999 else x)
 
     # 计算积温
     if degree is not None:
@@ -117,17 +131,18 @@ def data_processing(data_in, element, degree=None):
         element = 'Accum_Tem'
 
     # 2.时间转换
-    resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max', 'huangku']
-    resample_min = ['TEM_Min', 'PRS_Min', 'GST_Min', 'RHU_Min', 'fanqing']
+    resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max', 'Crop_Heigh']
+    resample_min = ['TEM_Min', 'PRS_Min', 'GST_Min', 'RHU_Min']
     resample_sum = ['PRE_Time_2020', 'PRE_Days', 'EVP_Big', 'EVP', 'EVP_Taka', 'PMET','sa','rainstorm','light_snow','snow',
                     'medium_snow','heavy_snow','severe_snow','Hail_Days','Hail','GaWIN',
                     'GaWIN_Days','SaSt','SaSt_Days','FlSa','FlSa_Days','FlDu','FlDu_Days',
                     'Thund','Thund_Days''high_tem','drought','light_drought','medium_drought',
-                    'heavy_drought','severe_drought','Accum_Tem']
+                    'heavy_drought','severe_drought','Accum_Tem','V14311']
     
     resample_mean = ['TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 
                      'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 
-                     'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'Cov', 'pmet','EVP_Taka']
+                     'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'Cov', 'pmet','EVP_Taka',
+                     'huangku','fanqing','dwei','fwei']
 
     def sample(x):
         '''
