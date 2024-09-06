@@ -28,7 +28,7 @@ def pagea_stats():
 @module01.route('/v1/extreme_features', methods=['POST'])
 def pagea_stats_b():
     '''
-    查询统计-气候要素接口
+    查询统计-极端指数接口
     '''
     json_str = request.get_data(as_text=True)  # 获取JSON字符串
     data_json = json.loads(json_str)

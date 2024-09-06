@@ -90,6 +90,11 @@ def data_processing(data_in, element, degree=None):
     df_data.set_index('Datetime', inplace=True)
     df_data['Station_Id_C'] = df_data['Station_Id_C'].astype(str)
 
+    df_data['Lon'] = df_data['Lon'].astype(float)
+    df_data['Lat'] = df_data['Lat'].astype(float)
+    df_data[element] = df_data[element].astype(float)
+
+
     if 'Unnamed: 0' in df_data.columns:
         df_data.drop(['Unnamed: 0'], axis=1, inplace=True)
 
@@ -131,15 +136,15 @@ def data_processing(data_in, element, degree=None):
         element = 'Accum_Tem'
 
     # 2.时间转换
-    resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max', 'Crop_Heigh']
-    resample_min = ['TEM_Min', 'PRS_Min', 'GST_Min', 'RHU_Min']
+    resample_max = [ 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max', 'Crop_Heigh']
+    resample_min = [ 'PRS_Min', 'GST_Min', 'RHU_Min']
     resample_sum = ['PRE_Time_2020', 'PRE_Days', 'EVP_Big', 'EVP', 'EVP_Taka', 'PMET','sa','rainstorm','light_snow','snow',
                     'medium_snow','heavy_snow','severe_snow','Hail_Days','Hail','GaWIN',
                     'GaWIN_Days','SaSt','SaSt_Days','FlSa','FlSa_Days','FlDu','FlDu_Days',
                     'Thund','Thund_Days''high_tem','drought','light_drought','medium_drought',
                     'heavy_drought','severe_drought','Accum_Tem','V14311']
     
-    resample_mean = ['TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 
+    resample_mean = ['q','TEM_Max','TEM_Min','TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 
                      'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 
                      'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'Cov', 'pmet','EVP_Taka',
                      'huangku','fanqing','dwei','fwei']
@@ -148,6 +153,7 @@ def data_processing(data_in, element, degree=None):
         '''
         重采样的applyfunc
         '''
+
         x_info = x[['Station_Id_C', 'Station_Name', 'Lat', 'Lon']].resample('1A').first()
         if element in resample_max:
             x_res = x[element].resample('1A').max()
