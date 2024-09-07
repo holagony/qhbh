@@ -28,41 +28,25 @@ def grass_features_stats(data_json):
     '''
     获取天擎数据，参数说明
     :param element：对应原型，传入的要素名称
-        草地返青期 grassland_green_period
-        草地枯黄期 grassland_yellow_period
-        草地生育期 grassland_growth_period
-        草地覆盖度 grassland_coverage
-        草高 grass_height
-        草地产量 grassland_yield
-        植被生态指数 vegetation_index
-        植被净初级生产力 vegetation_pri_productivity
-        植被覆盖度 vegetation_coverage
-        植被固定CO2 vegetation_carbon
-        湿地植被碳储量 wet_vegetation_carbon
-        荒漠化等级 desert_level
-        荒漠化面积 desert_area
-
-    :param refer_years: 对应原型的参考时段，只和气候值统计有关，传参：'%Y,%Y'
-
-    :param nearly_years: 传入近10年的年份，以今年为例，传：'1994,2023'
+        社会经济
+        人口
+        能源生产总量
+        能源消费总量
+        5度采暖度日总量
+        18度采暖度日总量
+        旅客运输量
+        货物运输量
+        公路里程
+        GDP
+        人口
 
     :param time_freq: 对应原型选择数据的时间尺度
         传参：
         年 - 'Y'
-        季 - 'Q'
-        月(连续) - 'M1'
-        月(区间) - 'M2' 
-        日(连续) - 'D1'
-        日(区间) - 'D2'
 
     :param stats_times: 对应原型的统计时段
         (1)当time_freq选择年Y。下载连续的年数据，传参：'%Y,%Y'
-        (2)当time_freq选择季Q。下载连续的月数据，处理成季数据（多下两个月数据），提取历年相应的季节数据，传：['%Y,%Y','3,4,5']，其中'3,4,5'为季度对应的月份 
-        (3)当time_freq选择月(连续)M1。下载连续的月数据，传参：'%Y%m,%Y%m'
-        (4)当time_freq选择月(区间)M2。下载连续的月数据，随后提取历年相应的月数据，传参：['%Y,%Y','11,12,1,2'] 前者年份，'11,12,1,2'为连续月份区间
-        (5)当time_freq选择日(连续)D1。下载连续的日数据，传参：'%Y%m%d,%Y%m%d'
-        (6)当time_freq选择日(区间)D2。直接调天擎接口，下载历年区间时间段内的日数据，传：['%Y,%Y','%m%d,%m%d'] 前者年份，后者区间
-    
+
     :param sta_ids: 传入的站点，多站，传：'52866,52713,52714'
 
     :param interp_method: 对应原型的插值方法
@@ -216,9 +200,9 @@ def grass_features_stats(data_json):
                             SELECT {elements}
                             FROM public.{table_name}
                             WHERE
-                                ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) >= %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
+                                ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
                                 OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) <= %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s))
+                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s))
                                 AND station_id_c IN %s
                             """)
 
