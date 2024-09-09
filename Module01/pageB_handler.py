@@ -26,6 +26,7 @@ from Module01.wrapped.func07_correlation_analysis import correlation_analysis
 from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
 
+# 极端指数
 
 def extreme_climate_features(data_json):
     '''

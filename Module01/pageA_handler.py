@@ -24,6 +24,7 @@ from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
 import time
 
+# 气候要素
 
 def climate_features_stats(data_json):
     '''

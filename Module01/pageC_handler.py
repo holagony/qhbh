@@ -23,6 +23,7 @@ from Module01.wrapped.func07_correlation_analysis import correlation_analysis
 from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
 
+# 草地植被
 
 def grass_features_stats(data_json):
     '''

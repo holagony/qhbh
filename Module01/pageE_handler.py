@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Sep  5 17:54:49 2024
+Created on Wed Sep  4 10:12:18 2024
 
 @author: EDY
+
+
 """
 
 import os
 import uuid
-import numpy as np
 import pandas as pd
 import xarray as xr
 import psycopg2
@@ -20,7 +21,6 @@ from Utils.data_loader_with_threads import get_cmadaas_monthly_data
 from Utils.data_loader_with_threads import get_cmadaas_daily_data
 from Utils.data_loader_with_threads import get_cmadaas_daily_period_data
 from Utils.data_processing import data_processing
-from Module01.wrapped.func01_table_stats import table_stats
 from Module01.wrapped.func02_interp_grid import contour_picture
 from Module01.wrapped.func03_mk_tests import time_analysis
 from Module01.wrapped.func04_cumsum_anomaly import calc_anomaly_cum
@@ -30,16 +30,25 @@ from Module01.wrapped.func07_correlation_analysis import correlation_analysis
 from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
 import time
+from Module01.wrapped.func13_frs_table_stats import frs_table_stats
+from Module01.wrapped.func14_ice_table_stats import snow_table_stats
 
+# 冰冻圈
 
 def climate_features_stats(data_json):
     '''
     获取天擎数据，参数说明
     :param element：对应原型，传入的要素名称
-        流量	Q 
-        水位	Z
-        降水资源量 PRE
-
+    
+       查询统计 - 冰冻圈 - 冻土
+       最大冻结深度 FRS_DEPTH
+       开始冻结日期 FRS_START
+       完全融化日期 FRS_END
+       冻结期 FRS_TIME
+       
+       查询统计 - 冰冻圈 - 积雪
+       最大积雪深度：SNOW_DEPTH
+       积雪日数： SNOW_DAYS
 
     :param refer_years: 对应原型的参考时段，只和气候值统计有关，传参：'%Y,%Y'
 
@@ -85,7 +94,6 @@ def climate_features_stats(data_json):
     interp_method = data_json['interp_method']
     ci = data_json['ci']
     shp_path = data_json.get('shp_path')
-    degree = data_json.get('degree')
 
     # 2.参数处理
     if shp_path is not None:
@@ -98,24 +106,20 @@ def climate_features_stats(data_json):
         os.makedirs(data_dir)
         os.chmod(data_dir, 0o007 | 0o070 | 0o700)
     
-    # 确定表名
-    if element=='Q':
-        table_name = 'qh_climate_other_river_day'
-        elements = 'Datetime,Station_Id_C,Station_Name,Lon,Lat,q'
 
-    elif element=='PRE':
-        table_name = 'qh_qhbh_cmadaas_day'
-        elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,PRE_Time_2020'
+    if element in ['FRS_DEPTH','FRS_START','FRS_END','FRS_TIME']:
+        element_str = 'frs_1st_top,frs_1st_bot,frs_2nd_top,frs_2nd_bot,frs_state,frs_depth'
+        
+    elif element in ['SNOW_DEPTH','SNOW_DAYS']:
+        element_str = 'snow_depth'
 
-    # 要素表
-    ele_dict=dict()
-    ele_dict['Q']='q'
-    ele_dict['PRE']='PRE_Time_2020'
 
+    table_name='qh_climate_cmadaas_day'
     # 从数据库截数据
     conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
     cur = conn.cursor()
     sta_ids = tuple(sta_ids.split(','))
+    elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,' + element_str
 
     if time_freq == 'Y':  # '%Y,%Y'
         query = sql.SQL(f"""
@@ -230,11 +234,19 @@ def climate_features_stats(data_json):
         end_date = dates.split(',')[1][2:]
         cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_mon, end_date, sta_ids))
         data = cur.fetchall()
-
+        
+        
     # 统计年份数据处理为df
     data_df = pd.DataFrame(data)
     data_df.columns = elements.split(',')
     
+    data_df.set_index('Datetime', inplace=True)
+    data_df.index = pd.DatetimeIndex(data_df.index)
+    data_df['Station_Id_C'] = data_df['Station_Id_C'].astype(str)
+
+    if 'Unnamed: 0' in data_df.columns:
+        data_df.drop(['Unnamed: 0'], axis=1, inplace=True)   
+        
     # 下载参考时段的数据
     query = sql.SQL(f"""
                     SELECT {elements}
@@ -250,6 +262,13 @@ def climate_features_stats(data_json):
     data = cur.fetchall()
     refer_df = pd.DataFrame(data)
     refer_df.columns = elements.split(',')
+    
+    refer_df.set_index('Datetime', inplace=True)
+    refer_df.index = pd.DatetimeIndex(refer_df.index)
+    refer_df['Station_Id_C'] = refer_df['Station_Id_C'].astype(str)
+
+    if 'Unnamed: 0' in refer_df.columns:
+        refer_df.drop(['Unnamed: 0'], axis=1, inplace=True) 
         
     # 下载近10年的数据
     start_year = nearly_years.split(',')[0]
@@ -258,55 +277,70 @@ def climate_features_stats(data_json):
     data = cur.fetchall()
     nearly_df = pd.DataFrame(data)
     nearly_df.columns = elements.split(',')
-        
-    data_df = data_processing(data_df, ele_dict[element], degree)
-    refer_df = data_processing(refer_df, ele_dict[element], degree)
-    nearly_df = data_processing(nearly_df, ele_dict[element], degree)
+    
+    nearly_df.set_index('Datetime', inplace=True)
+    nearly_df.index = pd.DatetimeIndex(nearly_df.index)
+    nearly_df['Station_Id_C'] = nearly_df['Station_Id_C'].astype(str)
 
+    if 'Unnamed: 0' in nearly_df.columns:
+        nearly_df.drop(['Unnamed: 0'], axis=1, inplace=True) 
+        
     # 关闭数据库
     cur.close()
     conn.close()
 
+    ###################################################
     # 开始计算
+    result_dict = dict()
+    result_dict['uuid'] = uuid4
+
     # 首先获取站号对应的站名
-    if element=='PRE':
-        station_df = pd.DataFrame()
-        station_df['站号'] = [
-            51886, 51991, 52602, 52633, 52645, 52657, 52707, 52713, 52737, 52745, 52754, 52765, 52818, 52825, 52833, 52836, 52842, 52851, 52853, 52855, 52856, 52859, 52862, 52863, 52866, 52868, 52869, 52874, 52875, 52876, 52877, 52908, 52942, 52943,
-            52955, 52957, 52963, 52968, 52972, 52974, 56004, 56015, 56016, 56018, 56021, 56029, 56033, 56034, 56043, 56045, 56046, 56065, 56067, 56125, 56151]
-        station_df['站名'] = [
-            '茫崖国家基准气候站', '那陵格勒国家基准气候站', '冷湖国家基准气候站', '托勒国家基本气象站', '野牛沟国家基准气候站', '祁连国家基本气象站', '小灶火国家基本气象站', '大柴旦国家基准气候站', '德令哈国家基本气象站', '天峻国家基本气象站', '刚察国家基准气候站', '门源国家基本气象站', '格尔木国家基准气候站', '诺木洪国家基准气候站', '乌兰国家基本气象站', '都兰国家基本气象站', '茶卡国家基准气候站', '江西沟国家基本气象站',
-            '海晏国家基本气象站', '湟源国家基本气象站', '共和国家基本气象站', '瓦里关国家基本气象站', '大通国家基本气象站', '互助国家基本气象站', '西宁国家基本气象站', '贵德国家基本气象站', '湟中国家基本气象站', '乐都国家基本气象站', '平安国家基本气象站', '民和国家基准气候站', '化隆国家基本气象站', '五道梁国家基本气象站', '河卡国家基本气象站', '兴海国家基准气候站', '贵南国家基本气象站', '同德国家基本气象站',
-            '尖扎国家基本气象站', '泽库国家基本气象站', '循化国家基本气象站', '同仁国家基本气象站', '沱沱河国家基准气候站', '曲麻河国家基准气候站', '治多国家基本气象站', '杂多国家基准气候站', '曲麻莱国家基本气象站', '玉树国家基本气象站', '玛多国家基准气候站', '清水河国家基本气象站', '玛沁国家基本气象站', '甘德国家基本气象站', '达日国家基准气候站', '河南国家基本气象站', '久治国家基准气候站', '囊谦国家基准气候站',
-            '班玛国家基本气象站']
-        station_df['站号'] = station_df['站号'].map(str)
-        new_station = station_df[ station_df['站号'].isin(sta_ids)]
-
-    elif element=='Q':
-        conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
-        cur = conn.cursor()
-        query = sql.SQL("""
-                            SELECT stcd, stnm
-                            FROM public.qh_climate_other_river_dict
-                        """)
-        cur.execute(query)
-        data = cur.fetchall()
-        station_df = pd.DataFrame(data)
-        station_df.columns=['站号','站名']
-        cur.close()
-        conn.close()
-        new_station = station_df[ station_df['站号'].isin(sta_ids)]
-
+    station_df = pd.DataFrame()
+    station_df['站号'] = [
+        51886, 51991, 52602, 52633, 52645, 52657, 52707, 52713, 52737, 52745, 52754, 52765, 52818, 52825, 52833, 52836, 52842, 52851, 52853, 52855, 52856, 
+        52859, 52862, 52863, 52866, 52868, 52869, 52874, 52875, 52876, 52877, 52908, 52942, 52943, 52955, 52957, 52963, 52968, 52972, 52974, 56004, 56015, 
+        56016, 56018, 56021, 56029, 56033, 56034, 56043, 56045, 56046, 56065, 56067, 56125, 56151]
+    station_df['站名'] = [
+        '茫崖', '那陵格勒', '冷湖', '托勒', '野牛沟', '祁连', '小灶火', '大柴旦', '德令哈', '天峻', '刚察', '门源', '格尔木', '诺木洪', '乌兰', '都兰', '茶卡', 
+        '江西沟', '海晏', '湟源', '共和', '瓦里关', '大通', '互助', '西宁', '贵德', '湟中', '乐都', '平安', '民和', '化隆', '五道梁', '河卡', '兴海', '贵南', '同德',
+        '尖扎', '泽库', '循化', '同仁', '沱沱河', '曲麻河', '治多', '杂多', '曲麻莱', '玉树', '玛多', '清水河', '玛沁', '甘德', '达日', '河南', '久治', '囊谦', '班玛']
+    station_df['站号'] = station_df['站号'].map(str)
+    new_station = station_df[ station_df['站号'].isin(sta_ids)]
 
     # stats_result 展示结果表格
     # post_data_df 统计年份数据，用于后续计算
     # post_refer_df 参考年份数据，用于后续计算
 
-    # 如果是积温，此时的element_str是TEM_Avg，需要修改为Accum_Tem
-    stats_result, post_data_df, post_refer_df, reg_params = table_stats(data_df, refer_df, nearly_df, ele_dict[element], last_year)
-    print('统计表完成')
+    if element in ['FRS_DEPTH','FRS_TIME']:
+        stats_result, post_data_df, post_refer_df, reg_params = frs_table_stats(data_df, refer_df, nearly_df, element,last_year)
 
+    elif element in ['FRS_START','FRS_END']:
+        stats_result, post_data_df, post_refer_df, reg_params,data_df_time = frs_table_stats(data_df, refer_df, nearly_df, element,last_year)
 
+    elif element in ['SNOW_DEPTH','SNOW_DAYS']:
+        stats_result, post_data_df, post_refer_df, reg_params = snow_table_stats(data_df, refer_df, nearly_df, element,time_freq,last_year)
+
+    # 分布图 try在里面了
+    if shp_path is not None:
+        nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
+        nc_path_trans = nc_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+        nc_path_trans = nc_path_trans.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+        print('分布图插值生成nc完成')
+    else:
+        nc_path = None
+        nc_path_trans = None
+            
+    # 6/7. 统计分析-EOF分析
+    if nc_path is not None:
+        try:
+            ds = xr.open_dataset(nc_path)
+            eof_path = eof(ds, shp_path, data_dir)
+            reof_path = reof(ds, shp_path, data_dir)
+            print('eof/reof完成')
+        except:
+            eof_path = None
+            reof_path = None
+            print('没有插值生成网格文件，无法计算eof/reof')
 
     # 测试下来，只有1个值也能出结果，以下所有的暂时不用加异常处理
     # 1.统计分析-mk检验
@@ -332,41 +366,16 @@ def climate_features_stats(data_json):
     # 8.EEMD分析
     eemd_result = eemd(post_data_df, data_dir)
     print('eemd完成')
-    
-    try:
-        # 分布图
-        if shp_path is not None:
-            nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
-            nc_path_trans = nc_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
-            nc_path_trans = nc_path_trans.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-            print('分布图插值生成nc完成')
-
-        # 6/7. 统计分析-EOF分析
-        if nc_path is not None:
-            ds = xr.open_dataset(nc_path)
-            eof_path = eof(ds, shp_path, data_dir)
-            print('eof完成')
-            reof_path = reof(ds, shp_path, data_dir)
-            print('reof完成')
-
-    except Exception as e:
-        nc_path = None
-        nc_path_trans = None
-        eof_path = None
-        reof_path = None
-        print("发生了一个错误：", e)
-
 
     # 数据保存
-    result_dict = dict()
-    result_dict['uuid'] = uuid4
-
     result_dict['表格'] = dict()
     result_dict['表格'] = stats_result.to_dict(orient='records')
 
+    if element in ['FRS_START','FRS_END']:
+        result_dict['表格_日期'] =data_df_time
+
     result_dict['分布图'] = dict()
     result_dict['分布图'] = nc_path_trans
-
     result_dict['统计分析'] = dict()
     result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
     result_dict['统计分析']['MK检验'] = mk_result
@@ -384,29 +393,17 @@ def climate_features_stats(data_json):
 
 if __name__ == '__main__':
     t1 = time.time()
-    # data_json = dict()
-    # data_json['element'] = 'PRE'
-    # data_json['refer_years'] = '1991,2020'
-    # data_json['nearly_years'] = '2014,2023'
-    # data_json['time_freq'] = 'Q'
-    # data_json['stats_times'] = ['1981,2020', '3,4,5']  # '198105,202009' # '1981,2023'
-    # data_json['sta_ids'] = '52754'#',56151,52855,52862,56065,52645,56046,52955,52968,52963,52825,56067,52713,52943,52877,52633,52866,52737,52745,52957,56018,56033,52657,52765,52972,52868,56016,52874,51886,56021,52876,56029,56125,52856,52836,52842,56004,52974,52863,56043,52908,56045,52818,56034,52853,52707,52602,52869,52833,52875,52859,52942,52851'
-    # data_json['interp_method'] = 'ukri'
-    # data_json['ci'] = 95
-    # data_json['shp_path'] =r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
-    # data_json['degree'] = None
-    
     data_json = dict()
-    data_json['element'] = 'Q'
-    data_json['refer_years'] = '2023,2024'
-    data_json['nearly_years'] = '2023,2024'
+    data_json['element'] = 'FRS_DEPTH'
+    data_json['refer_years'] = '2021,2022'
+    data_json['nearly_years'] = '2021,2022'
     data_json['time_freq'] = 'Y'
-    data_json['stats_times'] = '2023,2024' # '198105,202009' # '1981,2023'
-    data_json['sta_ids'] = '01004500'
-    data_json['interp_method'] = 'ukri'
+    data_json['stats_times'] = '2021,2024'  # '198105,202009' # '1981,2023'
+    data_json['sta_ids'] = '51886,52737,52842,52886,52876'
+    data_json['interp_method'] = 'idw'
     data_json['ci'] = 95
-    data_json['shp_path'] =r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
-    data_json['degree'] = None
+    data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
+    data_json['degree'] = 10
     
     result = climate_features_stats(data_json)
     t2 = time.time()
