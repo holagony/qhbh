@@ -52,3 +52,9 @@ __C.FILES.STATION = os.path.join(data_file_dir, 'qh_station.csv')
 
 __C.FILES.IDW_W = os.path.join(data_file_dir, 'idw/idw.dll')
 __C.FILES.IDW_L = os.path.join(data_file_dir, 'idw/libidw.so')
+
+# 行业数据
+__C.FILES.FILE01 = os.path.join(data_file_dir, '行业数据/01_GDP.xlsx')
+__C.FILES.FILE02 = os.path.join(data_file_dir, '行业数据/02_人口.xlsx')
+__C.FILES.FILE03 = os.path.join(data_file_dir, '行业数据/03_能源.xlsx')
+__C.FILES.FILE04 = os.path.join(data_file_dir, '行业数据/04_交通.xlsx')

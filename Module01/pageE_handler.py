@@ -35,7 +35,7 @@ from Module01.wrapped.func14_ice_table_stats import snow_table_stats
 
 # 冰冻圈
 
-def climate_features_stats(data_json):
+def freeze_features_stats(data_json):
     '''
     获取天擎数据，参数说明
     :param element：对应原型，传入的要素名称
@@ -94,7 +94,8 @@ def climate_features_stats(data_json):
     interp_method = data_json['interp_method']
     ci = data_json['ci']
     shp_path = data_json.get('shp_path')
-
+    degree = data_json.get('degree')
+    
     # 2.参数处理
     if shp_path is not None:
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
@@ -405,6 +406,6 @@ if __name__ == '__main__':
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
     data_json['degree'] = 10
     
-    result = climate_features_stats(data_json)
+    result = freeze_features_stats(data_json)
     t2 = time.time()
     print(t2 - t1)

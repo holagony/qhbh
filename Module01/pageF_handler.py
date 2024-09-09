@@ -8,10 +8,6 @@ from io import StringIO
 from psycopg2 import sql
 from Utils.config import cfg
 from Utils.ordered_easydict import OrderedEasyDict as edict
-from Utils.data_loader_with_threads import get_cmadaas_yearly_data
-from Utils.data_loader_with_threads import get_cmadaas_monthly_data
-from Utils.data_loader_with_threads import get_cmadaas_daily_data
-from Utils.data_loader_with_threads import get_cmadaas_daily_period_data
 from Utils.data_processing import data_processing
 from Module01.wrapped.func01_table_stats import table_stats
 from Module01.wrapped.func02_interp_grid import contour_picture
@@ -23,8 +19,9 @@ from Module01.wrapped.func07_correlation_analysis import correlation_analysis
 from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
 
+# 农牧业 因为数据不确定，暂时不做
 
-def grass_features_stats(data_json):
+def agriculture_features_stats(data_json):
     '''
     获取天擎数据，参数说明
     :param element：对应原型，传入的要素名称
@@ -69,7 +66,7 @@ def grass_features_stats(data_json):
     sta_ids = data_json['sta_ids']
     interp_method = data_json['interp_method']
     ci = data_json['ci']
-    shp_path = data_json['shp_path']
+    shp_path = data_json.get('shp_path')
 
     # 2.参数处理
     degree = None
@@ -441,6 +438,6 @@ if __name__ == '__main__':
     data_json['ci'] = 95
     data_json['shp_path'] = r'C:\Users\MJY\Desktop\qhbh\文档\03-边界矢量\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
 
-    result = grass_features_stats(data_json)
+    result = agriculture_features_stats(data_json)
     t2 = time.time()
     print(t2 - t1)

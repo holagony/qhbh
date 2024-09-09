@@ -33,7 +33,7 @@ import time
 
 # 水资源
 
-def climate_features_stats(data_json):
+def water_features_stats(data_json):
     '''
     获取天擎数据，参数说明
     :param element：对应原型，传入的要素名称
@@ -403,6 +403,6 @@ if __name__ == '__main__':
     data_json['shp_path'] =r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
     data_json['degree'] = None
     
-    result = climate_features_stats(data_json)
+    result = water_features_stats(data_json)
     t2 = time.time()
     print(t2 - t1)
