@@ -85,7 +85,7 @@ def grass_features_stats(data_json):
     sta_ids = data_json['sta_ids']
     interp_method = data_json['interp_method']
     ci = data_json['ci']
-    shp_path = data_json['shp_path']
+    shp_path = data_json.get('shp_path')
 
     # 2.参数处理
     degree = None
@@ -355,20 +355,19 @@ def grass_features_stats(data_json):
         cur.close()
         conn.close()
 
+    ######################################
     # 开始计算
     # 首先获取站号对应的站名
     station_df = pd.DataFrame()
-    station_df['站号'] = [
-        51886, 51991, 52602, 52633, 52645, 52657, 52707, 52713, 52737, 52745, 52754, 52765, 52818, 52825, 52833, 52836, 52842, 52851, 52853, 52855, 52856, 52859, 52862, 52863, 52866, 52868, 52869, 52874, 52875, 52876, 52877, 52908, 52942, 52943,
-        52955, 52957, 52963, 52968, 52972, 52974, 56004, 56015, 56016, 56018, 56021, 56029, 56033, 56034, 56043, 56045, 56046, 56065, 56067, 56125, 56151]
-    station_df['站名'] = [
-        '茫崖国家基准气候站', '那陵格勒国家基准气候站', '冷湖国家基准气候站', '托勒国家基本气象站', '野牛沟国家基准气候站', '祁连国家基本气象站', '小灶火国家基本气象站', '大柴旦国家基准气候站', '德令哈国家基本气象站', '天峻国家基本气象站', '刚察国家基准气候站', '门源国家基本气象站', '格尔木国家基准气候站', '诺木洪国家基准气候站', '乌兰国家基本气象站', '都兰国家基本气象站', '茶卡国家基准气候站', '江西沟国家基本气象站',
-        '海晏国家基本气象站', '湟源国家基本气象站', '共和国家基本气象站', '瓦里关国家基本气象站', '大通国家基本气象站', '互助国家基本气象站', '西宁国家基本气象站', '贵德国家基本气象站', '湟中国家基本气象站', '乐都国家基本气象站', '平安国家基本气象站', '民和国家基准气候站', '化隆国家基本气象站', '五道梁国家基本气象站', '河卡国家基本气象站', '兴海国家基准气候站', '贵南国家基本气象站', '同德国家基本气象站',
-        '尖扎国家基本气象站', '泽库国家基本气象站', '循化国家基本气象站', '同仁国家基本气象站', '沱沱河国家基准气候站', '曲麻河国家基准气候站', '治多国家基本气象站', '杂多国家基准气候站', '曲麻莱国家基本气象站', '玉树国家基本气象站', '玛多国家基准气候站', '清水河国家基本气象站', '玛沁国家基本气象站', '甘德国家基本气象站', '达日国家基准气候站', '河南国家基本气象站', '久治国家基准气候站', '囊谦国家基准气候站',
-        '班玛国家基本气象站']
+    station_df['站号'] = [52955, 56080, 56079, 56074, 56065, 56045, 56021, 54102, 53821, 53817, 53723, 53644, 53505, 53384, 53289, 53231, 52943, 52876, 52869, 
+                        52868, 52863, 52862, 52856, 52855, 52852, 52825, 52818, 52765, 52737, 52681, 52101, 51711, 51469, 51437, 50954, 50936, 50928, 50854, 
+                        50742, 50618, 50525, 50425]
+    station_df['站名'] = ['贵南', '合作', '若尔盖', '玛曲', '河南', '甘德', '曲麻莱', '锡林浩特', '环县', '固原', '盐池', '乌审旗', '孪井滩', '察哈尔右翼后旗', '镶黄旗', 
+                        '海力素', '兴海', '民和', '湟中', '贵德', '互助', '大通', '共和', '湟源', '海北', '诺木洪', '格尔木', '门源', '德令哈', '民勤', '巴里坤', '阿合奇', 
+                        '牧业', '昭苏', '肇源', '白城', '巴雅尔吐胡硕', '安达', '富裕', '新巴尔虎左旗', '鄂温克', '额尔古纳']
     station_df['站号'] = station_df['站号'].map(str)
-    new_station = station_df[ station_df['站号'].isin(sta_ids)]
-    new_station.drop_duplicates('站号', keep='first', inplace=True, ignore_index=True)
+    new_station = station_df[station_df['站号'].isin(sta_ids)]
+    result_dict['站号'] = new_station.to_dict(orient='records')
 
     result_dict = dict()
     result_dict['uuid'] = uuid4
@@ -381,65 +380,68 @@ def grass_features_stats(data_json):
     # post_refer_df 参考年份数据，用于后续计算
     stats_result, post_data_df, post_refer_df, reg_params = table_stats(data_df, refer_df, nearly_df, element_str, last_year)
     result_dict['表格'] = stats_result.to_dict(orient='records')
+    result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
     print('统计表完成')
 
-    try:
-        # 分布图
+    # 分布图 try在里面了
+    if shp_path is not None:
         nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
         nc_path_trans = nc_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
         nc_path_trans = nc_path_trans.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-        result_dict['分布图'] = nc_path_trans
         print('分布图插值生成nc完成')
+    else:
+        nc_path = None
+        nc_path_trans = None
+    result_dict['分布图'] = nc_path_trans
 
-        # 6. 统计分析-EOF分析
-        ds = xr.open_dataset(nc_path)
-        eof_path = eof(ds, shp_path, data_dir)
+    # 6/7. 统计分析-EOF分析
+    if nc_path is not None:
+        try:
+            ds = xr.open_dataset(nc_path)
+            eof_path = eof(ds, shp_path, data_dir)
+            reof_path = reof(ds, shp_path, data_dir)
+            print('eof/reof完成')
+        except:
+            eof_path = None
+            reof_path = None
+            print('没有插值生成网格文件，无法计算eof/reof')
         result_dict['统计分析']['EOF分析'] = eof_path
-        print('eof完成')
-
-        # 7. 统计分析-REOF分析
-        ds = xr.open_dataset(nc_path)
-        reof_path = reof(ds, shp_path, data_dir)
         result_dict['统计分析']['REOF分析'] = reof_path
-        print('reof完成')
-    except:
-        result_dict['分布图'] = None
-        result_dict['统计分析']['EOF分析'] = None
-        result_dict['统计分析']['REOF分析'] = None
 
+    # 测试下来，只有1个值也能出结果，以下所有的暂时不用加异常处理
     # 1.统计分析-mk检验
-    mk_result = time_analysis(post_data_df, data_dir)
+    mk_result = time_analysis(post_data_df, data_dir) # 里面有try
+    result_dict['统计分析']['MK检验'] = mk_result
     print('MK检验完成')
 
     # 2.统计分析-累积距平
     anomaly_result = calc_anomaly_cum(post_data_df, post_refer_df, data_dir)
+    result_dict['统计分析']['累积距平'] = anomaly_result
     print('距平完成')
 
     # 3.统计分析-滑动平均
     moving_result = calc_moving_avg(post_data_df, 5, data_dir)
+    result_dict['统计分析']['滑动平均'] = moving_result
     print('滑动平均完成')
 
     # 4. 统计分析-小波分析
     wave_result = wavelet_main(post_data_df, data_dir)
+    result_dict['统计分析']['小波分析'] = wave_result
     print('小波完成')
 
     # 5. 统计分析-相关分析
     correlation_result = correlation_analysis(post_data_df, data_dir)
+    result_dict['统计分析']['相关分析'] = correlation_result
     print('相关分析完成')
+    
+    # 8.EEMD分析
+    eemd_result = eemd(post_data_df, data_dir)
+    result_dict['统计分析']['EEMD分析'] = eemd_result
+    print('eemd完成')
 
     # 8.EEMD分析
     eemd_result = eemd(post_data_df, data_dir)
     print('eemd完成')
-
-    # 数据保存
-    result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
-    result_dict['统计分析']['MK检验'] = mk_result
-    result_dict['统计分析']['累积距平'] = anomaly_result
-    result_dict['统计分析']['滑动平均'] = moving_result
-    result_dict['统计分析']['小波分析'] = wave_result
-    result_dict['统计分析']['相关分析'] = correlation_result
-    result_dict['统计分析']['EEMD分析'] = eemd_result
-    result_dict['站号'] = new_station.to_dict(orient='records')
 
     return result_dict
 
