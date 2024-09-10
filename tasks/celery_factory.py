@@ -17,7 +17,7 @@ PASSWORD = quote(redis_pwd)
 # CELERY_RESULT_BACKEND = redis_info
 
 CELERY_BROKER_URL = f"redis://:{PASSWORD}@{redis_host}:{redis_port}/7"
-CELERY_RESULT_BACKEND =  f"redis://::{PASSWORD}@{redis_host}:{redis_port}/8"
+CELERY_RESULT_BACKEND =  f"redis://:{PASSWORD}@{redis_host}:{redis_port}/8"
 
 
 # initialize celery app

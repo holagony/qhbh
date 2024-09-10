@@ -132,7 +132,7 @@ def module_runoff(t, effective_precipitation, rl, ru, a0, a1, a2, K=[1, 1, 1, 1]
 
     # outflows
     a0[t] = K[0] * max(0, ru[t] - L)
-    a1[t] = K[1] * (ru[t] - a0[t])
+    a1[t] = K[1] * (ru[t] - a0[t]) # 减去a0[t]待观察
     a2[t] = K[2] * rl[t]
 
     # update reservoirs lvls

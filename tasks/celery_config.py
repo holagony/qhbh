@@ -14,7 +14,7 @@ redis_info = 'redis://:' + redis_pwd + '@' + redis_host + ':' + redis_port + '/1
 # broker_url = redis_info
 # result_backend = redis_info
 broker_url = f"redis://:{PASSWORD}@{redis_host}:{redis_port}/7"
-result_backend =  f"redis://::{PASSWORD}@{redis_host}:{redis_port}/8"
+result_backend =  f"redis://:{PASSWORD}@{redis_host}:{redis_port}/8"
 
 
 
