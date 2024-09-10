@@ -47,7 +47,7 @@ def energy_wind_power_his(element,df):
             all_freq_wd.reset_index(drop=True, inplace=True)
             all_freq_wd.reset_index(inplace=True,drop=True)
 
-            result[station_name]=all_freq_wd.to_dict()
+            result[station_name]=all_freq_wd.to_dict(orient='records')
             
     elif element=='WSF':
 
@@ -78,7 +78,7 @@ def energy_wind_power_his(element,df):
             all_ws_hist.insert(loc=0, column='年', value=years)
             all_ws_hist.columns = ['年'] + ws_bins_cols
             all_ws_hist.reset_index(inplace=True,drop=True)
-            result[station_name]=all_ws_hist.to_dict()
+            result[station_name]=all_ws_hist.to_dict(orient='records')
     
     elif element=='AH':
 

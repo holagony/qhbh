@@ -105,13 +105,13 @@ def energy_wind_power(data_json):
 
     #%% 统计计算模块
     if element == 'WPD':
-        elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datatime,Year,Mon,Day,Hour,WIN_D_Avg10mi,WIN_S_Avg10mi,TEM,PRS'
+        elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day,Hour,WIN_D_Avg10mi,WIN_S_Avg10mi,TEM,PRS'
     elif element == 'WDF':
-        elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datatime,Year,Mon,Day,Hour,WIN_D_Avg10mi'
+        elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day,Hour,WIN_D_Avg10mi'
     elif element == 'WSF':
-        elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datatime,Year,Mon,Day,Hour,WIN_S_Avg10mi'
+        elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day,Hour,WIN_S_Avg10mi'
     elif element == 'AH':
-        elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datatime,Year,Mon,Day,Hour,WIN_S_Avg10mi'    
+        elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day,Hour,WIN_S_Avg10mi'    
     
     # 评估数据
     conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
@@ -121,7 +121,7 @@ def energy_wind_power(data_json):
                     SELECT {elements}
                     FROM public.qh_climate_cmadaas_hour
                     WHERE
-                        CAST(SUBSTRING(datatime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                        CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
                         AND station_id_c IN %s
                     """)
     
@@ -144,10 +144,21 @@ def energy_wind_power(data_json):
         refer_result['年'] = refer_result['年'].astype(str)
         refer_result_z=data_deal(refer_result)
         
-        refer_result_z=refer_result_z.to_dict()
+        refer_result_z=refer_result_z.to_dict(orient='records')
     # refer_result_hdd18_z=data_deal(refer_result_hdd18)
     # refer_result_start_end_num_z=data_deal_num(refer_result_start_end_num)
     
+    # 加一个 站点站名字典
+    station_id=refer_df['Station_Id_C'].unique()
+    
+    matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name']],on='Station_Id_C')
+    matched_stations_unique = matched_stations.drop_duplicates()
+
+    station_name = matched_stations_unique['Station_Name'].values
+    station_id=matched_stations_unique['Station_Id_C'].values
+    station_dict=pd.DataFrame(columns=['站名','站号'])
+    station_dict['站名']=station_name
+    station_dict['站号']=station_id
     
     '''
     # 预估数据
@@ -196,6 +207,8 @@ def energy_wind_power(data_json):
     '''    
 
     result_df=dict()
+    result_df['站点']=station_dict.to_dict(orient='records')
+
     result_df['表格']=dict()
 
     result_df['表格']['历史']=dict()
