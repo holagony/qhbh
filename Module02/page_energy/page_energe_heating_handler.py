@@ -136,6 +136,18 @@ def energy_winter_heating(data_json):
     refer_result_hdd18_z=data_deal(refer_result_hdd18)
     refer_result_start_end_num_z=data_deal_num(refer_result_start_end_num)
     
+    # 加一个 站点站名字典
+    station_id=refer_df['Station_Id_C'].unique()
+    
+    matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name']],on='Station_Id_C')
+    matched_stations_unique = matched_stations.drop_duplicates()
+
+    station_name = matched_stations_unique['Station_Name'].values
+    station_id=matched_stations_unique['Station_Id_C'].values
+    station_dict=pd.DataFrame(columns=['站名','站号'])
+    station_dict['站名']=station_name
+    station_dict['站号']=station_id
+    
     # 预估数据
     insti = insti.split(',')
     sta_ids2=sta_ids.split(',')
@@ -154,7 +166,7 @@ def energy_winter_heating(data_json):
             pre_data[insti_a][scene_a]['HDTIME']=result_start_end
             pre_data[insti_a][scene_a]['HDTIME_NUM']=result_start_end_num
     
-    #%% 求集合
+#%% 求集合
     
     HD=calculate_average_hd(pre_data,'HD')
     HDD18=calculate_average_hd(pre_data,'HDD18')
@@ -218,6 +230,7 @@ def energy_winter_heating(data_json):
     result_df['时序图']['单模式' ]['基准期']=base_p.copy()
     '''
     result_df_dict=dict()
+    result_df_dict['站点']=station_dict.to_dict(orient='records')
     result_df_dict['表格']=dict()
 
     result_df_dict['表格']['历史']=dict()
@@ -270,3 +283,4 @@ if __name__ == '__main__':
     
     result_df_dict=energy_winter_heating(data_json)
     
+    result_example=pd.DataFrame( result_df_dict['时序图']['单模式' ]['基准期'])

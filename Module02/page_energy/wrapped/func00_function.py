@@ -195,7 +195,7 @@ def data_deal_2(data_df,refer_df,flag):
         stats_result = data_df.copy()
         stats_result['区域均值'] = np.round(data_df.iloc[:, :].mean(axis=1).astype(float),2)
         stats_result['区域距平'] = np.round((data_df.iloc[:, :].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).astype(float),2)
-        stats_result['区域距平百分率%'] = np.round(((stats_result['区域距平']/refer_df.iloc[:, :].mean().mean())*100).astype(float),2)
+        stats_result['区域距平百分率%'] = np.round(((stats_result['区域距平']/tmp_df.loc['参考时段均值'].mean())*100).astype(float),2)
         stats_result['区域最大值'] = data_df.iloc[:, :].max(axis=1)
         stats_result['区域最小值'] = data_df.iloc[:, :].min(axis=1)
     
@@ -209,8 +209,11 @@ def data_deal_2(data_df,refer_df,flag):
     
         # 合并所有结果
         stats_result = data_df.copy()
-        stats_result['区域距平'] =  np.round((data_df.iloc[:, :].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).astype(float),2)
-        stats_result['区域距平百分率%'] =  np.round(((stats_result['区域距平']/refer_df.iloc[:, :].mean().mean())*100).astype(float),2)
+        stats_result['区域均值'] = np.round(data_df.iloc[:, :].mean(axis=1).astype(float),2)
+        stats_result['区域距平'] = np.round((data_df.iloc[:, :].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).astype(float),2)
+        stats_result['区域距平百分率%'] = np.round(((stats_result['区域距平']/tmp_df.loc['参考时段均值'].mean())*100).astype(float),2)
+        stats_result['区域最大值'] = data_df.iloc[:, :].max(axis=1)
+        stats_result['区域最小值'] = data_df.iloc[:, :].min(axis=1)
     
         stats_days_result = stats_result
     
@@ -251,8 +254,8 @@ def data_deal_num_2(data_df,refer_df,flag):
         stats_result['区域距平1'] = np.round((data_df.iloc[1:, 0::2].mean(axis=1) - tmp_df.loc['参考时段均值'].iloc[0::2].mean()).astype(float),2)
         stats_result['区域距平2'] = np.round((data_df.iloc[1:, 1::2].mean(axis=1) - tmp_df.loc['参考时段均值'].iloc[1::2].mean()).astype(float),2)
     
-        stats_result['区域距平百分率%1'] = np.round(((stats_result['区域距平1']/refer_df.iloc[1:, 0::2].mean().mean())*100).astype(float),2)
-        stats_result['区域距平百分率%2'] = np.round(((stats_result['区域距平2']/refer_df.iloc[1:, 1::2].mean().mean())*100).astype(float),2)
+        stats_result['区域距平百分率%1'] = np.round(((stats_result['区域距平1']/tmp_df.loc['参考时段均值'].iloc[0::2].mean())*100).astype(float),2)
+        stats_result['区域距平百分率%2'] = np.round(((stats_result['区域距平2']/tmp_df.loc['参考时段均值'].iloc[1::2].mean())*100).astype(float),2)
     
     
         stats_result = pd.concat((stats_result, tmp_df), axis=0)
@@ -279,17 +282,32 @@ def data_deal_num_2(data_df,refer_df,flag):
     
         # 合并所有结果
         stats_result = data_df.copy()
+        stats_result['区域均值1'] = np.round(data_df.iloc[1:, 0::2].mean(axis=1).astype(float),2)
+        stats_result['区域均值2'] = np.round(data_df.iloc[1:, 1::2].mean(axis=1).astype(float),2)
+    
+        stats_result['区域最大值1'] = data_df.iloc[1:, 0::2].max(axis=1)
+        stats_result['区域最大值2'] = data_df.iloc[1:, 1::2].max(axis=1)
+    
+        stats_result['区域最小值1'] = data_df.iloc[1:, 0::2].min(axis=1)
+        stats_result['区域最小值2'] = data_df.iloc[1:, 1::2].min(axis=1)
+    
         stats_result['区域距平1'] = np.round((data_df.iloc[1:, 0::2].mean(axis=1) - tmp_df.loc['参考时段均值'].iloc[0::2].mean()).astype(float),2)
         stats_result['区域距平2'] = np.round((data_df.iloc[1:, 1::2].mean(axis=1) - tmp_df.loc['参考时段均值'].iloc[1::2].mean()).astype(float),2)
     
-        stats_result['区域距平百分率%1'] = np.round(((stats_result['区域距平1']/refer_df.iloc[1:, 0::2].mean().mean())*100).astype(float),2)
-        stats_result['区域距平百分率%2'] = np.round(((stats_result['区域距平2']/refer_df.iloc[1:, 1::2].mean().mean())*100).astype(float),2)
+        stats_result['区域距平百分率%1'] = np.round(((stats_result['区域距平1']/ tmp_df.loc['参考时段均值'].iloc[0::2].mean())*100).astype(float),2)
+        stats_result['区域距平百分率%2'] = np.round(((stats_result['区域距平2']/tmp_df.loc['参考时段均值'].iloc[1::2].mean())*100).astype(float),2)
     
     
-        stats_result = stats_result
+        stats_result = pd.concat((stats_result, tmp_df), axis=0)
         stats_result.insert(loc=0, column='时间', value=stats_result.index)
         stats_result.reset_index(drop=True, inplace=True)
         
+        stats_result.at[0,'区域均值1'] = '开始日期'
+        stats_result.at[0,'区域均值2'] = '结束日期'
+        stats_result.at[0,'区域最大值1'] = '开始日期'
+        stats_result.at[0,'区域最大值2'] = '结束日期'
+        stats_result.at[0,'区域最小值1'] = '开始日期'
+        stats_result.at[0,'区域最小值2'] = '结束日期'
         stats_result.at[0,'区域距平1'] = '开始日期'
         stats_result.at[0,'区域距平2'] = '结束日期'
         stats_result.at[0,'区域距平百分率%1'] = '开始日期'
