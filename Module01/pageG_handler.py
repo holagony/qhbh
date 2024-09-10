@@ -50,10 +50,8 @@ def other_features_stats(data_json):
     '''
     # 1.参数读取
     element = data_json['element']
-    time_freq = data_json['time_freq']
     stats_times = data_json['stats_times']
     sta_ids = data_json.get('sta_ids')
-    interp_method = data_json['interp_method']
     shp_path = data_json.get('shp_path')
 
     # 2.参数处理
@@ -65,9 +63,8 @@ def other_features_stats(data_json):
         os.chmod(data_dir, 0o007 | 0o070 | 0o700)    
 
     # 开始计算
-    years = '1980,2010'
-    start_year = int(years.split(',')[0])
-    end_year = int(years.split(',')[1])
+    start_year = int(stats_times.split(',')[0])
+    end_year = int(stats_times.split(',')[1])
 
     result_dict = dict()
     result_dict['uuid'] = uuid4
