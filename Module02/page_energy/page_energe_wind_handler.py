@@ -56,7 +56,7 @@ from Module02.page_energy.wrapped.func00_function import calculate_average_hd
 from Module02.page_energy.wrapped.func00_function import percentile_std
 from Module02.page_energy.wrapped.func00_function import percentile_std_time
 
-from Module02.wrapped.func04_wind_power_his import energy_wind_power_his
+from Module02.page_energy.wrapped.func04_wind_power_his import energy_wind_power_his
 # from Module02.wrapped.func02_winter_heating_his import winter_heating_his
 
 #%% main
