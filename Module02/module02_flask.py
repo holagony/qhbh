@@ -4,6 +4,7 @@ from flask import Blueprint, request, jsonify, current_app
 from tasks.dispatcher_worker import celery_submit, celery_task_status
 from Module02.page_energy.page_energe_heating_handler import energy_winter_heating
 from Module02.page_energy.page_energe_wind_handler import energy_wind_power
+from Module02.page_energy.page_energe_solar_handler import energy_solar_power
 
 
 module02 = Blueprint('module02', __name__)
@@ -38,5 +39,21 @@ def pagea_wind():
         return jsonify({'code': 202, 'msg': '任务提交成功，开始计算...', 'data': {'task_id': result.id}})
 
     result_dict = energy_wind_power(data_json)
+    return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result_dict}, ensure_ascii=False, ignore_nan=True)
+    return return_data
+
+@module02.route('/v1/energy_solar', methods=['POST'])
+def pagea_solar():
+    '''
+    重点领域与行业预估-能源影响预估-太阳能
+    '''
+    json_str = request.get_data(as_text=True)  # 获取JSON字符串
+    data_json = json.loads(json_str)
+    is_async = data_json.get('is_async')
+    if is_async == 1 or is_async is True or is_async == '1':
+        result = celery_submit.delay('workerPageEnergeSolar', json_str)
+        return jsonify({'code': 202, 'msg': '任务提交成功，开始计算...', 'data': {'task_id': result.id}})
+
+    result_dict = energy_solar_power(data_json)
     return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result_dict}, ensure_ascii=False, ignore_nan=True)
     return return_data
