@@ -135,19 +135,34 @@ def water_features_stats(data_json):
     elif time_freq == 'Q':  # ['%Y,%Y','3,4,5']
         mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
         mon_ = tuple(mon_list)
-        query = sql.SQL(f"""
-                        SELECT {elements}
-                        FROM public.{table_name}
-                        WHERE
-                            (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                            AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
-                            AND station_id_c IN %s
-                        """)
-
         years = stats_times[0]
         start_year = years.split(',')[0]
         end_year = years.split(',')[1]
-        cur.execute(query, (start_year, end_year, mon_, sta_ids))
+
+        if 12 in mon_list:
+            
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.{table_name}
+                                WHERE (SUBSTRING(datetime, 1, 4) BETWEEN %s AND %s) 
+                                AND SUBSTRING(datetime, 6, 2) IN ('12', '01', '02')
+                                OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) = '12')
+                                OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) IN ('01', '02'))
+                                AND station_id_c IN %s
+                            """)
+            cur.execute(query, (start_year, end_year,str(int(start_year)-1),str(int(end_year)+1), sta_ids))
+
+        else:    
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.{table_name}
+                            WHERE
+                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
+                                AND station_id_c IN %s
+                            """)  
+            cur.execute(query, (start_year, end_year, mon_, sta_ids))
+
         data = cur.fetchall()
 
     elif time_freq == 'M1':  # '%Y%m,%Y%m'

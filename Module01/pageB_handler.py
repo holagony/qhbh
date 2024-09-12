@@ -475,20 +475,34 @@ def extreme_climate_features(data_json):
             elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,' + ele_dict[element]
             mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
             mon_ = tuple(mon_list)
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{sql_choose}
-                            WHERE
-                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
-                                AND station_id_c IN %s
-                            """)
-
-            # 下载统计年份的数据
             years = stats_times[0]
             start_year = years.split(',')[0]
             end_year = years.split(',')[1]
-            cur.execute(query, (start_year, end_year, mon_, sta_ids))
+    
+            if 12 in mon_list:
+                
+                query = sql.SQL(f"""
+                                SELECT {elements}
+                                FROM public.{sql_choose}
+                                    WHERE (SUBSTRING(datetime, 1, 4) BETWEEN %s AND %s) 
+                                    AND SUBSTRING(datetime, 6, 2) IN ('12', '01', '02')
+                                    OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) = '12')
+                                    OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) IN ('01', '02'))
+                                    AND station_id_c IN %s
+                                """)
+                cur.execute(query, (start_year, end_year,str(int(start_year)-1),str(int(end_year)+1), sta_ids))
+    
+            else:    
+                query = sql.SQL(f"""
+                                SELECT {elements}
+                                FROM public.{sql_choose}
+                                WHERE
+                                    (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                    AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
+                                    AND station_id_c IN %s
+                                """)  
+                cur.execute(query, (start_year, end_year, mon_, sta_ids))
+    
             data = cur.fetchall()
             data_df = pd.DataFrame(data)
             data_df.columns = elements.split(',')
