@@ -12,7 +12,15 @@ data_file_dir = os.path.join(current_obj, 'Files')
 # 生成字典
 __C = edict()
 cfg = __C
-flag = 'HX'
+
+if os.name == 'nt':
+    flag = 'local'
+elif os.name == 'posix':
+    flag = 'HX'
+else:
+    flag = 'HX'
+                
+
 
 # 信息配置
 __C.INFO = edict()
