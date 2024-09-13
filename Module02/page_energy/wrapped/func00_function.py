@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import os
 from sklearn.linear_model import LinearRegression
+import glob
 
 def trend_rate(x):
     '''
@@ -40,32 +41,36 @@ def choose_mod_path(inpath, data_cource,insti, var, time_scale, yr, expri_i,res=
     else:
         expri = expri_i
         
-    if insti == 'CNRM-CM6-1':
-        data_grid = '_r1i1p1f2_gr_'
+    # if insti == 'CNRM-CM6-1':
+    #     data_grid = '_r1i1p1f2_gr_'
         
-    elif (insti == 'BCC-CSM2-MR') & (yr < 2015):
-        data_grid = '_r3i1p1f1_gn_'
+    # elif (insti == 'BCC-CSM2-MR') & (yr < 2015):
+    #     data_grid = '_r3i1p1f1_gn_'
 
-    else:
-        data_grid = '_r1i1p1f1_gn_'
+    # else:
+    #     data_grid = '_r1i1p1f1_gn_'
 
     if time_scale == 'daily':
         path1 = 'daily'
-        filen = var + '_day_' + insti + '_' + expri + data_grid + str(yr) + '0101-' + str(yr) + '1231.nc'
+        # filen = var + '_day_' + insti + '_' + expri + data_grid + str(yr) + '0101-' + str(yr) + '1231.nc'
     elif time_scale == 'monthly':
         path1 = 'monthly'
-        filen = var + '_month_' + insti + '_' + expri + data_grid + str(yr) + '0101-' + str(yr) + '1231.nc'
+        # filen = var + '_month_' + insti + '_' + expri + data_grid + str(yr) + '0101-' + str(yr) + '1231.nc'
     elif time_scale == 'yearly':
         path1 = 'yearly'
-        filen = var + '_year_' + insti + '_' + expri + data_grid + str(yr) + '0101-' + str(yr) + '1231.nc'
+        # filen = var + '_year_' + insti + '_' + expri + data_grid + str(yr) + '0101-' + str(yr) + '1231.nc'
     else:
         path1 = time_scale
-        filen = var + '_' + time_scale + '_' + insti + '_' + expri + data_grid + str(yr) + '0101-' + str(yr) + '1231.nc'
+        # filen = var + '_' + time_scale + '_' + insti + '_' + expri + data_grid + str(yr) + '0101-' + str(yr) + '1231.nc'
 
     if data_cource=='original':
-        path = os.path.join(inpath, data_cource,path1,insti ,expri,var,filen)
+        # path = os.path.join(inpath, data_cource,path1,insti ,expri,var,filen)
+        path_dir = os.path.join(inpath, data_cource,path1,insti ,expri,var)
+        path=glob.glob(os.path.join(path_dir, f'{var}*{str(yr)}*.nc'))[0]
     else:
-        path = os.path.join(inpath, data_cource,res,path1,insti ,expri,var,filen)
+        # path = os.path.join(inpath, data_cource,res,path1,insti ,expri,var,filen)
+        path_dir = os.path.join(inpath, data_cource,res,path1,insti ,expri,var)
+        path=glob.glob(os.path.join(path_dir, f'{var}*{str(yr)}*.nc'))[0]
 
     return path
 
@@ -388,7 +393,7 @@ def percentile_std(scene,insti,df,ele,refer_data):
         df_example.iloc[:,1:]=np.mean(data[:,j,:,:], axis=0)+np.std(np.array(data[:,j,:,:]).astype(float), axis=0)
         result[scene[j]]['std_upper'] = df_example.round(2).copy().to_dict(orient='records')
         
-        df_example.iloc[:,1:]=np.mean(data[:,j,:,:], axis=0)+np.std(np.array(data[:,j,:,:]).astype(float), axis=0)
+        df_example.iloc[:,1:]=np.mean(data[:,j,:,:], axis=0)-np.std(np.array(data[:,j,:,:]).astype(float), axis=0)
         result[scene[j]]['std_lower'] = df_example.round(2).copy().to_dict(orient='records')
 
     return result
@@ -447,7 +452,7 @@ def percentile_std_time(scene,insti,df,refer_data):
         selected_columns.iloc[:,1:]=np.mean(data[:,j,:,0::2], axis=0)+np.std(np.array(data[:,j,:,0::2]).astype(float), axis=0)
         result[scene[j]]['开始时间']['std_upper'] = selected_columns.round(2).copy().to_dict(orient='records')
         
-        selected_columns.iloc[:,1:]=np.mean(data[:,j,:,0::2], axis=0)+np.std(np.array(data[:,j,:,0::2]).astype(float), axis=0)
+        selected_columns.iloc[:,1:]=np.mean(data[:,j,:,0::2], axis=0)-np.std(np.array(data[:,j,:,0::2]).astype(float), axis=0)
         result[scene[j]]['开始时间']['std_lower'] = selected_columns.round(2).copy().to_dict(orient='records')
         
         # 结束时间
@@ -468,7 +473,7 @@ def percentile_std_time(scene,insti,df,refer_data):
         selected_columns.iloc[:,1:]=np.mean(data[:,j,:,1::2], axis=0)+np.std(np.array(data[:,j,:,1::2]).astype(float), axis=0)
         result[scene[j]]['结束时间']['std_upper'] = selected_columns.round(2).copy().to_dict(orient='records')
         
-        selected_columns.iloc[:,1:]=np.mean(data[:,j,:,1::2], axis=0)+np.std(np.array(data[:,j,:,1::2]).astype(float), axis=0)
+        selected_columns.iloc[:,1:]=np.mean(data[:,j,:,1::2], axis=0)-np.std(np.array(data[:,j,:,1::2]).astype(float), axis=0)
         result[scene[j]]['结束时间']['std_lower'] = selected_columns.round(2).copy().to_dict(orient='records')
         
     return result

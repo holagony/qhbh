@@ -36,7 +36,7 @@ Created on Wed Aug 28 09:06:27 2024
         100 - '100'
 
 """
-
+import os
 import numpy as np
 import pandas as pd
 import uuid
@@ -71,8 +71,15 @@ def energy_winter_heating(data_json):
     res = data_json.get('res', '1')
     
     #%% 固定信息
-    data_dir=r'D:\Project\qh\Evaluate_Energy\data'
+    
     # data_dir='/zipdata'
+
+    if os.name == 'nt':
+        data_dir=r'D:\Project\qh\Evaluate_Energy\data'
+    elif os.name == 'posix':
+        data_dir='/zipdata'
+    else:
+        data_dir='/zipdata'
 
     res_d=dict()
     res_d['1']='0.01deg'
@@ -114,7 +121,7 @@ def energy_winter_heating(data_json):
                     """)
     
     start_year = refer_times.split(',')[0]
-    end_year = refer_times.split(',')[1]
+    end_year = str(int(refer_times.split(',')[1])+1)
     
     cur.execute(query, (start_year, end_year,sta_ids1))
     data = cur.fetchall()
@@ -127,6 +134,7 @@ def energy_winter_heating(data_json):
     refer_df.set_index('Datetime', inplace=True)
     refer_df.index = pd.DatetimeIndex(refer_df.index)
     refer_df['Station_Id_C'] = refer_df['Station_Id_C'].astype(str)
+    refer_df.sort_index(inplace=True)
     
     if 'Unnamed: 0' in refer_df.columns:
         refer_df.drop(['Unnamed: 0'], axis=1, inplace=True)
@@ -158,7 +166,7 @@ def energy_winter_heating(data_json):
         pre_data[insti_a]=dict()
         for scene_a in scene:
             pre_data[insti_a][scene_a]=dict()
-            stats_path=[choose_mod_path(data_dir, data_cource,insti_a, var, time_scale, year_a, scene_a,res_d[res]) for year_a in np.arange(int(stats_start_year),int(stats_end_year)+1,1)]
+            stats_path=[choose_mod_path(data_dir, data_cource,insti_a, var, time_scale, year_a, scene_a,res_d[res]) for year_a in np.arange(int(stats_start_year),int(stats_end_year)+2,1)]
             result_days,result_hdd18,result_start_end,result_start_end_num= winter_heating_pre(stats_path,sta_ids2,time_freq,stats_times)
     
             pre_data[insti_a][scene_a]['HDD18']=result_hdd18
@@ -275,7 +283,7 @@ if __name__ == '__main__':
     data_json['element'] ='HDD18'
     data_json['refer_times'] = '2000,2010'
     data_json['time_freq'] = 'Y'
-    data_json['stats_times'] = '1990,2018'
+    data_json['stats_times'] = '2020,2040'
     data_json['sta_ids'] = '52754,56151,52855,52862,56065,52645,56046,52955,52968,52963,52825,56067,52713,52943,52877,52633,52866'
     data_json['data_cource'] = 'original'
     data_json['insti'] = 'BCC-CSM2-MR,CanESM5'

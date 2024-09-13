@@ -281,7 +281,7 @@ if __name__ == '__main__':
     # 日照时数：SH；
     # 有效日照天数：ASD    
     data_json = dict()
-    data_json['element'] ='PDR'
+    data_json['element'] ='TR'
     data_json['refer_times'] = '2023,2024'
     data_json['time_freq'] = 'Y'
     data_json['stats_times'] = '1990,2018'

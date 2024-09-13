@@ -79,7 +79,7 @@ def winter_heating_his(refer_df):
         
         
         # 剩余时间
-        for year in time_year:
+        for year in time_year[:-1:]:
             # break
             data_year = data[((data.index.year == year) & (data.index.month >= 10)) |
                              ((data.index.year == year+1) & (data.index.month <= 4))]

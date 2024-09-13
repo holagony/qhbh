@@ -142,6 +142,7 @@ def winter_heating_pre(tas_paths,station_id,time_freq,stats_times):
     # 遍历所有文件
     df = pd.DataFrame(columns=['datetime', 'station_id_c', 'lon', 'lat', 'tas'])
     for tas_path in tas_paths:
+        # print(tas_path)
         # break
         with nc.Dataset(tas_path) as tas_dataset:
             lon = tas_dataset.variables['lon'][:]
@@ -162,7 +163,8 @@ def winter_heating_pre(tas_paths,station_id,time_freq,stats_times):
         else:
             dates = [ref_date + timedelta(days=int(t)) for t in time[:]]
         
-        date_indices = time_choose(time_freq,stats_times,dates)
+        stats_times_nc=stats_times.split(',')[0]+','+str(int(stats_times.split(',')[1])+1)
+        date_indices = time_choose(time_freq,stats_times_nc,dates)
     
         tas = tas[date_indices,:, :]
         dates = [dates[i] for i in date_indices]
@@ -185,7 +187,7 @@ def winter_heating_pre(tas_paths,station_id,time_freq,stats_times):
             'station_id_c': station_id_repeated,
             'lon': np.tile(target_lons, len(dates)),
             'lat': np.tile(target_lats, len(dates)),
-            'tas': interpolated_data - 273.15
+            'tas': interpolated_data# - 273.15
         })
         
         # 使用concat方法将新的数据与原有的DataFrame合并
@@ -246,7 +248,7 @@ def winter_heating_pre(tas_paths,station_id,time_freq,stats_times):
         
         
         # 剩余时间
-        for year in time_year:
+        for year in time_year[:-1:]:
             # break
             data_year = data[((data.index.year == year) & (data.index.month >= 10)) |
                              ((data.index.year == year+1) & (data.index.month <= 4))]
