@@ -11,7 +11,7 @@ import requests
 from flask import Blueprint, request, jsonify
 from Utils.config import cfg
 from Utils.ordered_easydict import OrderedEasyDict as edict
-from Module02.page_ice.wrapped.page_ice_model_handler import ice_model_def
+from Module02.page_ice.page_ice_model_handler import ice_model_def
 
 
 def callback(url, result_id, result):
