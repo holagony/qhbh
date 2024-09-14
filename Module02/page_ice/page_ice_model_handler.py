@@ -106,8 +106,9 @@ def ice_model_def(data_json):
     processing_methods.update({element: 'min' for element in resample_min})
         
     # 因子数据_训练_验证
-    train_station,verify_station,train_data,verify_data=factor_data_deal(factor_element,train_time,verify_time,sta_ids,factor_time_freq,factor_time_freq_data,time_freq_main,processing_methods)
-    
+    train_station,train_data=factor_data_deal(factor_element,train_time,sta_ids,factor_time_freq,factor_time_freq_data,time_freq_main,processing_methods)
+    verify_station,verify_data=factor_data_deal(factor_element,verify_time,sta_ids,factor_time_freq,factor_time_freq_data,time_freq_main,processing_methods)
+        
     train_data=train_data.reset_index()
     verify_data=verify_data.reset_index()
     train_data = train_data.rename(columns={'年份': 'Datetime'})
@@ -116,8 +117,9 @@ def ice_model_def(data_json):
     verify_data = verify_data.set_index(verify_data['Datetime'].astype(str))
     
     # 评估数据_训练_验证
-    train_evaluate,verify_evaluate,verify_evaluate_station=ice_evaluate_data_deal(main_element,train_time,verify_time,sta_ids,time_freq_main,time_freq_main_data)
-    
+    train_evaluate,train_evaluate_station=ice_evaluate_data_deal(main_element,train_time,sta_ids,time_freq_main,time_freq_main_data)
+    verify_evaluate,verify_evaluate_station=ice_evaluate_data_deal(main_element,verify_time,sta_ids,time_freq_main,time_freq_main_data)
+        
     # 拼接一下数据
     train=pd.merge(train_data,train_evaluate, left_index=True, right_index=True, how='inner')
     train.dropna(inplace=True)
