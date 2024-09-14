@@ -34,4 +34,4 @@ def equalsIgnoreCase(a, b):
 
 if __name__ == '__main__':
     print(name_convert('HelloWorldWorld'))  # -> hello_world_world
-    print(name_convert('worker_page01'))  # -> woShiOsin
+    print(name_convert('worker_page_water_hbv'))  # -> woShiOsin
