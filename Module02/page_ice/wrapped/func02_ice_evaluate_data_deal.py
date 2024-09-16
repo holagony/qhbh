@@ -91,12 +91,20 @@ def ice_evaluate_data_deal(element,train_time,sta_ids,time_freq,time_freq_data):
     elif time_freq == 'Q':# ['%Y,%Y','3,4,5']
         train_time_use=[train_time,time_freq_data]
 
+    elif time_freq== 'M1': #'%Y%m,%Y%m' '%Y,%Y' '%m,%m'
+        train_time_use=train_time.split(',')[0]+time_freq_data.split(',')[0]+','+\
+                            train_time.split(',')[1]+time_freq_data.split(',')[1]
+        
     elif time_freq== 'M2':
         train_time_use=[train_time,time_freq_data]
         
     elif time_freq == 'D1':
         train_time_use= train_time.split(',')[0]+'0101,'+train_time.split(',')[1]+'1231'
 
+    elif time_freq== 'D2': 
+        train_time_use=[train_time,time_freq_data]
+
+ 
     train_data=data_read_sql(sta_ids,element_str,train_time_use,table_name,time_freq)
 
     train_data.set_index('Datetime', inplace=True)

@@ -35,7 +35,7 @@ def data_proce(df,processing_methods, additional_method=None):
         }
         for element, method in processing_methods.items():
             if element in group.columns:
-                processed[f'{element}_{method}'] = getattr(group[element], method)()
+                processed[f'{element}'] = getattr(group[element], method)()
         return pd.Series(processed)
     
     grouped_data = df.groupby(['Station_Id_C', '年份']).apply(process_group).reset_index(drop=True)
@@ -44,12 +44,8 @@ def data_proce(df,processing_methods, additional_method=None):
     station_data=grouped_data.copy()
     station_data['年'] = station_data['Datetime'].dt.year
     station_data.drop(['Datetime'], axis=1, inplace=True) 
-
     
-    grouped_data['年份'] = grouped_data['Datetime'].dt.year
-    average_data = grouped_data.iloc[:,2::].groupby('年份').mean()
-    
-    return station_data,average_data
+    return station_data
 
 def increment_date(start_date, days):
     """
@@ -99,6 +95,14 @@ def time_choose(time_freq,time_freq_data,stats_times,dates):
         else:
             date_indices = [i for i, date in enumerate(dates) if ((int(start_year) <= date.year <= int(end_year)) & (date.month in month))]
 
+    elif time_freq== 'M1':
+   
+        # M1
+        start_time = stats_times.split(',')[0]+time_freq_data.split(',')[0]
+        end_time = stats_times.split(',')[1]+time_freq_data.split(',')[1]
+        
+        date_indices = [i for i, date in enumerate(dates) if ((int(start_time[:4:]) <= date.year <= int(end_time[:4:])) 
+                                                              & (int(start_time[5::]) <= date.month <= int(end_time[5::])))]
     elif time_freq== 'M2':
     
         # M2
@@ -118,10 +122,32 @@ def time_choose(time_freq,time_freq_data,stats_times,dates):
         end_date_nc_object = datetime.strptime(end_time, '%Y%m%d')
         date_indices = [i for i, date in enumerate(dates) if start_date_nc_object <= date <= end_date_nc_object]
     
+    elif time_freq== 'D2':
+    
+    # D2
+    
+        def is_date_within_range(date_month,date_day, start_month, start_day, end_month, end_day):
+            input_date = datetime(2000, date_month,date_day)
+            
+            start_date = datetime(2000, start_month, start_day)
+            end_date = datetime(2000, end_month, end_day)
+            
+            return start_date <= input_date <= end_date
+        
+        start_year = stats_times.split(',')[0]
+        end_year = stats_times.split(',')[1]
+        start_month=time_freq_data.split(',')[0]
+        end_month=time_freq_data.split(',')[0]
+        
+        date_indices = [i for i, date in enumerate(dates) if ((int(start_year) <= date.year <= int(end_year)) 
+                                                              & (is_date_within_range(date.month,date.day, 
+                        int(start_month[:2]), int(start_month[2:]), int(end_month[:2]), int(end_month[2:]))))]
+        
+        
     return date_indices
 
 
-def model_factor_data_deal(tas_paths,station_id,var,ele,time_freq,time_freq_data,stats_times,processing_methods):
+def model_factor_data_deal(tas_paths,station_id,var,ele,time_freq,time_freq_data,time_freq_main,stats_times,processing_methods):
     
     #%% 站点编号 和 站点名经纬度匹配
     df_station=pd.read_csv(cfg.FILES.STATION,encoding='gbk')
@@ -191,18 +217,17 @@ def model_factor_data_deal(tas_paths,station_id,var,ele,time_freq,time_freq_data
     
     # 针对不同的要素进行不同的要素处理
 
-    if time_freq != 'D':
-        verify_station_data,verify_data_deal=data_proce(df,processing_methods)
+    if time_freq_main != 'D':
+        verify_station_data=data_proce(df,processing_methods)
     else:
         verify_station_data=df.copy()
         verify_data=df.copy()
         verify_data['Datetime'] = pd.to_datetime(verify_data['Datetime'])
         verify_data=verify_data.set_index(verify_data['Datetime'])
         verify_data.drop([ 'Station_Id_C','Datetime'], axis=1,inplace=True)
-        verify_data_deal = verify_data.resample('D').mean()
     
     
-    return verify_station_data,verify_data_deal
+    return verify_station_data
 
 
 
