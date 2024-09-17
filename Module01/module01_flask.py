@@ -57,7 +57,7 @@ def page_c_stats():
     data_json = json.loads(json_str)
     is_async = data_json.get('is_async')
     if is_async == 1 or is_async is True or is_async == '1':
-        result = celery_submit.delay('workerPageB', json_str)
+        result = celery_submit.delay('workerPageC', json_str)
         return jsonify({'code': 202, 'msg': '任务提交成功，开始计算...', 'data': {'task_id': result.id}})
 
     result_dict = grass_features_stats(data_json)
@@ -74,7 +74,7 @@ def page_d_stats():
     data_json = json.loads(json_str)
     is_async = data_json.get('is_async')
     if is_async == 1 or is_async is True or is_async == '1':
-        result = celery_submit.delay('workerPageB', json_str)
+        result = celery_submit.delay('workerPageD', json_str)
         return jsonify({'code': 202, 'msg': '任务提交成功，开始计算...', 'data': {'task_id': result.id}})
 
     result_dict = water_features_stats(data_json)
@@ -91,7 +91,7 @@ def page_e_stats():
     data_json = json.loads(json_str)
     is_async = data_json.get('is_async')
     if is_async == 1 or is_async is True or is_async == '1':
-        result = celery_submit.delay('workerPageB', json_str)
+        result = celery_submit.delay('workerPageE', json_str)
         return jsonify({'code': 202, 'msg': '任务提交成功，开始计算...', 'data': {'task_id': result.id}})
 
     result_dict = freeze_features_stats(data_json)
@@ -108,7 +108,7 @@ def page_f_stats():
     data_json = json.loads(json_str)
     is_async = data_json.get('is_async')
     if is_async == 1 or is_async is True or is_async == '1':
-        result = celery_submit.delay('workerPageB', json_str)
+        result = celery_submit.delay('workerPageF', json_str)
         return jsonify({'code': 202, 'msg': '任务提交成功，开始计算...', 'data': {'task_id': result.id}})
 
     result_dict = agriculture_features_stats(data_json)
@@ -125,7 +125,7 @@ def page_g_stats():
     data_json = json.loads(json_str)
     is_async = data_json.get('is_async')
     if is_async == 1 or is_async is True or is_async == '1':
-        result = celery_submit.delay('workerPageB', json_str)
+        result = celery_submit.delay('workerPageG', json_str)
         return jsonify({'code': 202, 'msg': '任务提交成功，开始计算...', 'data': {'task_id': result.id}})
 
     result_dict = other_features_stats(data_json)
