@@ -142,35 +142,36 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
     
     i = 0
     for ele in ele_choose:
-        value_sta = df_sta_1[ele].values
-        ele_name = 'data' + str(i)
+        try:
+            value_sta = df_sta_1[ele].values
+            ele_name = 'data' + str(i)
 
-        # 数据清洗
-        data_uclean = pd.DataFrame({'lon': lon_sta, 'lat': lat_sta, 'value': value_sta})
+            # 数据清洗
+            data_uclean = pd.DataFrame({'lon': lon_sta, 'lat': lat_sta, 'value': value_sta})
 
-        # 将inf值替换为NaN
-        data_uclean.replace([np.inf, -np.inf], np.nan, inplace=True)
+            # 将inf值替换为NaN
+            data_uclean.replace([np.inf, -np.inf], np.nan, inplace=True)
 
-        # 移除包含NaN值的行
-        data_clean = data_uclean.dropna()
+            # 移除包含NaN值的行
+            data_clean = data_uclean.dropna()
 
-        # 从清洗后的DataFrame中提取经度、纬度和值
-        lon_clean = data_clean['lon'].values
-        lat_clean = data_clean['lat'].values
-        value_clean = data_clean['value'].values
+            # 从清洗后的DataFrame中提取经度、纬度和值
+            lon_clean = data_clean['lon'].values
+            lat_clean = data_clean['lat'].values
+            value_clean = data_clean['value'].values
 
-        if len(value_clean) == 0:
-            i = i + 1
-            continue
+            if len(value_clean) == 0:
+                i = i + 1
+                continue
 
-        data2 = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, ele)
+            data2 = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, ele)
+        
+        except:
+            data2 = np.nan
 
         nc_file = Dataset(output_filepath_name, 'a', format='NETCDF4', encoding='gbk')
 
-        grid_var = nc_file.createVariable(ele_name, 'f4', (
-            'lat',
-            'lon',
-        ))  # grid
+        grid_var = nc_file.createVariable(ele_name, 'f4', ('lat','lon',))  # grid
         grid_var[:] = data2
 
         nc_file.close()

@@ -42,48 +42,52 @@ def correlation_analysis(df, output_filepath):
         name = ''.join(columns1)
         all_result[name] = dict()
 
-        r, q, p = sm.tsa.acf(new_df[columns1], nlags=num, fft=True, qstat=True)  # alpha=0.05
-        data = np.c_[range(1, num+1), r[1:], q, p]
-        table = pd.DataFrame(data, columns=['Lag', "AC", "Q", "Prob(>Q)"])
-        all_result[name]['自相关'] = table.to_dict(orient='records')
+        try:
+            r, q, p = sm.tsa.acf(new_df[columns1], nlags=num, fft=True, qstat=True)  # alpha=0.05
+            data = np.c_[range(1, num+1), r[1:], q, p]
+            table = pd.DataFrame(data, columns=['Lag', "AC", "Q", "Prob(>Q)"])
+            all_result[name]['自相关'] = table.to_dict(orient='records')
 
-        fig = plt.figure(figsize=(8, 6))
-        ax1 = fig.add_subplot(111)
-        fig = sm.graphics.tsa.plot_acf(new_df[columns1], lags=num, ax=ax1)
-        plt.xlabel('滞后阶数')
-        plt.ylabel('相关系数')
-        plt.title(columns1)
+            fig = plt.figure(figsize=(8, 6))
+            ax1 = fig.add_subplot(111)
+            fig = sm.graphics.tsa.plot_acf(new_df[columns1], lags=num, ax=ax1)
+            plt.xlabel('滞后阶数')
+            plt.ylabel('相关系数')
+            plt.title(columns1)
 
-        result_picture = os.path.join(output_filepath, name + '_自相关.png')
-        fig.savefig(result_picture, dpi=200, bbox_inches='tight')
-        plt.clf()
-        plt.close()
-        result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
-        result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-        all_result[name]['img'] = result_picture
+            result_picture = os.path.join(output_filepath, name + '_自相关.png')
+            fig.savefig(result_picture, dpi=200, bbox_inches='tight')
+            plt.clf()
+            plt.close()
+            result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+            result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+            all_result[name]['img'] = result_picture
 
-        # 偏自相关
-        r = sm.tsa.pacf(new_df[columns1], nlags=num)
-        table = pd.DataFrame(r[1:], columns=['偏相关系数'])
-        table.reset_index(drop=False,inplace=True)
-        table.columns = ['Lags','偏相关系数']
-        all_result[name]['偏自相关'] = table.to_dict(orient='records')
+            # 偏自相关
+            r = sm.tsa.pacf(new_df[columns1], nlags=num)
+            table = pd.DataFrame(r[1:], columns=['偏相关系数'])
+            table.reset_index(drop=False,inplace=True)
+            table.columns = ['Lags','偏相关系数']
+            all_result[name]['偏自相关'] = table.to_dict(orient='records')
 
-        fig = plt.figure(figsize=(8, 6))
-        ax1 = fig.add_subplot(111)
-        fig = sm.graphics.tsa.plot_pacf(new_df[columns1], lags=num, ax=ax1)
-        plt.xlabel('滞后阶数')
-        plt.ylabel('相关系数')
-        plt.title(columns1)
+            fig = plt.figure(figsize=(8, 6))
+            ax1 = fig.add_subplot(111)
+            fig = sm.graphics.tsa.plot_pacf(new_df[columns1], lags=num, ax=ax1)
+            plt.xlabel('滞后阶数')
+            plt.ylabel('相关系数')
+            plt.title(columns1)
 
-        result_picture = os.path.join(output_filepath, name + '_偏自相关.png')
-        fig.savefig(result_picture, dpi=200, bbox_inches='tight')
-        plt.clf()
-        plt.close()
+            result_picture = os.path.join(output_filepath, name + '_偏自相关.png')
+            fig.savefig(result_picture, dpi=200, bbox_inches='tight')
+            plt.clf()
+            plt.close()
 
-        result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
-        result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-        all_result[name]['p_img'] = result_picture
+            result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+            result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+            all_result[name]['p_img'] = result_picture
+        
+        except:
+            all_result[name]['p_img'] = '站点时间序列太短，无法计算结果'
 
     return all_result
 
