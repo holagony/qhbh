@@ -94,7 +94,7 @@ def pagea_ice_table():
     return return_data
 
 @module02.route('/v1/water_source_hbv', methods=['POST'])
-def pagea_solar():
+def pageb_water_hbv():
     '''
     重点领域与行业预估-水资源影响预估-HBV
     '''
