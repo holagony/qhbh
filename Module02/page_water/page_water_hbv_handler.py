@@ -12,8 +12,9 @@ from Utils.data_processing import data_processing
 import time
 import netCDF4 as nc
 from datetime import  date,datetime, timedelta
-from Module02.page_water.wrapped.func01_q_stats import stats_q
 from Module02.page_water.wrapped.hbv import hbv_main
+from Module02.page_water.wrapped.func01_q_stats import stats_q
+from Module02.page_water.wrapped.func02_result_stats import stats_result_1, stats_result_2, stats_result_3
 import glob
 
 # hbv计算接口
@@ -102,15 +103,14 @@ def choose_mod_path(inpath, data_source, insti, var, time_scale, yr, expri_i, re
 
     return path
 
-# inpath = '/share/data5/QH_qihou_proj-200G/data/cmip_data/'
+# inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6' # cmip6路径
 # data_source = 'original'
 # insti = 'BCC-CSM2-MR'
-# var = 'pr-new'
+# var = 'pr'
 # time_scale = 'daily'
 # expri_i = 'ssp126'
 # yr = 2018
 # path = choose_mod_path(inpath, data_source, insti, var, time_scale, yr, expri_i, res=None)
-
 
 def hbv_single_calc(data_json):
     '''
@@ -162,8 +162,8 @@ def hbv_single_calc(data_json):
     ca = data_json['ca']
     l = data_json['l']
     
-    inpath = '/zipdata'
-    # inpath = r'C:\Users\MJY\Desktop\cmip6' # cmip6路径
+    inpath = '/zipdata/cmip6'
+    # inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6' # cmip6路径
 
     # 2.参数处理
     uuid4 = uuid.uuid4().hex
@@ -435,6 +435,8 @@ def hbv_single_calc(data_json):
     # 结果计算
     # 1.水文站数据的原始统计结果
     result_q = stats_q(data_df, refer_df)
+    result_q = result_q.to_dict(orient='records')
+
     
     # 2.模拟(观测) 使用验证期的气象数据计算径流
     data_df_meteo['EVP_Taka'] = data_df_meteo['EVP_Taka'].apply(lambda x: 0 if x<0 else x)
@@ -461,11 +463,12 @@ def hbv_single_calc(data_json):
     q_sim = hbv_main(len(temp), date_time, month, temp, precip, evp_monthly, tem_monthly, d, fc, beta, c, k0, k1, k2, kp, l, pwp, Tsnow_thresh, ca)
     q_sim = pd.DataFrame(q_sim, index=tem_daily.index, columns=['Q'])
     q_sim_yearly = q_sim.resample('1A').mean().round(2) # m^3/s
-    # TODO 生成原型表格
-
-    # 3.模拟（模式） 使用验证期的cmip6数据计算径流
+    q_sim_yearly1 = stats_result_1(q_sim_yearly, refer_df)
+        
+    # 3.模拟（模式） 使用验证期的cmip6数据计算径流 
+    # 同一情境 不同模式集合平均
     vaild_cmip_res = dict()
-    for exp, sub_dict1 in vaild_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
+    for exp, sub_dict1 in vaild_cmip.items():  # vaild_cmip[exp][insti]['tmp']
         tmp_list = []
         pre_list = []
         for insti, sub_dict2 in sub_dict1.items():
@@ -496,8 +499,9 @@ def hbv_single_calc(data_json):
         q_sim = pd.DataFrame(q_sim, index=pd.to_datetime(tem_daily.time), columns=['Q'])
         q_sim_yearly = q_sim.resample('1A').mean().round(2)
         vaild_cmip_res[exp] = q_sim_yearly
-        # TODO 生成原型表格
     
+    vaild_cmip_res = stats_result_2(vaild_cmip_res, refer_df)
+            
     # 4.预估-集合模式
     evaluate_cmip_res = dict()
     for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
@@ -532,6 +536,8 @@ def hbv_single_calc(data_json):
         q_sim_yearly = q_sim.resample('1A').mean().round(2)
         evaluate_cmip_res[exp] = q_sim_yearly
 
+    evaluate_cmip_res = stats_result_2(evaluate_cmip_res, refer_df)
+
     # 5.预估-单情景-单模式
     single_cmip_res = dict()
     for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
@@ -557,8 +563,22 @@ def hbv_single_calc(data_json):
             q_sim = pd.DataFrame(q_sim, index=pd.to_datetime(tem_daily.time), columns=['Q'])
             q_sim_yearly = q_sim.resample('1A').mean().round(2)
             single_cmip_res[exp][insti] = q_sim_yearly
-            # TODO 生成原型表格
-        
+    
+    single_cmip_res = stats_result_3(single_cmip_res, refer_df)
+    
+    result_dict = dict()
+    result_dict['uuid'] = uuid4
+    result_dict['表格历史'] = dict()
+    result_dict['表格预估'] = dict()
+    result_dict['表格历史']['观测'] = result_q
+    result_dict['表格历史']['模拟观测'] = q_sim_yearly1
+    result_dict['表格历史']['模拟模式'] = vaild_cmip_res
+    result_dict['表格预估']['集合'] = evaluate_cmip_res
+    result_dict['表格预估']['单模式'] = single_cmip_res
+
+    return result_dict
+
+    
     # data_df 验证期水文数据
     # refer_df 参考时段水文数据
     # data_df_meteo 验证期气象数据（站点平均）
@@ -569,7 +589,7 @@ def hbv_single_calc(data_json):
     # vaild_cmip_res 验证期cmip数据的HBV结果
     # evaluate_cmip_res 预估期cmip数据的HBV结果（集合）
     # single_cmip_res 预估器cmip数据的HBV结果（单一模式）
-    return data_df, refer_df, data_df_meteo, vaild_cmip, evaluate_cmip, result_q, q_sim_yearly, vaild_cmip_res, evaluate_cmip_res, single_cmip_res
+    # return data_df, refer_df, data_df_meteo, vaild_cmip, evaluate_cmip, result_q, q_sim_yearly, vaild_cmip_res, evaluate_cmip_res, single_cmip_res
 
 
 if __name__ == '__main__':
@@ -595,4 +615,5 @@ if __name__ == '__main__':
     data_json['pwp'] = 106
     data_json['Tsnow_thresh'] = 0
     data_json['ca'] = 150000
-    ddata_df, refer_df, data_df_meteo, vaild_cmip, evaluate_cmip, result_q, q_sim_yearly, vaild_cmip_res, evaluate_cmip_res, single_cmip_res = hbv_single_calc(data_json)
+    # ddata_df, refer_df, data_df_meteo, vaild_cmip, evaluate_cmip, result_q, q_sim_yearly, vaild_cmip_res, evaluate_cmip_res, single_cmip_res = hbv_single_calc(data_json)
+    result_dict = hbv_single_calc(data_json)

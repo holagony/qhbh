@@ -27,6 +27,11 @@ def stats_q(data_df, refer_df):
     sta_id = data_df['Station_Id_C'][0]
     data_df_Q = data_df['Q'].resample('1A').mean().round(2).to_frame()
     data_df_Q.index = data_df_Q.index.strftime('%Y')
+    
+    # 横向的距平和距平百分率
+    df = pd.DataFrame(index=data_df_Q.index)
+    df['距平'] = data_df_Q['Q'] - refer_df['Q'].mean(axis=0)
+    df['距平百分率'] = ((df['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
 
     # 创建临时下方统计的df
     tmp_df = pd.DataFrame(columns=data_df_Q.columns)
@@ -39,28 +44,15 @@ def stats_q(data_df, refer_df):
     tmp_df.loc['参考时段'] = refer_df['Q'].mean(axis=0).round(1)
 
     result = pd.concat([data_df_Q,tmp_df],axis=0)
+    result = pd.concat([result,df],axis=1)
+    
     result['站名'] = station_name
     result['站号'] = sta_id
-    result = result[['站名','站号','Q']]
+    result = result[['站名','站号','Q','距平','距平百分率']]
     result.reset_index(drop=False,inplace=True)
     
     return result
 
 
 if __name__ == '__main__':
-    # from Module02.page_water.page_water_hbv import hbv_single_calc
-    # data_json = dict()
-    # data_json['time_freq'] = 'Y'
-    # data_json['evaluate_times'] = '1950,1980' # 预估时段时间条
-    # data_json['refer_years'] = '2023,2024'# 参考时段时间条
-    # data_json['valid_times'] = '202303,202403' # 验证期 '%Y%m,%Y%m'
-    # data_json['hydro_ids'] = '40100350' # 唐乃亥
-    # data_json['sta_ids'] = '52943,52955,52957,52968,56033,56043,56045,56046,56065,56067'
-    # data_json['cmip_type'] = 'original' # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
-    # data_json['cmip_res'] = None # 分辨率 1/5/10/25/50/100 km
-    # data_json['cmip_model'] = ['BCC-CSM2-MR', 'CanESM5']# 模式，列表：['CanESM5','CESM2']等
-    # data_json['degree'] = None
-    # data_df, refer_df, data_df_meteo, vaild_cmip, evaluate_cmip = hbv_single_calc(data_json)
-
-    # result = stats_q(data_df, refer_df)
     pass
