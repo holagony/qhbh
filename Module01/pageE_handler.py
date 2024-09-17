@@ -9,6 +9,7 @@ Created on Wed Sep  4 10:12:18 2024
 
 import os
 import uuid
+import numpy as np
 import pandas as pd
 import xarray as xr
 import psycopg2
@@ -34,6 +35,7 @@ from Module01.wrapped.func13_frs_table_stats import frs_table_stats
 from Module01.wrapped.func14_ice_table_stats import snow_table_stats
 
 # 冰冻圈
+
 
 def freeze_features_stats(data_json):
     '''
@@ -95,7 +97,7 @@ def freeze_features_stats(data_json):
     ci = data_json['ci']
     shp_path = data_json.get('shp_path')
     degree = data_json.get('degree')
-    
+
     # 2.参数处理
     if shp_path is not None:
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
@@ -106,16 +108,14 @@ def freeze_features_stats(data_json):
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
         os.chmod(data_dir, 0o007 | 0o070 | 0o700)
-    
 
-    if element in ['FRS_DEPTH','FRS_START','FRS_END','FRS_TIME']:
+    if element in ['FRS_DEPTH', 'FRS_START', 'FRS_END', 'FRS_TIME']:
         element_str = 'frs_1st_top,frs_1st_bot,frs_2nd_top,frs_2nd_bot,frs_state,frs_depth'
-        
-    elif element in ['SNOW_DEPTH','SNOW_DAYS']:
+
+    elif element in ['SNOW_DEPTH', 'SNOW_DAYS']:
         element_str = 'snow_depth'
 
-
-    table_name='qh_climate_cmadaas_day'
+    table_name = 'qh_climate_cmadaas_day'
     # 从数据库截数据
     conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
     cur = conn.cursor()
@@ -145,7 +145,7 @@ def freeze_features_stats(data_json):
         end_year = years.split(',')[1]
 
         if 12 in mon_list:
-            
+
             query = sql.SQL(f"""
                             SELECT {elements}
                             FROM public.{table_name}
@@ -155,9 +155,9 @@ def freeze_features_stats(data_json):
                                 OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) IN ('01', '02'))
                                 AND station_id_c IN %s
                             """)
-            cur.execute(query, (start_year, end_year,str(int(start_year)-1),str(int(end_year)+1), sta_ids))
+            cur.execute(query, (start_year, end_year, str(int(start_year) - 1), str(int(end_year) + 1), sta_ids))
 
-        else:    
+        else:
             query = sql.SQL(f"""
                             SELECT {elements}
                             FROM public.{table_name}
@@ -165,7 +165,7 @@ def freeze_features_stats(data_json):
                                 (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
                                 AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
                                 AND station_id_c IN %s
-                            """)  
+                            """)
             cur.execute(query, (start_year, end_year, mon_, sta_ids))
 
         data = cur.fetchall()
@@ -250,19 +250,18 @@ def freeze_features_stats(data_json):
         end_date = dates.split(',')[1][2:]
         cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_mon, end_date, sta_ids))
         data = cur.fetchall()
-        
-        
+
     # 统计年份数据处理为df
     data_df = pd.DataFrame(data)
     data_df.columns = elements.split(',')
-    
+
     data_df.set_index('Datetime', inplace=True)
     data_df.index = pd.DatetimeIndex(data_df.index)
     data_df['Station_Id_C'] = data_df['Station_Id_C'].astype(str)
 
     if 'Unnamed: 0' in data_df.columns:
-        data_df.drop(['Unnamed: 0'], axis=1, inplace=True)   
-        
+        data_df.drop(['Unnamed: 0'], axis=1, inplace=True)
+
     # 下载参考时段的数据
     query = sql.SQL(f"""
                     SELECT {elements}
@@ -278,14 +277,14 @@ def freeze_features_stats(data_json):
     data = cur.fetchall()
     refer_df = pd.DataFrame(data)
     refer_df.columns = elements.split(',')
-    
+
     refer_df.set_index('Datetime', inplace=True)
     refer_df.index = pd.DatetimeIndex(refer_df.index)
     refer_df['Station_Id_C'] = refer_df['Station_Id_C'].astype(str)
 
     if 'Unnamed: 0' in refer_df.columns:
-        refer_df.drop(['Unnamed: 0'], axis=1, inplace=True) 
-        
+        refer_df.drop(['Unnamed: 0'], axis=1, inplace=True)
+
     # 下载近10年的数据
     start_year = nearly_years.split(',')[0]
     end_year = nearly_years.split(',')[1]
@@ -293,14 +292,14 @@ def freeze_features_stats(data_json):
     data = cur.fetchall()
     nearly_df = pd.DataFrame(data)
     nearly_df.columns = elements.split(',')
-    
+
     nearly_df.set_index('Datetime', inplace=True)
     nearly_df.index = pd.DatetimeIndex(nearly_df.index)
     nearly_df['Station_Id_C'] = nearly_df['Station_Id_C'].astype(str)
 
     if 'Unnamed: 0' in nearly_df.columns:
-        nearly_df.drop(['Unnamed: 0'], axis=1, inplace=True) 
-        
+        nearly_df.drop(['Unnamed: 0'], axis=1, inplace=True)
+
     # 关闭数据库
     cur.close()
     conn.close()
@@ -313,29 +312,35 @@ def freeze_features_stats(data_json):
     # 首先获取站号对应的站名
     station_df = pd.DataFrame()
     station_df['站号'] = [
-        51886, 51991, 52602, 52633, 52645, 52657, 52707, 52713, 52737, 52745, 52754, 52765, 52818, 52825, 52833, 52836, 52842, 52851, 52853, 52855, 52856, 
-        52859, 52862, 52863, 52866, 52868, 52869, 52874, 52875, 52876, 52877, 52908, 52942, 52943, 52955, 52957, 52963, 52968, 52972, 52974, 56004, 56015, 
-        56016, 56018, 56021, 56029, 56033, 56034, 56043, 56045, 56046, 56065, 56067, 56125, 56151]
+        51886, 51991, 52602, 52633, 52645, 52657, 52707, 52713, 52737, 52745, 52754, 52765, 52818, 52825, 52833, 52836, 52842, 52851, 52853, 52855, 52856, 52859, 52862, 52863, 52866, 52868, 52869, 52874, 52875, 52876, 52877, 52908, 52942, 52943,
+        52955, 52957, 52963, 52968, 52972, 52974, 56004, 56015, 56016, 56018, 56021, 56029, 56033, 56034, 56043, 56045, 56046, 56065, 56067, 56125, 56151
+    ]
     station_df['站名'] = [
-        '茫崖', '那陵格勒', '冷湖', '托勒', '野牛沟', '祁连', '小灶火', '大柴旦', '德令哈', '天峻', '刚察', '门源', '格尔木', '诺木洪', '乌兰', '都兰', '茶卡', 
-        '江西沟', '海晏', '湟源', '共和', '瓦里关', '大通', '互助', '西宁', '贵德', '湟中', '乐都', '平安', '民和', '化隆', '五道梁', '河卡', '兴海', '贵南', '同德',
-        '尖扎', '泽库', '循化', '同仁', '沱沱河', '曲麻河', '治多', '杂多', '曲麻莱', '玉树', '玛多', '清水河', '玛沁', '甘德', '达日', '河南', '久治', '囊谦', '班玛']
+        '茫崖', '那陵格勒', '冷湖', '托勒', '野牛沟', '祁连', '小灶火', '大柴旦', '德令哈', '天峻', '刚察', '门源', '格尔木', '诺木洪', '乌兰', '都兰', '茶卡', '江西沟', '海晏', '湟源', '共和', '瓦里关', '大通', '互助', '西宁', '贵德', '湟中', '乐都', '平安', '民和', '化隆', '五道梁', '河卡', '兴海', '贵南', '同德', '尖扎', '泽库',
+        '循化', '同仁', '沱沱河', '曲麻河', '治多', '杂多', '曲麻莱', '玉树', '玛多', '清水河', '玛沁', '甘德', '达日', '河南', '久治', '囊谦', '班玛'
+    ]
     station_df['站号'] = station_df['站号'].map(str)
-    new_station = station_df[ station_df['站号'].isin(sta_ids)]
+    new_station = station_df[station_df['站号'].isin(sta_ids)]
 
     # stats_result 展示结果表格
     # post_data_df 统计年份数据，用于后续计算
     # post_refer_df 参考年份数据，用于后续计算
 
-    if element in ['FRS_DEPTH','FRS_TIME']:
-        stats_result, post_data_df, post_refer_df, reg_params = frs_table_stats(data_df, refer_df, nearly_df, element,last_year)
+    if element in ['FRS_DEPTH', 'FRS_TIME']:
+        stats_result, post_data_df, post_refer_df, reg_params = frs_table_stats(data_df, refer_df, nearly_df, element, last_year)
 
-    elif element in ['FRS_START','FRS_END']:
-        stats_result, post_data_df, post_refer_df, reg_params,data_df_time = frs_table_stats(data_df, refer_df, nearly_df, element,last_year)
-
-    elif element in ['SNOW_DEPTH','SNOW_DAYS']:
-        stats_result, post_data_df, post_refer_df, reg_params = snow_table_stats(data_df, refer_df, nearly_df, element,time_freq,last_year)
-
+    elif element in ['FRS_START', 'FRS_END']:
+        stats_result, post_data_df, post_refer_df, reg_params, data_df_time = frs_table_stats(data_df, refer_df, nearly_df, element, last_year)
+        
+        # 增加时间处理为str
+        for col in data_df_time.columns:
+            data_df_time[col] = data_df_time[col].apply(lambda x: np.nan if pd.isnull(x) else x.strftime('%Y-%m-%d'))
+        data_df_time.dropna(how='all',axis=0,inplace=True)
+        data_df_time.reset_index(drop=False,inplace=True)
+        
+    elif element in ['SNOW_DEPTH', 'SNOW_DAYS']:
+        stats_result, post_data_df, post_refer_df, reg_params = snow_table_stats(data_df, refer_df, nearly_df, element, time_freq, last_year)
+    
     # 分布图 try在里面了
     if shp_path is not None:
         nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
@@ -345,7 +350,7 @@ def freeze_features_stats(data_json):
     else:
         nc_path = None
         nc_path_trans = None
-            
+
     # 6/7. 统计分析-EOF分析
     if nc_path is not None:
         try:
@@ -387,8 +392,8 @@ def freeze_features_stats(data_json):
     result_dict['表格'] = dict()
     result_dict['表格'] = stats_result.to_dict(orient='records')
 
-    if element in ['FRS_START','FRS_END']:
-        result_dict['表格_日期'] =data_df_time
+    if element in ['FRS_START', 'FRS_END']:
+        result_dict['表格_日期'] = data_df_time.to_dict(orient='records')
 
     result_dict['分布图'] = dict()
     result_dict['分布图'] = nc_path_trans
@@ -410,7 +415,7 @@ def freeze_features_stats(data_json):
 if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
-    data_json['element'] = 'FRS_DEPTH'
+    data_json['element'] = 'FRS_START'
     data_json['refer_years'] = '2021,2022'
     data_json['nearly_years'] = '2021,2022'
     data_json['time_freq'] = 'Y'
@@ -420,7 +425,7 @@ if __name__ == '__main__':
     data_json['ci'] = 95
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
     data_json['degree'] = 10
-    
+
     result = freeze_features_stats(data_json)
     t2 = time.time()
     print(t2 - t1)
