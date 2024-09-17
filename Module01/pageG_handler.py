@@ -55,7 +55,9 @@ def other_features_stats(data_json):
     shp_path = data_json.get('shp_path')
 
     # 2.参数处理
-    shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+    if shp_path is not None:
+        shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+        
     uuid4 = uuid.uuid4().hex
     data_dir = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
     if not os.path.exists(data_dir):
@@ -70,6 +72,7 @@ def other_features_stats(data_json):
     result_dict['uuid'] = uuid4
     
     if element == 'gdp':
+        path = cfg.FILES.FILE01
         if sta_ids == '630000':
             qh_df = pd.read_excel(path, sheet_name='青海省国民经济生产总值', header=0)
             qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
@@ -84,6 +87,7 @@ def other_features_stats(data_json):
             qh_df = qh_df[['年份', '指标', '单位'] + stations]
     
     elif element == 'pop':
+        path = cfg.FILES.FILE02
         if sta_ids == '630000':
             qh_df = pd.read_excel(path, sheet_name='人口（全省）', header=0)
             qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
@@ -98,14 +102,17 @@ def other_features_stats(data_json):
             qh_df = qh_df[['年份', '指标', '单位'] + stations]
     
     elif element == 'energy_production':
+        path = cfg.FILES.FILE03
         qh_df = pd.read_excel(path, sheet_name='一次能源生产总量（万吨标准煤）', header=0)
         qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
     
     elif element == 'energy_consumption':
+        path = cfg.FILES.FILE03
         qh_df = pd.read_excel(path, sheet_name='一次能源消费总量（万吨标准煤）', header=0)
         qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
     
     elif element == 'heating_drgree_5':
+        path = cfg.FILES.FILE03
         if sta_ids == '630000':
             qh_df = pd.read_excel(path, sheet_name='5度采暖度日总量（℃•d）', header=0)
             qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
@@ -119,6 +126,7 @@ def other_features_stats(data_json):
             qh_df = qh_df[['年份'] + stations]
     
     elif element == 'heating_drgree_18':
+        path = cfg.FILES.FILE03
         if sta_ids == '630000':
             qh_df = pd.read_excel(path, sheet_name='18度采暖度日总量（℃•d）', header=0)
             qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
@@ -132,6 +140,7 @@ def other_features_stats(data_json):
             qh_df = qh_df[['年份'] + stations]
     
     elif element == 'passenger_transport':
+        path = cfg.FILES.FILE04
         qh_df = pd.read_excel(path, sheet_name='旅客运输量', header=0)
         qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
     
@@ -140,6 +149,7 @@ def other_features_stats(data_json):
         qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
     
     elif element == 'road_mile':
+        path = cfg.FILES.FILE04
         if sta_ids == '630000':
             qh_df = pd.read_excel(path, sheet_name='公路里程', header=0)
             qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
@@ -158,26 +168,27 @@ def other_features_stats(data_json):
 
 
 if __name__ == '__main__':
-    t1 = time.time()
-    t2 = time.time()
-    print(t2 - t1)
+    # t1 = time.time()
+    # t2 = time.time()
+    # print(t2 - t1)
 
-    path = cfg.FILES.FILE04
+    # path = cfg.FILES.FILE04
     
-    years = '1980,2010'
-    start_year = int(years.split(',')[0])
-    end_year = int(years.split(',')[1])
+    # years = '1980,2010'
+    # start_year = int(years.split(',')[0])
+    # end_year = int(years.split(',')[1])
     
-    sta_ids = '52869,52855,52875,52876,52874,52863,52877,52972,52765,52657,52853,52754,52856'
+    # sta_ids = '52869,52855,52875,52876,52874,52863,52877,52972,52765,52657,52853,52754,52856'
     
-    if sta_ids == '630000':
-        qh_df = pd.read_excel(path, sheet_name='公路里程', header=0)
-        qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
-    else:
-        sta_ids = sta_ids.split(',')
-        station_info = pd.read_excel(path, sheet_name='空间分布', header=0)
-        station_info['站号'] = station_info['站号'].map(int).map(str)
-        stations = station_info[station_info['站号'].isin(sta_ids)]['站名'].to_list()
-        qh_df = pd.read_excel(path, sheet_name='公路里程', header=0)
-        qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
-        qh_df = qh_df[['年份','指标','单位'] + stations]
+    # if sta_ids == '630000':
+    #     qh_df = pd.read_excel(path, sheet_name='公路里程', header=0)
+    #     qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
+    # else:
+    #     sta_ids = sta_ids.split(',')
+    #     station_info = pd.read_excel(path, sheet_name='空间分布', header=0)
+    #     station_info['站号'] = station_info['站号'].map(int).map(str)
+    #     stations = station_info[station_info['站号'].isin(sta_ids)]['站名'].to_list()
+    #     qh_df = pd.read_excel(path, sheet_name='公路里程', header=0)
+    #     qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
+    #     qh_df = qh_df[['年份','指标','单位'] + stations]
+    pass

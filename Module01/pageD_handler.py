@@ -409,7 +409,7 @@ if __name__ == '__main__':
     data_json = dict()
     data_json['element'] = 'Q'
     data_json['refer_years'] = '2023,2024'
-    data_json['nearly_years'] = '2023,2024'
+    data_json['nearly_years'] = '2014,2023'
     data_json['time_freq'] = 'Y'
     data_json['stats_times'] = '2023,2024' # '198105,202009' # '1981,2023'
     data_json['sta_ids'] = '01004500'
@@ -418,6 +418,6 @@ if __name__ == '__main__':
     data_json['shp_path'] =r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
     data_json['degree'] = None
     
-    result = water_features_stats(data_json)
+    result,post_data_df, post_refer_df = water_features_stats(data_json)
     t2 = time.time()
     print(t2 - t1)
