@@ -25,17 +25,7 @@ def agriculture_features_stats(data_json):
     '''
     获取天擎数据，参数说明
     :param element：对应原型，传入的要素名称
-        社会经济
-        人口
-        能源生产总量
-        能源消费总量
-        5度采暖度日总量
-        18度采暖度日总量
-        旅客运输量
-        货物运输量
-        公路里程
-        GDP
-        人口
+        农牧业
 
     :param time_freq: 对应原型选择数据的时间尺度
         传参：
@@ -168,8 +158,7 @@ def agriculture_features_stats(data_json):
                                     AND station_id_c IN %s
                                 """)  
                 cur.execute(query, (start_year, end_year, mon_, sta_ids))
-
-        data = cur.fetchall()
+            data = cur.fetchall()
 
         elif time_freq == 'M1':  # '%Y%m,%Y%m'
             query = sql.SQL(f"""

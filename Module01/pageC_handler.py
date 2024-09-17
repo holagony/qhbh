@@ -383,13 +383,14 @@ def grass_features_stats(data_json):
                         '牧业', '昭苏', '肇源', '白城', '巴雅尔吐胡硕', '安达', '富裕', '新巴尔虎左旗', '鄂温克', '额尔古纳']
     station_df['站号'] = station_df['站号'].map(str)
     new_station = station_df[station_df['站号'].isin(sta_ids)]
-    result_dict['站号'] = new_station.to_dict(orient='records')
 
     result_dict = dict()
     result_dict['uuid'] = uuid4
     result_dict['表格'] = dict()
     result_dict['分布图'] = dict()
     result_dict['统计分析'] = dict()
+    result_dict['站号'] = new_station.to_dict(orient='records')
+
 
     # stats_result 展示结果表格
     # post_data_df 统计年份数据，用于后续计算
