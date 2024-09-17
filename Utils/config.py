@@ -20,7 +20,7 @@ elif os.name == 'posix':
 else:
     flag = 'HX'
                 
-
+# flag = 'local'
 
 # 信息配置
 __C.INFO = edict()
@@ -30,11 +30,11 @@ __C.INFO.NUM_THREADS = 20  # 多线程数量
 __C.INFO.IN_UPLOAD_FILE = '/zipdata'
 __C.INFO.OUT_UPLOAD_FILE = '/mnt/PRESKY/project/bgdb/qihou/zipdata' if flag == 'HX' else 'C:/Users/MJY/Desktop/qhbh/zipdata'
 
-__C.INFO.IN_DATA_DIR = '/data' if flag == 'HX' else 'C:/Users/MJY/Desktop/qhbh/data' # 容器内保存文件夹
+__C.INFO.IN_DATA_DIR = '/data' # if flag == 'HX' else 'C:/Users/MJY/Desktop/qhbh/data' # 容器内保存文件夹
 __C.INFO.OUT_DATA_DIR = '/mnt/PRESKY/project/bgdb/qihou/data' if flag == 'HX' else 'C:/Users/MJY/Desktop/qhbh/data'  # 容器外挂载保存文件夹
 __C.INFO.OUT_DATA_URL = 'http://221.122.67.145:8889/qh_climate/result/' if flag == 'HX' else 'http://221.122.67.145:8889/qh_climate/result/'
 
-__C.INFO.REDIS_HOST = '192.168.1.119' if flag == 'HX' else '172.17.0.2'
+__C.INFO.REDIS_HOST = '192.168.1.119' if flag == 'HX' else '172.17.0.1'
 __C.INFO.REDIS_PORT = '8086' if flag == 'HX' else '6379'
 __C.INFO.REDIS_PWD = 'hC%34okFq&' if flag == 'HX' else ''
 
