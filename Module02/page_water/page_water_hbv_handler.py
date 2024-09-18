@@ -95,11 +95,11 @@ def choose_mod_path(inpath, data_source, insti, var, time_scale, yr, expri_i, re
     if data_source=='original':
         # path = os.path.join(inpath, data_cource,path1,insti ,expri,var,filen)
         path_dir = os.path.join(inpath, data_source,path1,insti ,expri,var)
-        path=glob.glob(os.path.join(path_dir, f'{var}*{str(yr)}*.nc'))[0]
+        path=glob.glob(os.path.join(path_dir, f'{var}*{str(yr)}0101*.nc'))[0]
     else:
         # path = os.path.join(inpath, data_cource,res,path1,insti ,expri,var,filen)
         path_dir = os.path.join(inpath, data_source,res,path1,insti ,expri,var)
-        path=glob.glob(os.path.join(path_dir, f'{var}*{str(yr)}*.nc'))[0]
+        path=glob.glob(os.path.join(path_dir, f'{var}*{str(yr)}0101*.nc'))[0]
 
     return path
 
