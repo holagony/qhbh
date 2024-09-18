@@ -90,7 +90,9 @@ def grass_features_stats(data_json):
 
     # 2.参数处理
     degree = None
-    shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+    if shp_path is not None:
+        shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+        
     last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
 
     uuid4 = uuid.uuid4().hex

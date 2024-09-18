@@ -162,7 +162,7 @@ def hbv_single_calc(data_json):
     ca = data_json['ca']
     l = data_json['l']
     
-    inpath = '/zipdata/cmip6'
+    inpath = '/zipdata'
     # inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6' # cmip6路径
 
     # 2.参数处理

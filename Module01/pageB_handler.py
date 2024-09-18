@@ -155,8 +155,9 @@ def extreme_climate_features(data_json):
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
         os.chmod(data_dir, 0o007 | 0o070 | 0o700)
-        
-    shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+    
+    if shp_path is not None:
+        shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
 
     # 3. 要素字典
     tem_table=['TN10p','TX10p','TN90p','TX90p','ID','FD','TNx','TXx','TNn','TXn',
