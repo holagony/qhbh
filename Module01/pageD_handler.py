@@ -30,6 +30,7 @@ from Module01.wrapped.func07_correlation_analysis import correlation_analysis
 from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
 import time
+import logging
 
 # 水资源
 
@@ -90,6 +91,8 @@ def water_features_stats(data_json):
     # 2.参数处理
     if shp_path is not None:
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+        print(shp_path)
+        logging.info(shp_path)
 
     last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
     uuid4 = uuid.uuid4().hex

@@ -60,7 +60,7 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
     start_lat = df_shp['Latitude'].min() - 1
     end_lon = df_shp['Longitude'].max() + 1
     end_lat = df_shp['Latitude'].max() + 1
-    resolution = 0.25
+    resolution = 0.5
 
     gridx = np.arange(start_lon, end_lon + resolution, resolution)
     gridy = np.arange(start_lat, end_lat + resolution, resolution)
