@@ -154,8 +154,10 @@ def data_read_sql(sta_ids,elements,stats_times,table_name,time_freq):
     data_df = pd.DataFrame(data)
     data_df.columns = elements.split(',')
     
-    for name in elements.split(',')[3::]:
-        data_df.loc[data_df[name] > 1000, [name]] = np.nan
+    for name in data_df.columns:
+        if name in ['frs_1st_top','frs_1st_bot','frs_2nd_top','frs_2nd_bot','frs_state',
+                     'frs_depth','snow_depth','dwei','fwei','Cov']:
+            data_df.loc[data_df[name] > 99999, [name]] = np.nan
     
 
     return data_df
