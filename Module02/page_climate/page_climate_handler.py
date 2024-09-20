@@ -1,21 +1,24 @@
 import os
 import uuid
+import time
+import glob
 import numpy as np
 import pandas as pd
 import xarray as xr
 import psycopg2
 from io import StringIO
 from psycopg2 import sql
+from datetime import date, datetime, timedelta
+from Module02.page_climate.wrapped.func01_table_stats import table_stats_simple
+from Module02.page_climate.wrapped.func02_table_stats_cmip import table_stats_simple_cmip
+
+from Module02.page_water.wrapped.func02_result_stats import stats_result_1, stats_result_2, stats_result_3
 from Utils.config import cfg
 from Utils.ordered_easydict import OrderedEasyDict as edict
 from Utils.data_processing import data_processing
-import time
-import netCDF4 as nc
-from datetime import  date,datetime, timedelta
-from Module02.page_water.wrapped.hbv import hbv_main
-from Module02.page_water.wrapped.func01_q_stats import stats_q
-from Module02.page_water.wrapped.func02_result_stats import stats_result_1, stats_result_2, stats_result_3
-import glob
+from Utils.data_loader_with_threads import get_database_data
+from Utils.station_to_grid import station_to_grid
+
 
 # 气候要素预估接口
 
@@ -84,7 +87,7 @@ def climate_forcast(data_json):
         日(连续) - 'D1'
         日(区间) - 'D2'
 
-    :param stats_times: 对应原型的统计时段
+    :param evaluate_times: 对应原型的统计时段
         (1)当time_freq选择年Y。下载连续的年数据，传参：'%Y,%Y'
         (2)当time_freq选择季Q。下载连续的月数据，处理成季数据（多下两个月数据），提取历年相应的季节数据，传：['%Y,%Y','3,4,5']，其中'3,4,5'为季度对应的月份 
         (3)当time_freq选择月(连续)M1。下载连续的月数据，传参：'%Y%m,%Y%m'
@@ -107,7 +110,7 @@ def climate_forcast(data_json):
     '''
     # 1.参数读取
     time_freq = data_json['time_freq'] # 控制预估时段
-    stats_times = data_json['stats_times'] # 预估时段时间条
+    evaluate_times = data_json['evaluate_times'] # 预估时段时间条
     refer_years = data_json['refer_years'] # 参考时段时间条
     element = data_json['element']
     sta_ids = data_json['sta_ids'] # 气象站 '52943,52955,52957,52968,56033,56043,56045,56046,56065,56067'
@@ -116,7 +119,7 @@ def climate_forcast(data_json):
     cmip_model = data_json['cmip_model'] # 模式，列表：['CanESM5','CESM2']等
 
     inpath = '/zipdata'
-    # inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6' # cmip6路径
+    inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6' # cmip6路径
 
     # 2.参数处理
     degree = None
@@ -136,179 +139,25 @@ def climate_forcast(data_json):
         table_name = 'qh_qhbh_cmadaas_day'
     element_str = element
     
-    # 从数据库截数据
-    conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
-    cur = conn.cursor()
+    # 从数据库获取
     sta_ids = tuple(sta_ids.split(','))
-    elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,' + element_str
-
-    if time_freq == 'Y':  # '%Y,%Y'
-        query = sql.SQL(f"""
-                        SELECT {elements}
-                        FROM public.{table_name}
-                        WHERE
-                            CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                            AND station_id_c IN %s
-                        """)
-
-        # 根据sql获取统计年份data
-        start_year = stats_times.split(',')[0]
-        end_year = stats_times.split(',')[1]
-        cur.execute(query, (start_year, end_year, sta_ids))
-        data = cur.fetchall()
-
-    elif time_freq == 'Q':  # ['%Y,%Y','3,4,5']
-        mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
-        mon_ = tuple(mon_list)
-        years = stats_times[0]
-        start_year = years.split(',')[0]
-        end_year = years.split(',')[1]
-
-        if 12 in mon_list:
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{table_name}
-                                WHERE (SUBSTRING(datetime, 1, 4) BETWEEN %s AND %s) 
-                                AND SUBSTRING(datetime, 6, 2) IN ('12', '01', '02')
-                                OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) = '12')
-                                OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) IN ('01', '02'))
-                                AND station_id_c IN %s
-                            """)
-            cur.execute(query, (start_year, end_year,str(int(start_year)-1),str(int(end_year)+1), sta_ids))
-
-        else:    
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{table_name}
-                            WHERE
-                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
-                                AND station_id_c IN %s
-                            """)  
-            cur.execute(query, (start_year, end_year, mon_, sta_ids))
-
-        data = cur.fetchall()
-
-    elif time_freq == 'M1':  # '%Y%m,%Y%m'
-        query = sql.SQL(f"""
-                        SELECT {elements}
-                        FROM public.{table_name}
-                        WHERE
-                            ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) >= %s)
-                            OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
-                            OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) <= %s))
-                            AND station_id_c IN %s
-                        """)
-
-        start_year = stats_times.split(',')[0][:4]
-        end_year = stats_times.split(',')[1][:4]
-        start_month = stats_times.split(',')[0][4:]
-        end_month = stats_times.split(',')[1][4:]
-        cur.execute(query, (start_year, start_month, start_year, end_year, end_year, end_month, sta_ids))
-        data = cur.fetchall()
-
-    elif time_freq == 'M2':  # ['%Y,%Y','11,12,1,2']
-        mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
-        mon_ = tuple(mon_list)
-        query = sql.SQL(f"""
-                        SELECT {elements}
-                        FROM public.{table_name}
-                        WHERE
-                            (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                            AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
-                            AND station_id_c IN %s
-                        """)
-
-        years = stats_times[0]
-        start_year = years.split(',')[0]
-        end_year = years.split(',')[1]
-        cur.execute(query, (start_year, end_year, mon_, sta_ids))
-        data = cur.fetchall()
-
-    elif time_freq == 'D1':  # '%Y%m%d,%Y%m%d'
-        query = sql.SQL(f"""
-                        SELECT {elements}
-                        FROM public.{table_name}
-                        WHERE
-                            ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) >= %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
-                            OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
-                            OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) <= %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s))
-                            AND station_id_c IN %s
-                        """)
-
-        start_year = stats_times.split(',')[0][:4]
-        end_year = stats_times.split(',')[1][:4]
-        start_month = stats_times.split(',')[0][4:6]
-        end_month = stats_times.split(',')[1][4:6]
-        start_date = stats_times.split(',')[0][6:]
-        end_date = stats_times.split(',')[1][6:]
-        cur.execute(query, (start_year, start_month, start_date, start_year, end_year, end_year, end_month, end_date, sta_ids))
-        data = cur.fetchall()
-
-    elif time_freq == 'D2':  # ['%Y,%Y','%m%d,%m%d']
-        query = sql.SQL(f"""
-                        SELECT {elements}
-                        FROM public.{table_name}
-                        WHERE
-                            (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                            AND (
-                                (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
-                                OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) < %s)
-                                OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s)
-                            ))
-                            AND station_id_c IN %s
-                        """)
-
-        years = stats_times[0]
-        dates = stats_times[1]
-        start_year = years.split(',')[0]
-        end_year = years.split(',')[1]
-        start_mon = dates.split(',')[0][:2]
-        end_mon = dates.split(',')[1][:2]
-        start_date = dates.split(',')[0][2:]
-        end_date = dates.split(',')[1][2:]
-        cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_mon, end_date, sta_ids))
-        data = cur.fetchall()
-
-    # 统计年份数据处理为df
-    data_df = pd.DataFrame(data)
-    data_df.columns = elements.split(',')
+    refer_df = get_database_data(sta_ids, element_str, table_name, time_freq, refer_years)
     
-    # 下载参考时段的数据
-    query = sql.SQL(f"""
-                    SELECT {elements}
-                    FROM public.{table_name}
-                    WHERE
-                        CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                        AND station_id_c IN %s
-                    """)
-
-    start_year = refer_years.split(',')[0]
-    end_year = refer_years.split(',')[1]
-    cur.execute(query, (start_year, end_year, sta_ids))
-    data = cur.fetchall()
-    refer_df = pd.DataFrame(data)
-    refer_df.columns = elements.split(',')
-
-    # 关闭数据库
-    cur.close()
-    conn.close()
-
     ######################################################
     # 模式数据获取
     # 先确定年份
     if time_freq == 'Y':  # '%Y,%Y'
-        start_year = stats_times.split(',')[0]
-        end_year = stats_times.split(',')[1]
+        start_year = int(evaluate_times.split(',')[0])
+        end_year = int(evaluate_times.split(',')[1])
 
     elif time_freq in ['Q', 'M2', 'D2']:  # ['%Y,%Y','3,4,5']
-        years = stats_times[0]
-        start_year = years.split(',')[0]
-        end_year = years.split(',')[1]
+        years = evaluate_times[0]
+        start_year = int(years.split(',')[0])
+        end_year = int(years.split(',')[1])
 
     elif time_freq in ['M1', 'D1']:  # '%Y%m,%Y%m'
-        start_year = stats_times.split(',')[0][:4]
-        end_year = stats_times.split(',')[1][:4]
+        start_year = int(evaluate_times.split(',')[0][:4])
+        end_year = int(evaluate_times.split(',')[1][:4])
 
     # 确定模式原始要素
     var_dict = dict()
@@ -319,7 +168,7 @@ def climate_forcast(data_json):
     var_dict['PRE_Days'] = 'pr'
     var_dict['RHU_Avg'] = 'hurs'
     # var_dict['WIN_S_2mi_Avg'] = 'uas,vas'
-    var = var_dict['elements']
+    var = var_dict[element]
 
     # 读取数据
     evaluate_cmip = dict()
@@ -346,71 +195,179 @@ def climate_forcast(data_json):
             evaluate_cmip[exp][insti][var] = tmp_all
 
     ######################################################
-    # 数据处理
-    ##### 站点数据
-    data_df = data_processing(data_df, element_str, degree)
+    ##### 站点数据处理
     refer_df = data_processing(refer_df, element_str, degree)
-
-
-    ##### 预估期的cmip6插值到水文站
+    df_unique = refer_df.drop_duplicates(subset='Station_Id_C') # 删除重复行
+    lon_list = df_unique['Lon'].tolist()
+    lat_list = df_unique['Lat'].tolist()
+    sta_list = df_unique['Station_Id_C'].tolist()
+    
+    ######################################################
+    ##### 模式数据处理
     # 首先筛选时间
     if time_freq == 'Y':
-        s = stats_times.split(',')[0]
-        e = stats_times.split(',')[1]
+        s = evaluate_times.split(',')[0]
+        e = evaluate_times.split(',')[1]
         time_index = pd.date_range(start=s, end=e, freq='D')[:-1] # 'Y'
 
     elif time_freq in ['Q', 'M2']:
-        s = stats_times[0].split(',')[0]
-        e = stats_times[1].split(',')[1]
-        mon_list = [int(val) for val in stats_times[1].split(',')]
+        s = evaluate_times[0].split(',')[0]
+        e = evaluate_times[1].split(',')[1]
+        mon_list = [int(val) for val in evaluate_times[1].split(',')]
         time_index = pd.date_range(start=s, end=e, freq='D')[:-1]  # 'Q' or 'M2'
         time_index = time_index[time_index.month.isin(mon_list)]
     
     elif time_freq == 'M1':
-        s = stats_times.split(',')[0]
-        e = stats_times.split(',')[1]
+        s = evaluate_times.split(',')[0]
+        e = evaluate_times.split(',')[1]
         s = pd.to_datetime(s,format='%Y%m')
         e = pd.to_datetime(e,format='%Y%m') + pd.DateOffset(months=1)
         time_index = pd.date_range(start=s, end=e, freq='D')[:-1] # M1
     
     elif time_freq == 'D1':
-        s = stats_times.split(',')[0]
-        e = stats_times.split(',')[1]
+        s = evaluate_times.split(',')[0]
+        e = evaluate_times.split(',')[1]
         time_index = pd.date_range(start=s, end=e, freq='D') # D1
     
     elif time_freq == 'D2': # ['%Y,%Y','%m%d,%m%d']
-        s = stats_times[0].split(',')[0]
-        e = stats_times[1].split(',')[1]
-        s_mon = stats_times[1].split(',')[0][:2]
-        e_mon = stats_times[1].split(',')[1][:2]
-        s_day = stats_times[1].split(',')[0][2:]
-        e_day = stats_times[1].split(',')[1][2:]
+        s = evaluate_times[0].split(',')[0]
+        e = evaluate_times[1].split(',')[1]
+        s_mon = evaluate_times[1].split(',')[0][:2]
+        e_mon = evaluate_times[1].split(',')[1][:2]
+        s_day = evaluate_times[1].split(',')[0][2:]
+        e_day = evaluate_times[1].split(',')[1][2:]
         dates = pd.date_range(start=s, end=e, freq='D')
         time_index = dates[((dates.month==s_mon) & (dates.day>=s_day)) | ((dates.month>s_mon) & (dates.month<e_mon)) | ((dates.month==e_mon) & (dates.day<=e_day))]
 
     time_index = time_index[~((time_index.month==2) & (time_index.day==29))] # 由于数据原因，删除2月29号
-    hydro_lon = data_df['Lon'][0]
-    hydro_lat = data_df['Lat'][0]
+    
+    # 插值到多个站点
+    interp_lon = xr.DataArray(lon_list, dims="location", coords={"location": sta_list,})
+    interp_lat = xr.DataArray(lat_list, dims="location", coords={"location": sta_list,})
+    
     for _, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
         for _, sub_dict2 in sub_dict1.items():
             for key, ds_data in sub_dict2.items():
                 selected_data = ds_data.sel(time=time_index)
-                selected_data = selected_data.interp(lat=hydro_lat, lon=hydro_lon, method='nearest')
+                selected_data = selected_data.interp(lat=interp_lat, lon=interp_lon, method='nearest')
                 sub_dict2[key] = selected_data
+    
+    ######################################################
+    # 开始计算
+    result_dict = dict()
+    result_dict['uuid'] = uuid4
+    result_dict['表格'] = dict()
+    result_dict['时序图'] = dict()
+    result_dict['分布图'] = dict()
+
+    # 首先获取站号对应的站名
+    station_df = pd.DataFrame()
+    station_df['站号'] = [
+        51886, 51991, 52602, 52633, 52645, 52657, 52707, 52713, 52737, 52745, 52754, 52765, 52818, 52825, 52833, 52836, 52842, 52851, 52853, 52855, 52856, 
+        52859, 52862, 52863, 52866, 52868, 52869, 52874, 52875, 52876, 52877, 52908, 52942, 52943, 52955, 52957, 52963, 52968, 52972, 52974, 56004, 56015, 
+        56016, 56018, 56021, 56029, 56033, 56034, 56043, 56045, 56046, 56065, 56067, 56125, 56151]
+    station_df['站名'] = [
+        '茫崖', '那陵格勒', '冷湖', '托勒', '野牛沟', '祁连', '小灶火', '大柴旦', '德令哈', '天峻', '刚察', '门源', '格尔木', '诺木洪', '乌兰', '都兰', '茶卡', 
+        '江西沟', '海晏', '湟源', '共和', '瓦里关', '大通', '互助', '西宁', '贵德', '湟中', '乐都', '平安', '民和', '化隆', '五道梁', '河卡', '兴海', '贵南', '同德',
+        '尖扎', '泽库', '循化', '同仁', '沱沱河', '曲麻河', '治多', '杂多', '曲麻莱', '玉树', '玛多', '清水河', '玛沁', '甘德', '达日', '河南', '久治', '囊谦', '班玛']
+    station_df['站号'] = station_df['站号'].map(str)
+    new_station = station_df[ station_df['站号'].isin(sta_ids)]
+    result_dict['站号'] = new_station.to_dict(orient='records')
+
+    # 1.表格-历史
+    stats_result, _, _ = table_stats_simple(refer_df, element_str)
+    result_dict['表格']['历史'] = stats_result.to_dict(orient='records')
+
+    # 2.表格-预估-各个情景的集合
+    evaluate_cmip_res = dict()
+    for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tas']
+        ds_list = []
+        for insti, sub_dict2 in sub_dict1.items():
+            ds = sub_dict2[var]
+            ds_list.append(ds)
+        
+        ds_daily = xr.concat(ds_list, 'new_dim')
+        ds_daily = ds_daily.mean(dim='new_dim')
+        ds_yearly = ds_daily.resample(time='YE').mean()
+        res_table = table_stats_simple_cmip(ds_yearly, var, sta_list) # 调用生成表格
+        evaluate_cmip_res[exp] = res_table.to_dict(orient='records')
+    
+    result_dict['表格']['预估集合'] = evaluate_cmip_res
+    
+    # 3.表格-预估-各个情景的单模式
+    single_cmip_res = dict()
+    for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
+        single_cmip_res[exp] = dict()
+        for insti, sub_dict2 in sub_dict1.items():
+            ds_daily = sub_dict2[var]
+            ds_yearly = ds_daily.resample(time='YE').mean()
+            res_table = table_stats_simple_cmip(ds_yearly, var, sta_list)
+            single_cmip_res[exp][insti] = res_table#.to_dict(orient='records')
+    
+    # return single_cmip_res, lon_list, lat_list
+            
+    result_dict['表格']['预估单模式'] = single_cmip_res
+            
+    # 4.时序图-各个情景的集合
+    std_percent = dict()
+    for exp, sub_dict in single_cmip_res.items():
+        std_percent[exp] = dict()
+        array_list= []
+        for insti, res_df in sub_dict.items():
+            res_df = pd.DataFrame(res_df)
+            res_df.set_index('时间',inplace=True)
+            array_list.append(res_df.iloc[:-4, :].values[None])
+            array = np.concatenate(array_list,axis=0)
+            std = np.std(array, ddof=1, axis=0).round(2)
+            per25 = np.percentile(array, 25, axis=0).round(2)
+            per75 = np.percentile(array, 75, axis=0).round(2)
+            
+            std = pd.DataFrame(std, index=res_df.index[:-4], columns=res_df.columns)
+            per25 = pd.DataFrame(per25, index=res_df.index[:-4], columns=res_df.columns)
+            per75 = pd.DataFrame(per75, index=res_df.index[:-4], columns=res_df.columns)
+            
+            std.reset_index(drop=False,inplace=True)
+            per25.reset_index(drop=False,inplace=True)
+            per75.reset_index(drop=False,inplace=True)
+            
+            std_percent[exp]['1倍标准差'] = std.to_dict(orient='records')
+            std_percent[exp]['百分位数25'] = per25.to_dict(orient='records')
+            std_percent[exp]['百分位数75'] = per75.to_dict(orient='records')
+    
+    result_dict['时序图'] = std_percent
+    
+    # 5.分布图 实时画（后面改为提取提前画好的图）
+    # 先插值
+    
+    
+    
 
 
- 
 
+
+
+    return result_dict
+        
 
 if __name__ == '__main__':
     data_json = dict()
     data_json['time_freq'] = 'Y'
-    data_json['stats_times'] = '1950,1980' # 预估时段时间条
-    data_json['refer_years'] = '2023,2024'# 参考时段时间条
+    data_json['evaluate_times'] = '1950,1980' # 预估时段时间条
+    data_json['refer_years'] = '2000,2024'# 参考时段时间条
     data_json['sta_ids'] = '52943,52955,52957,52968,56033,56043,56045,56046,56065,56067'
     data_json['cmip_type'] = 'original' # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None # 分辨率 1/5/10/25/50/100 km
     data_json['cmip_model'] = ['BCC-CSM2-MR', 'CanESM5']# 模式，列表：['CanESM5','CESM2']等
+    data_json['element'] = 'TEM_Avg'
+    result_dict = climate_forcast(data_json)
+    
 
-    # ddata_df, refer_df, data_df_meteo, vaild_cmip, evaluate_cmip, result_q, q_sim_yearly, vaild_cmip_res, evaluate_cmip_res, single_cmip_res = hbv_single_calc(data_json)
-    result_dict = hbv_single_calc(data_json)
+
+
+
+
+    
+    
+    
+    
+    
