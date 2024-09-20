@@ -484,7 +484,7 @@ def hbv_single_calc(data_json):
         
         # 数据处理
         tem_monthly = tem_daily.resample(time='1M').mean()
-        tem_monthly = tem_monthly.tas.to_series() - 273.15
+        tem_monthly = tem_monthly.tas.to_series()
         pre_monthly = pre_daily.resample(time='1M').sum()
         pre_monthly = pre_monthly.pr.to_series()
         evp_monthly = 3100*tem_monthly/(3100+1.8*(pre_monthly**2)*np.exp((-34.4*tem_monthly)/(235+tem_monthly)))
@@ -493,7 +493,7 @@ def hbv_single_calc(data_json):
         # hbv-input
         date_time = pd.to_datetime(tem_daily.time)
         month = np.array(pd.to_datetime(tem_daily.time).month)
-        temp = tem_daily.tas.data-273.15  # 气温 单位：度
+        temp = tem_daily.tas.data  # 气温 单位：度
         precip = pre_daily.pr.data  # 单位：mm
         q_sim = hbv_main(len(temp), date_time, month, temp, precip, evp_monthly, tem_monthly, d, fc, beta, c, k0, k1, k2, kp, l, pwp, Tsnow_thresh, ca)
         q_sim = pd.DataFrame(q_sim, index=pd.to_datetime(tem_daily.time), columns=['Q'])
@@ -520,7 +520,7 @@ def hbv_single_calc(data_json):
         
         # 数据处理
         tem_monthly = tem_daily.resample(time='1M').mean()
-        tem_monthly = tem_monthly.tas.to_series() - 273.15
+        tem_monthly = tem_monthly.tas.to_series()
         pre_monthly = pre_daily.resample(time='1M').sum()
         pre_monthly = pre_monthly.pr.to_series()
         evp_monthly = 3100*tem_monthly/(3100+1.8*(pre_monthly**2)*np.exp((-34.4*tem_monthly)/(235+tem_monthly)))
@@ -529,7 +529,7 @@ def hbv_single_calc(data_json):
         # hbv-input
         date_time = pd.to_datetime(tem_daily.time)
         month = np.array(pd.to_datetime(tem_daily.time).month)
-        temp = tem_daily.tas.data-273.15  # 气温 单位：度
+        temp = tem_daily.tas.data  # 气温 单位：度
         precip = pre_daily.pr.data  # 单位：mm
         q_sim = hbv_main(len(temp), date_time, month, temp, precip, evp_monthly, tem_monthly, d, fc, beta, c, k0, k1, k2, kp, l, pwp, Tsnow_thresh, ca)
         q_sim = pd.DataFrame(q_sim, index=pd.to_datetime(tem_daily.time), columns=['Q'])
@@ -548,7 +548,7 @@ def hbv_single_calc(data_json):
         
             # 数据处理
             tem_monthly = tem_daily.resample(time='1M').mean()
-            tem_monthly = tem_monthly.tas.to_series() - 273.15
+            tem_monthly = tem_monthly.tas.to_series()
             pre_monthly = pre_daily.resample(time='1M').sum()
             pre_monthly = pre_monthly.pr.to_series()
             evp_monthly = 3100*tem_monthly/(3100+1.8*(pre_monthly**2)*np.exp((-34.4*tem_monthly)/(235+tem_monthly)))
@@ -557,7 +557,7 @@ def hbv_single_calc(data_json):
             # hbv-input
             date_time = pd.to_datetime(tem_daily.time)
             month = np.array(pd.to_datetime(tem_daily.time).month)
-            temp = tem_daily.tas.data-273.15  # 气温 单位：度
+            temp = tem_daily.tas.data  # 气温 单位：度
             precip = pre_daily.pr.data  # 单位：mm
             q_sim = hbv_main(len(temp), date_time, month, temp, precip, evp_monthly, tem_monthly, d, fc, beta, c, k0, k1, k2, kp, l, pwp, Tsnow_thresh, ca)
             q_sim = pd.DataFrame(q_sim, index=pd.to_datetime(tem_daily.time), columns=['Q'])
