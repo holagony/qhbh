@@ -6,18 +6,16 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 import psycopg2
+from tqdm import tqdm
 from io import StringIO
 from psycopg2 import sql
 from datetime import date, datetime, timedelta
 from Module02.page_climate.wrapped.func01_table_stats import table_stats_simple
 from Module02.page_climate.wrapped.func02_table_stats_cmip import table_stats_simple_cmip
-
-from Module02.page_water.wrapped.func02_result_stats import stats_result_1, stats_result_2, stats_result_3
+from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
 from Utils.config import cfg
-from Utils.ordered_easydict import OrderedEasyDict as edict
 from Utils.data_processing import data_processing
 from Utils.data_loader_with_threads import get_database_data
-from Utils.station_to_grid import station_to_grid
 
 
 # 气候要素预估接口
@@ -74,7 +72,7 @@ def choose_mod_path(inpath, data_source, insti, var, time_scale, yr, expri_i, re
 # yr = 2018
 # path = choose_mod_path(inpath, data_source, insti, var, time_scale, yr, expri_i, res=None)
 
-def climate_forcast(data_json):
+def climate_esti(data_json):
     '''
     获取天擎数据，参数说明
 
@@ -117,9 +115,12 @@ def climate_forcast(data_json):
     cmip_type = data_json['cmip_type'] # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     cmip_res = data_json.get('cmip_res') # 分辨率 1/5/10/25/50/100 km
     cmip_model = data_json['cmip_model'] # 模式，列表：['CanESM5','CESM2']等
+    plot = data_json['plot']
+    method = data_json['method']
+    shp_path = data_json['shp_path']
 
     inpath = '/zipdata'
-    inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6' # cmip6路径
+    # inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6' # cmip6路径
 
     # 2.参数处理
     degree = None
@@ -198,6 +199,8 @@ def climate_forcast(data_json):
     ##### 站点数据处理
     refer_df = data_processing(refer_df, element_str, degree)
     df_unique = refer_df.drop_duplicates(subset='Station_Id_C') # 删除重复行
+    
+    # 重要!!!
     lon_list = df_unique['Lon'].tolist()
     lat_list = df_unique['Lat'].tolist()
     sta_list = df_unique['Station_Id_C'].tolist()
@@ -302,10 +305,8 @@ def climate_forcast(data_json):
             ds_daily = sub_dict2[var]
             ds_yearly = ds_daily.resample(time='YE').mean()
             res_table = table_stats_simple_cmip(ds_yearly, var, sta_list)
-            single_cmip_res[exp][insti] = res_table#.to_dict(orient='records')
-    
-    # return single_cmip_res, lon_list, lat_list
-            
+            single_cmip_res[exp][insti] = res_table.to_dict(orient='records')
+                
     result_dict['表格']['预估单模式'] = single_cmip_res
             
     # 4.时序图-各个情景的集合
@@ -337,15 +338,42 @@ def climate_forcast(data_json):
     result_dict['时序图'] = std_percent
     
     # 5.分布图 实时画（后面改为提取提前画好的图）
-    # 先插值
+    if plot == 1:
+        all_png = dict()
+        for exp, sub_dict1 in single_cmip_res.items():
+            all_png[exp] = dict()
+            for insti,stats_table in sub_dict1.items():
+                all_png[exp][insti] = dict()
+                stats_table = pd.DataFrame(stats_table)
+                for i in tqdm(range(len(stats_table))):
+                    value_list = stats_table.iloc[i,1:-3].tolist()
+                    year_name = stats_table.iloc[i,0]
+                    exp_name = exp
+                    insti_name = insti
+                    # 插值/掩膜/画图/保存
+                    mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
+                    
+                    # 转url
+                    png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+                    png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+
+                    all_png[exp][insti][year_name] = png_path
+
+        
+    else: # 直接获取现成的，目前没做，所有图片路径都是None
+        all_png = dict()
+        for exp, sub_dict1 in single_cmip_res.items():
+            all_png[exp] = dict()
+            for insti,stats_table in sub_dict1.items():
+                all_png[exp][insti] = dict()
+                stats_table = pd.DataFrame(stats_table)
+                for i in tqdm(range(len(stats_table))):
+                    year_name = stats_table.iloc[i,0]
+                    all_png[exp][insti][year_name] = None
     
-    
-    
-
-
-
-
-
+    result_dict['分布图'] = all_png
+        
     return result_dict
         
 
@@ -359,7 +387,10 @@ if __name__ == '__main__':
     data_json['cmip_res'] = None # 分辨率 1/5/10/25/50/100 km
     data_json['cmip_model'] = ['BCC-CSM2-MR', 'CanESM5']# 模式，列表：['CanESM5','CESM2']等
     data_json['element'] = 'TEM_Avg'
-    result_dict = climate_forcast(data_json)
+    data_json['plot'] = 0
+    data_json['method'] = 'idw'
+    data_json['shp_path'] = r'C:/Users/MJY/Desktop/青海省.json'
+    result_dict = climate_esti(data_json)
     
 
 
