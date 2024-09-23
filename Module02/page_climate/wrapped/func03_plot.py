@@ -9,7 +9,7 @@ from shapely.prepared import prep
 # import cmaps
 import cartopy.crs as ccrs
 import matplotlib 
-# matplotlib.use('agg')
+matplotlib.use('agg')
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
