@@ -9,22 +9,23 @@ from shapely.prepared import prep
 # import cmaps
 import cartopy.crs as ccrs
 import matplotlib 
-matplotlib.use('agg')
+# matplotlib.use('agg')
 
 import matplotlib.patches as mpatches
-import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 import geopandas as gpd
-from shapely.prepared import prep
-from matplotlib.colors import ListedColormap, BoundaryNorm, LogNorm
 from shapely.geometry.multipolygon import MultiPolygon
-from shapely import wkt
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import cartopy.feature as cfeat
-from tqdm import tqdm
-from cartopy.io.shapereader import Reader
 from Utils.station_to_grid import station_to_grid
+from shapely.geometry import  Polygon
+from Utils.config import cfg
+import matplotlib as mpl
+
+mpl.rcParams['font.sans-serif'] = [u'SimHei']  # 中文字体可修改
+mpl.rcParams['axes.unicode_minus'] = False
+
+
 
     
 def polygon_to_mask(polygon, x, y):
@@ -144,43 +145,45 @@ def get_fig_ax():
     return fig, ax
 
 
-def add_scalebar(ax,lon0,lat0,length,size=0.45):
+def add_scalebar(ax, x0, y0, length, size=0.014):
     '''
     ax: 坐标轴
-    lon0: 经度
-    lat0: 纬度
-    length: 长度
+    x0: 比例尺起点的x坐标（0-1之间）
+    y0: 比例尺起点的y坐标（0-1之间）
+    length: 比例尺的长度（单位：km）
     size: 控制粗细和距离的
     '''
-    # style 3
-    ax.hlines(y=lat0,  xmin = lon0, xmax = lon0+length/111, colors="black", ls="-", lw=1, label='%d km' % (length))
-    ax.vlines(x = lon0, ymin = lat0-size, ymax = lat0+size, colors="black", ls="-", lw=1)
-    ax.vlines(x = lon0+length/2/111, ymin = lat0-size, ymax = lat0+size, colors="black", ls="-", lw=1)
-    ax.vlines(x = lon0+length/111, ymin = lat0-size, ymax = lat0+size, colors="black", ls="-", lw=1)
-    ax.text(lon0+length/111,lat0+size+0.01,'%d' % (length),horizontalalignment = 'center')
-    ax.text(lon0+length/2/111,lat0+size+0.01,'%d' % (length/2),horizontalalignment = 'center')
-    ax.text(lon0,lat0+size+0.01, '0',horizontalalignment = 'center')
-    ax.text(lon0+length/111/2*3,lat0+size+0.01,'km',horizontalalignment = 'center')
+    # 获取当前坐标轴的范围
     
-    # style 1
-    # print(help(ax.vlines))
-    # ax.hlines(y=lat0,  xmin = lon0, xmax = lon0+length/111, colors="black", ls="-", lw=2, label='%d km' % (length))
-    # ax.vlines(x = lon0, ymin = lat0-size, ymax = lat0+size, colors="black", ls="-", lw=2)
-    # ax.vlines(x = lon0+length/111, ymin = lat0-size, ymax = lat0+size, colors="black", ls="-", lw=2)
-    # # ax.text(lon0+length/2/111,lat0+size,'500 km',horizontalalignment = 'center')
-    # ax.text(lon0+length/2/111,lat0+size,'%d' % (length/2),horizontalalignment = 'center')
-    # ax.text(lon0,lat0+size,'0',horizontalalignment = 'center')
-    # ax.text(lon0+length/111/2*3,lat0+size,'km',horizontalalignment = 'center')
-
-    # style 2
-    # plt.hlines(y=lat0,  xmin = lon0, xmax = lon0+length/111, colors="black", ls="-", lw=1, label='%d km' % (length))
-    # plt.vlines(x = lon0, ymin = lat0-size, ymax = lat0+size, colors="black", ls="-", lw=1)
-    # plt.vlines(x = lon0+length/111, ymin = lat0-size, ymax = lat0+size, colors="black", ls="-", lw=1)
-    # plt.text(lon0+length/111,lat0+size,'%d km' % (length),horizontalalignment = 'center')
-    # plt.text(lon0,lat0+size,'0',horizontalalignment = 'center')
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
     
-
-def add_north(ax, labelsize=18, loc_x=0.9, loc_y=0.97, width=0.03, height=0.075, pad=0.16):
+    # 计算比例尺的实际长度（根据坐标轴的范围）
+    x_range = xlim[1] - xlim[0]
+    y_range = ylim[1] - ylim[0]
+    
+    # 将0-1坐标系转换为实际坐标系
+    x0_actual = xlim[0] + x0 * x_range
+    y0_actual = ylim[0] + y0 * y_range
+    
+    # 计算比例尺的实际长度（单位：度）
+    length_deg = length / 111  # 1度大约等于111公里
+    
+    # 绘制比例尺
+    ax.hlines(y=y0_actual, xmin=x0_actual, xmax=x0_actual + length_deg, colors="black", ls="-", lw=1, label='%d km' % (length))
+    
+    # 绘制竖线（只在上半部分）
+    ax.vlines(x=x0_actual, ymin=y0_actual, ymax=y0_actual + size * y_range, colors="black", ls="-", lw=1)
+    ax.vlines(x=x0_actual + length_deg / 2, ymin=y0_actual, ymax=y0_actual + size * y_range, colors="black", ls="-", lw=1)
+    ax.vlines(x=x0_actual + length_deg, ymin=y0_actual, ymax=y0_actual + size * y_range, colors="black", ls="-", lw=1)
+    
+    # 添加文本
+    ax.text(x0_actual + length_deg, y0_actual + size * y_range + 0.01 * y_range, '%d' % (length), horizontalalignment='center')
+    ax.text(x0_actual + length_deg / 2, y0_actual + size * y_range + 0.01 * y_range, '%d' % (length / 2), horizontalalignment='center')
+    ax.text(x0_actual, y0_actual + size * y_range + 0.01 * y_range, '0', horizontalalignment='center')
+    ax.text(x0_actual + length_deg / 2 * 2.5, y0_actual + size * y_range + 0.01 * y_range, 'km', horizontalalignment='center')
+     
+def add_north(ax, labelsize=18, loc_x=0.9, loc_y=0.99, width=0.03, height=0.075, pad=0.16):
     """
     画一个比例尺带'N'文字注释
     主要参数如下
@@ -218,18 +221,49 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     insti_name: 模式名，用于保存文件名
     year_name: 年份or最大/最小/变率，用于保存文件名
     '''
-    fig, ax = get_fig_ax()
-    year_name = str(year_name)
     
+    lon_min=89
+    lon_max=104
+    lat_min=31
+    lat_max=40
+    lakes_shp=cfg.FILES.LAKE
+    glaciers_shp=cfg.FILES.ICE
+    
+    
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(111, projection=ccrs.PlateCarree())    
     # 画结果网格
     mesh = ax.contourf(lon_grid, lat_grid, mask_grid, transform=ccrs.PlateCarree(), alpha=0.8, cmap='jet', extend='both')
-    cbar = fig.colorbar(mesh, ax=ax, extend='neither', shrink=0.75, spacing='uniform') # 添加colorbar
-    # cbar.set_label('气温 $\mathrm{degree}$', fontsize=12, loc='top')
     
     # 画边界
     shp = gpd.read_file(shp_path,encoding='utf-8')
     shp_feature = cfeat.ShapelyFeature(shp['geometry'], ccrs.PlateCarree(), edgecolor='k', facecolor='none')
     ax.add_feature(shp_feature, linewidth=0.7, alpha=0.4)
+    
+    # 合并所有多边形
+    try:
+        merged_geometry = shp.geometry.unary_union
+        
+        # 提取最外部的边界
+        if isinstance(merged_geometry, MultiPolygon):
+            exterior_boundary = MultiPolygon([Polygon(geom.exterior) for geom in merged_geometry.geoms])
+        elif isinstance(merged_geometry, Polygon):
+            exterior_boundary = Polygon(merged_geometry.exterior)
+        else:
+            raise ValueError("Unexpected geometry type")
+        
+        # 创建外部边界的 ShapelyFeature
+        exterior_feature = cfeat.ShapelyFeature(exterior_boundary, ccrs.PlateCarree(), edgecolor='k', facecolor='none')
+        ax.add_feature(exterior_feature, linewidth=1.0, alpha=0.7)
+    except:
+        print("Unexpected geometry type")
+
+
+    # 湖泊、冰川
+    lakes_gdf = gpd.read_file(lakes_shp)
+    glaciers_gdf = gpd.read_file(glaciers_shp)
+    lakes_gdf.plot(ax=ax, color='blue', label='湖泊')
+    glaciers_gdf.plot(ax=ax, color='#73ffdf', label='冰川')
 
     # 添加网格线/经纬度
     grid = ax.gridlines(draw_labels=True, linestyle='--', linewidth=0.6, alpha=0.7, x_inline=False, y_inline=False, color='grey')
@@ -237,29 +271,48 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     grid.right_labels=False
     grid.xformatter = LONGITUDE_FORMATTER
     grid.yformatter = LATITUDE_FORMATTER
-    # grid.xlocator = mticker.FixedLocator(np.arange(np.floor(lon_min), np.ceil(lon_max), 1.5)) # 经纬度范围自定义
-    # grid.ylocator = mticker.FixedLocator(np.arange(np.floor(lat_min), np.ceil(lat_max), 1.5))
+
     grid.xlabel_style={'size':13}
     grid.ylabel_style={'size':13}
-    ax.set_extent([89,104,31,40.5],crs=ccrs.PlateCarree()) # 写死了，青海省
+    ax.set_extent([lon_min,lon_max,lat_min,lat_max],crs=ccrs.PlateCarree()) 
     
-    # ax.set_title(time, loc='left', fontsize=20, weight='normal')     
-    # ax.set_title(str(time)+' 门头沟区域积水风险结果', loc='center', fontsize=20 ,weight='normal')
-    # ax.set_title('unit:'+unit, loc='right', fontsize=18 ,weight='normal')
-    ax.text(0.5, 0.92, f'青海省{year_name}年要素分布图', transform=ax.transAxes, fontdict={'size':'15','color':'black'}, horizontalalignment='center')
-    ax.text(0.7, 0.05, '青海省气候中心 制', transform=ax.transAxes, fontdict={'size':'15','color':'black'})
+    # ax.text(0.5, 0.96, f'青海省{year_name}要素分布图', transform=ax.transAxes, fontdict={'size':'15','color':'black'}, horizontalalignment='center')
+    ax.text(0.8, 0.02, '青海省气候中心', transform=ax.transAxes, fontdict={'size':'10','color':'black'})
     
     # 画指南针和比例尺
     add_north(ax)
-    add_scalebar(ax,90,31.5,150,size=0.1)
+    add_scalebar(ax,0.8, 0.05,200,size=0.014)
 
-    # 保存图片
+    lakes_handle = mpatches.Rectangle((0, 0), 1, 1, facecolor='blue', label='湖泊')
+    glaciers_handle = mpatches.Rectangle((0, 0), 1, 1, facecolor='#73ffdf', label='冰川')
+    state_handle = mpatches.Patch(facecolor='none', edgecolor='black', linewidth=0.7,alpha=0.4, label='州界')
+    province_handle = mpatches.Patch(facecolor='none', edgecolor='black', linewidth=0.7,alpha=1, label='省界')
+
+    # 添加图例
+    legend = ax.legend(handles=[province_handle,lakes_handle,state_handle,  glaciers_handle], 
+                   loc='lower left', 
+                   fontsize=10, 
+                   ncol=2,  
+                   frameon=False, 
+                   title='图例',  
+                   title_fontsize=10, 
+                   handletextpad=0.5,  
+                   columnspacing=1.0,
+                   bbox_to_anchor=(0.0, 0.05))  
+
+    # 手动调整图例框的位置
+    legend._legend_box.align = 'left'
+    
+    cax = ax.inset_axes([0.02, 0.035, 0.4, 0.02]) 
+    cbar = fig.colorbar(mesh, cax=cax,orientation='horizontal',shrink=0.01, spacing='uniform',extend='none')
+    cbar.ax.tick_params(labelsize=7)  
+
     save_path1 = save_path + '/{}_{}_{}_结果图.png'.format(exp_name, insti_name, year_name)
     plt.savefig(save_path1, dpi=300, bbox_inches='tight')
     plt.clf()
     plt.close('all')
     gc.collect()
-    
+
     return save_path1
     
     

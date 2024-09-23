@@ -66,3 +66,18 @@ __C.FILES.FILE01 = os.path.join(data_file_dir, '行业数据/01_GDP.xlsx')
 __C.FILES.FILE02 = os.path.join(data_file_dir, '行业数据/02_人口.xlsx')
 __C.FILES.FILE03 = os.path.join(data_file_dir, '行业数据/03_能源.xlsx')
 __C.FILES.FILE04 = os.path.join(data_file_dir, '行业数据/04_交通.xlsx')
+
+# shp文件路径
+__C.FILES.LAKE = os.path.join(data_file_dir, 'shp/lake.shp')
+__C.FILES.ICE = os.path.join(data_file_dir, 'shp/ice.shp')
+
+
+
+
+
+
+
+
+
+
+
