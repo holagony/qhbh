@@ -90,7 +90,9 @@ def other_features_stats(data_json):
             station_df = pd.read_excel(path, sheet_name='Sheet1', header=None)
             station_df.columns = ['地区','站号','val']
             station_df = station_df[['地区','站号']]
-            result_dict['站号'] = station_df.to_dict(orient='records')
+            station_df['站号'] = station_df['站号'].map(str)
+            new_station = station_df[ station_df['站号'].isin(sta_ids)]
+            result_dict['站号'] = new_station.to_dict(orient='records')
     
     elif element == 'pop':
         path = cfg.FILES.FILE02
@@ -111,8 +113,10 @@ def other_features_stats(data_json):
             station_df = pd.read_excel(path, sheet_name='Sheet1', header=None)
             station_df.columns = ['地区','站号','val','val1']
             station_df = station_df[['地区','站号']]
-            result_dict['站号'] = station_df.to_dict(orient='records')
-    
+            station_df['站号'] = station_df['站号'].map(str)
+            new_station = station_df[ station_df['站号'].isin(sta_ids)]
+            result_dict['站号'] = new_station.to_dict(orient='records')
+
     elif element == 'energy_production':
         path = cfg.FILES.FILE03
         qh_df = pd.read_excel(path, sheet_name='一次能源生产总量（万吨标准煤）', header=0)
@@ -141,7 +145,9 @@ def other_features_stats(data_json):
             station_df = pd.read_excel(path, sheet_name='Sheet1', header=0)
             station_df.columns = ['地区','站号','val']
             station_df = station_df[['地区','站号']]
-            result_dict['站号'] = station_df.to_dict(orient='records')
+            station_df['站号'] = station_df['站号'].map(str)
+            new_station = station_df[ station_df['站号'].isin(sta_ids)]
+            result_dict['站号'] = new_station.to_dict(orient='records')
 
     elif element == 'heating_drgree_18':
         path = cfg.FILES.FILE03
@@ -160,8 +166,9 @@ def other_features_stats(data_json):
             # 站名站号信息
             station_df = pd.read_excel(path, sheet_name='Sheet1', header=0)
             station_df.columns = ['地区','站号','val']
-            station_df = station_df[['地区','站号']]
-            result_dict['站号'] = station_df.to_dict(orient='records')
+            station_df['站号'] = station_df['站号'].map(str)
+            new_station = station_df[ station_df['站号'].isin(sta_ids)]
+            result_dict['站号'] = new_station.to_dict(orient='records')
     
     elif element == 'passenger_transport':
         path = cfg.FILES.FILE04
@@ -189,8 +196,9 @@ def other_features_stats(data_json):
             # 站名站号信息
             station_df = pd.read_excel(path, sheet_name='空间分布', header=0)
             station_df.columns = ['地区','站号','val','val1']
-            station_df = station_df[['地区','站号']]
-            result_dict['站号'] = station_df.to_dict(orient='records')
+            station_df['站号'] = station_df['站号'].map(str)
+            new_station = station_df[ station_df['站号'].isin(sta_ids)]
+            result_dict['站号'] = new_station.to_dict(orient='records')
     
     result_dict['表格'] = qh_df.to_dict(orient='records')
 
