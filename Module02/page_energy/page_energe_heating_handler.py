@@ -55,6 +55,7 @@ from Module02.page_energy.wrapped.func00_function import percentile_std_time
 
 from Module02.page_energy.wrapped.func01_winter_heating_pre import winter_heating_pre
 from Module02.page_energy.wrapped.func02_winter_heating_his import winter_heating_his
+# from Module02.page_energy.wrapped.func06_plot import interp_and_mask, plot_and_save
 
 #%% main
 def energy_winter_heating(data_json):
@@ -68,7 +69,7 @@ def energy_winter_heating(data_json):
     sta_ids = data_json['sta_ids']
     data_cource = data_json['data_cource']
     insti = data_json['insti']
-    res = data_json.get('res', '1')
+    res = data_json.get('res', '10')
     
     #%% 固定信息
     
@@ -82,8 +83,6 @@ def energy_winter_heating(data_json):
         data_dir='/zipdata'
 
     res_d=dict()
-    res_d['1']='0.01deg'
-    res_d['5']='0.06deg'
     res_d['10']='0.10deg'
     res_d['25']='0.25deg'
     res_d['50']='0.50deg'
@@ -147,14 +146,17 @@ def energy_winter_heating(data_json):
     # 加一个 站点站名字典
     station_id=refer_df['Station_Id_C'].unique()
     
-    matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name']],on='Station_Id_C')
-    matched_stations_unique = matched_stations.drop_duplicates()
+    matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name','Lon','Lat']],on='Station_Id_C')
+    matched_stations_unique = matched_stations.drop_duplicates(subset='Station_Id_C')
 
     station_name = matched_stations_unique['Station_Name'].values
     station_id=matched_stations_unique['Station_Id_C'].values
     station_dict=pd.DataFrame(columns=['站名','站号'])
     station_dict['站名']=station_name
     station_dict['站号']=station_id
+    lon_list=matched_stations_unique['Lon'].values
+    lat_list=matched_stations_unique['Lat'].values
+
     
     # 预估数据
     insti = insti.split(',')
@@ -167,7 +169,7 @@ def energy_winter_heating(data_json):
         for scene_a in scene:
             pre_data[insti_a][scene_a]=dict()
             stats_path=[choose_mod_path(data_dir, data_cource,insti_a, var, time_scale, year_a, scene_a,res_d[res]) for year_a in np.arange(int(stats_start_year),int(stats_end_year)+2,1)]
-            result_days,result_hdd18,result_start_end,result_start_end_num= winter_heating_pre(stats_path,sta_ids2,time_freq,stats_times)
+            result_days,result_hdd18,result_start_end,result_start_end_num= winter_heating_pre(stats_path,sta_ids2,time_freq,stats_times,station_name,lon_list,lat_list)
     
             pre_data[insti_a][scene_a]['HDD18']=result_hdd18
             pre_data[insti_a][scene_a]['HD']=result_days
@@ -201,42 +203,7 @@ def energy_winter_heating(data_json):
                     pre_data_result[i][j][ele_a]=data_deal_num_2(pre_data[i][j][elem_dict[ele_a]],refer_result_days,2).to_dict(orient='records')
 
 #%% 结果保存
-    '''
-    result_df=dict()
-    result_df['表格']=dict()
-
-    result_df['表格']['历史']=dict()
-    result_df['表格']['历史']['采暖日']=refer_result_days_z
-    result_df['表格']['历史']['采暖度日']=refer_result_hdd18_z
-    result_df['表格']['历史']['采暖起始日_日期']=refer_result_start_end
-    result_df['表格']['历史']['采暖起始日_日序']=refer_result_start_end_num_z
-    
-    result_df['表格']['预估']=dict()
-    for insti_a in insti:
-        result_df['表格']['预估'][insti_a]=dict()
-        for scene_a in scene:
-            result_df['表格']['预估'][insti_a][scene_a]=dict()
-            result_df['表格']['预估'][insti_a][scene_a]['采暖日']=data_deal_2(pre_data[insti_a][scene_a]['HD'],refer_result_days,1)
-            result_df['表格']['预估'][insti_a][scene_a]['采暖度日']=data_deal_2(pre_data[insti_a][scene_a]['HDD18'],refer_result_hdd18,1)
-            result_df['表格']['预估'][insti_a][scene_a]['采暖起始日_日期']=pre_data[insti_a][scene_a]['HDTIME']
-            result_df['表格']['预估'][insti_a][scene_a]['采暖起始日_日序']=data_deal_num_2(pre_data[insti_a][scene_a]['HDTIME_NUM'],result_start_end_num,1)
-    
-    result_df['表格']['预估']['集合']=dict()
-    for scens in scene:
-        result_df['表格']['预估']['集合'][scens]=dict()
-        result_df['表格']['预估']['集合'][scens]['采暖日']=data_deal_2(HD[scens],refer_result_days,1)
-        result_df['表格']['预估']['集合'][scens]['采暖度日'] =data_deal_2(HDD18[scens],refer_result_hdd18,1)
-        result_df['表格']['预估']['集合'][scens]['采暖起始日_日序']=data_deal_num_2(HDTIME[scens],result_start_end_num,1)
-        
-    result_df['时序图']=dict()
-    result_df['时序图']['集合_多模式' ]=dict()
-    result_df['时序图']['集合_多模式' ]['采暖日']=percentile_std(scene,insti,pre_data,'HD',refer_result_days)
-    result_df['时序图']['集合_多模式' ]['采暖度日']=percentile_std(scene,insti,pre_data,'HDD18',refer_result_hdd18)
-    result_df['时序图']['集合_多模式' ]['采暖起始日_日序']=percentile_std_time(scene,insti,pre_data,result_start_end_num)
-    
-    result_df['时序图']['单模式' ]=pre_data_result.copy()
-    result_df['时序图']['单模式' ]['基准期']=base_p.copy()
-    '''
+   
     result_df_dict=dict()
     result_df_dict['站点']=station_dict.to_dict(orient='records')
     result_df_dict['表格']=dict()
@@ -248,21 +215,20 @@ def energy_winter_heating(data_json):
     result_df_dict['表格']['历史']['采暖起始日_日序']=refer_result_start_end_num_z.to_dict(orient='records')
     
     result_df_dict['表格']['预估']=dict()
-    for insti_a in insti:
-        result_df_dict['表格']['预估'][insti_a]=dict()
-        for scene_a in scene:
-            result_df_dict['表格']['预估'][insti_a][scene_a]=dict()
-            result_df_dict['表格']['预估'][insti_a][scene_a]['采暖日']=data_deal_2(pre_data[insti_a][scene_a]['HD'],refer_result_days,1).to_dict(orient='records')
-            result_df_dict['表格']['预估'][insti_a][scene_a]['采暖度日']=data_deal_2(pre_data[insti_a][scene_a]['HDD18'],refer_result_hdd18,1).to_dict(orient='records')
-            result_df_dict['表格']['预估'][insti_a][scene_a]['采暖起始日_日期']=pre_data[insti_a][scene_a]['HDTIME'].to_dict(orient='records')
-            result_df_dict['表格']['预估'][insti_a][scene_a]['采暖起始日_日序']=data_deal_num_2(pre_data[insti_a][scene_a]['HDTIME_NUM'],result_start_end_num,1).to_dict(orient='records')
+        
+    for scene_a in scene:
+        result_df_dict['表格']['预估'][scene_a]=dict()
+        for insti_a in insti:
+            result_df_dict['表格']['预估'][scene_a][insti_a]=dict()
+            result_df_dict['表格']['预估'][scene_a][insti_a]['采暖日']=data_deal_2(pre_data[insti_a][scene_a]['HD'],refer_result_days,1).to_dict(orient='records')
+            result_df_dict['表格']['预估'][scene_a][insti_a]['采暖度日']=data_deal_2(pre_data[insti_a][scene_a]['HDD18'],refer_result_hdd18,1).to_dict(orient='records')
+            result_df_dict['表格']['预估'][scene_a][insti_a]['采暖起始日_日期']=pre_data[insti_a][scene_a]['HDTIME'].to_dict(orient='records')
+            result_df_dict['表格']['预估'][scene_a][insti_a]['采暖起始日_日序']=data_deal_num_2(pre_data[insti_a][scene_a]['HDTIME_NUM'],result_start_end_num,1).to_dict(orient='records')
 
-    result_df_dict['表格']['预估']['集合']=dict()
-    for scens in scene:
-        result_df_dict['表格']['预估']['集合'][scens]=dict()
-        result_df_dict['表格']['预估']['集合'][scens]['采暖日']=data_deal_2(HD[scens],refer_result_days,1).to_dict(orient='records')
-        result_df_dict['表格']['预估']['集合'][scens]['采暖度日']=data_deal_2(HDD18[scens],refer_result_hdd18,1).to_dict(orient='records')
-        result_df_dict['表格']['预估']['集合'][scens]['采暖起始日_日序']=data_deal_num_2(HDTIME[scens],result_start_end_num,1).to_dict(orient='records')
+        result_df_dict['表格']['预估'][scene_a]['集合']=dict()
+        result_df_dict['表格']['预估'][scene_a]['集合']['采暖日']=data_deal_2(HD[scene_a],refer_result_days,1).to_dict(orient='records')
+        result_df_dict['表格']['预估'][scene_a]['集合']['采暖度日']=data_deal_2(HDD18[scene_a],refer_result_hdd18,1).to_dict(orient='records')
+        result_df_dict['表格']['预估'][scene_a]['集合']['采暖起始日_日序']=data_deal_num_2(HDTIME[scene_a],result_start_end_num,1).to_dict(orient='records')
 
     result_df_dict['时序图']=dict()
     result_df_dict['时序图']['集合_多模式' ]=dict()
@@ -274,7 +240,6 @@ def energy_winter_heating(data_json):
     result_df_dict['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()
 
 
-    
     return result_df_dict
         
 if __name__ == '__main__':
