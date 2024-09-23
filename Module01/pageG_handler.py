@@ -166,6 +166,7 @@ def other_features_stats(data_json):
             # 站名站号信息
             station_df = pd.read_excel(path, sheet_name='Sheet1', header=0)
             station_df.columns = ['地区','站号','val']
+            station_df = station_df[['地区','站号']]
             station_df['站号'] = station_df['站号'].map(str)
             new_station = station_df[station_df['站号'].isin(sta_ids)]
             result_dict['站号'] = new_station.to_dict(orient='records')
@@ -196,6 +197,7 @@ def other_features_stats(data_json):
             # 站名站号信息
             station_df = pd.read_excel(path, sheet_name='空间分布', header=0)
             station_df.columns = ['地区','站号','val','val1']
+            station_df = station_df[['地区','站号']]
             station_df['站号'] = station_df['站号'].map(str)
             new_station = station_df[station_df['站号'].isin(sta_ids)]
             result_dict['站号'] = new_station.to_dict(orient='records')
