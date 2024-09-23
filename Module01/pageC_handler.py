@@ -313,8 +313,8 @@ def grass_features_stats(data_json):
             data_df = data_df[data_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
             data_df = data_df[~data_df.index.duplicated()]
             data_df['fanqing'] = data_df.index.dayofyear
-            data_df['fanqing_date'] = data_df.index.year
-
+            data_df['fanqing_date'] = data_df.index.strftime('%Y-%m-%d')
+            
             refer_df['Crop_Name'] = refer_df['Crop_Name'].map(int)
             refer_df['Datetime'] = pd.to_datetime(refer_df['Datetime'])
             refer_df.set_index('Datetime', inplace=True, drop=False)
@@ -322,7 +322,7 @@ def grass_features_stats(data_json):
             refer_df = refer_df[refer_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
             refer_df = refer_df[~refer_df.index.duplicated()]
             refer_df['fanqing'] = refer_df.index.dayofyear
-            refer_df['fanqing_date'] = refer_df.index.year
+            refer_df['fanqing_date'] = refer_df.index.strftime('%Y-%m-%d')
 
             nearly_df['Crop_Name'] = nearly_df['Crop_Name'].map(int)
             nearly_df['Datetime'] = pd.to_datetime(nearly_df['Datetime'])
@@ -331,7 +331,7 @@ def grass_features_stats(data_json):
             nearly_df = nearly_df[nearly_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
             nearly_df = nearly_df[~nearly_df.index.duplicated()]
             nearly_df['fanqing'] = nearly_df.index.dayofyear
-            nearly_df['fanqing_date'] = nearly_df.index.year
+            nearly_df['fanqing_date'] = nearly_df.index.strftime('%Y-%m-%d')
             element_str = 'fanqing'
 
         elif element == 'grassland_yellow_period':
@@ -343,7 +343,7 @@ def grass_features_stats(data_json):
             data_df = data_df[data_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
             data_df = data_df[~data_df.index.duplicated()]
             data_df['huangku'] = data_df.index.dayofyear
-            data_df['huangku_date'] = data_df.index.year
+            data_df['huangku_date'] = data_df.index.strftime('%Y-%m-%d')
 
             refer_df['Crop_Name'] = refer_df['Crop_Name'].map(int)
             refer_df['Datetime'] = pd.to_datetime(refer_df['Datetime'])
@@ -352,8 +352,8 @@ def grass_features_stats(data_json):
             refer_df = refer_df[refer_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
             refer_df = refer_df[~refer_df.index.duplicated()]
             refer_df['huangku'] = refer_df.index.dayofyear
-            refer_df['huangku_date'] = refer_df.index.year
-
+            refer_df['huangku_date'] = refer_df.index.strftime('%Y-%m-%d')
+            
             nearly_df['Crop_Name'] = nearly_df['Crop_Name'].map(int)
             nearly_df['Datetime'] = pd.to_datetime(nearly_df['Datetime'])
             nearly_df.set_index('Datetime', inplace=True, drop=False)
@@ -361,7 +361,7 @@ def grass_features_stats(data_json):
             nearly_df = nearly_df[nearly_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
             nearly_df = nearly_df[~nearly_df.index.duplicated()]
             nearly_df['huangku'] = nearly_df.index.dayofyear
-            nearly_df['huangku_date'] = nearly_df.index.year
+            nearly_df['huangku_date'] = nearly_df.index.strftime('%Y-%m-%d')
             element_str = 'huangku'
 
         else:
@@ -372,7 +372,7 @@ def grass_features_stats(data_json):
         # 关闭数据库
         cur.close()
         conn.close()
-
+    
     ######################################
     # 开始计算
     # 首先获取站号对应的站名
@@ -401,7 +401,19 @@ def grass_features_stats(data_json):
     result_dict['表格'] = stats_result.to_dict(orient='records')
     result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
     print('统计表完成')
+    
+    # 增加日期表
+    if element in ['grassland_green_period', 'grassland_yellow_period']:
+        data_df.index = data_df.index.year
+        df_dict = dict()
+        for sta in data_df['Station_Id_C'].unique():
+            df_tmp = data_df[data_df['Station_Id_C']==sta]['fanqing_date']
+            df_dict[sta] = df_tmp
 
+        date_df = pd.DataFrame(df_dict)
+        date_df.reset_index(drop=False, inplace=True)
+        result_dict['日期表格'] = date_df.to_dict(orient='records')
+    
     # 分布图 try在里面了
     if shp_path is not None:
         nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
@@ -468,12 +480,12 @@ def grass_features_stats(data_json):
 if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
-    data_json['element'] = 'dwei'
+    data_json['element'] = 'grassland_green_period'
     data_json['refer_years'] = '1991,2020'
     data_json['nearly_years'] = '2014,2023'
     data_json['time_freq'] = 'Y'
     data_json['stats_times'] = '1981,2023'
-    data_json['sta_ids'] = '52943,56021,56045,56065'
+    data_json['sta_ids'] = '52754,56151,52855,52862,56065,52645,56046,52955,52968,52963,52825,56067,52713,52943,52877,52633,52866,52737,52745,52957,56018,56033,52657,52765,52972,52868,56016,52874,51886,56021,52876,56029,56125,52856,52836,52842,56004,52974,52863,56043,52908,56045,52818,56034,52853,52707,52602,52869,52833,52875,52859,52942,52851'
     data_json['interp_method'] = 'ukri'
     data_json['ci'] = 95
     data_json['shp_path'] = r'C:\Users\MJY\Desktop\qhbh\文档\03-边界矢量\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
@@ -481,3 +493,11 @@ if __name__ == '__main__':
     result = grass_features_stats(data_json)
     t2 = time.time()
     print(t2 - t1)
+
+
+
+
+
+
+
+
