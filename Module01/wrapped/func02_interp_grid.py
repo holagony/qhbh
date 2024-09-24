@@ -17,24 +17,26 @@ from Module01.wrapped.func01_table_stats import table_stats
 from Utils.data_processing import data_processing
 from Utils.station_to_grid import station_to_grid
 from Utils.config import cfg
+from Module02.page_climate.wrapped.func03_plot import polygon_to_mask
 
 
 def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
     # 数据选取
     # 插值范围、掩膜
     gdf = gpd.read_file(shp_name)
-    points = []
-    for polygon in gdf.geometry:
-        if polygon.geom_type == 'Polygon':
-            exterior = polygon.exterior
-            for point in exterior.coords:
-                points.append(point)
-        elif polygon.geom_type == 'MultiPolygon':
-            for part in polygon.geoms:
-                exterior = part.exterior
-                for point in exterior.coords:
-                    points.append(point)
-    df_shp = pd.DataFrame(points, columns=['Longitude', 'Latitude'])
+    # points = []
+    # for polygon in gdf.geometry:
+    #     if polygon.geom_type == 'Polygon':
+    #         exterior = polygon.exterior
+    #         for point in exterior.coords:
+    #             points.append(point)
+    #     elif polygon.geom_type == 'MultiPolygon':
+    #         for part in polygon.geoms:
+    #             exterior = part.exterior
+    #             for point in exterior.coords:
+    #                 points.append(point)
+    # df_shp = pd.DataFrame(points, columns=['Longitude', 'Latitude'])
+
 
     # 站点经纬度匹配
     # df_sta_1 = stats_result.T.reset_index()
@@ -56,10 +58,11 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
 
     # 插值
     # 网格参数设置
-    start_lon = df_shp['Longitude'].min() - 1
-    start_lat = df_shp['Latitude'].min() - 1
-    end_lon = df_shp['Longitude'].max() + 1
-    end_lat = df_shp['Latitude'].max() + 1
+    bounds = gdf['geometry'].total_bounds
+    start_lon = bounds[0] + resolution
+    start_lat = bounds[1] - resolution
+    end_lon = bounds[2] + resolution
+    end_lat = bounds[3] + resolution
     resolution = 0.5
 
     gridx = np.arange(start_lon, end_lon + resolution, resolution)
@@ -105,7 +108,17 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
                 continue
 
             year_u.append(year[i])
-            data[i, :, :] = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, str(year[i]))
+            grid = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, str(year[i]))
+
+            # 新增掩膜
+            multi_polygon = gdf['geometry'].unary_union
+            lon_grid, lat_grid = np.meshgrid(gridx, gridy)
+            mask = polygon_to_mask(multi_polygon, lon_grid, lat_grid)
+            mask = np.where(mask == False, 1, 0)  # 生成mask，并将True/False转化为0/1
+            mask_grid = np.ma.masked_array(grid, mask, fill_value=np.nan)
+            mask_grid = mask_grid.filled()
+            data[i, :, :] = mask_grid
+
         except:
             data[i, :, :] = np.nan
 
@@ -165,6 +178,15 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
                 continue
 
             data2 = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, ele)
+
+            # 新增掩膜
+            multi_polygon = gdf['geometry'].unary_union
+            lon_grid, lat_grid = np.meshgrid(gridx, gridy)
+            mask = polygon_to_mask(multi_polygon, lon_grid, lat_grid)
+            mask = np.where(mask == False, 1, 0)  # 生成mask，并将True/False转化为0/1
+            mask_grid = np.ma.masked_array(data2, mask, fill_value=np.nan)
+            mask_grid = mask_grid.filled()
+            data[i, :, :] = mask_grid
         
         except:
             data2 = np.nan
