@@ -55,7 +55,7 @@ from Module02.page_energy.wrapped.func00_function import percentile_std_time
 
 from Module02.page_energy.wrapped.func01_winter_heating_pre import winter_heating_pre
 from Module02.page_energy.wrapped.func02_winter_heating_his import winter_heating_his
-# from Module02.page_energy.wrapped.func06_plot import interp_and_mask, plot_and_save
+from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
 
 #%% main
 def energy_winter_heating(data_json):
@@ -70,10 +70,14 @@ def energy_winter_heating(data_json):
     data_cource = data_json['data_cource']
     insti = data_json['insti']
     res = data_json.get('res', '10')
-    
+    plot= data_json.get('plot')
+    shp_path=data_json['shp_path']
+    method=data_json['method']
     #%% 固定信息
     
     # data_dir='/zipdata'
+    if shp_path is not None:
+        shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
 
     if os.name == 'nt':
         data_dir=r'D:\Project\qh\Evaluate_Energy\data'
@@ -104,6 +108,11 @@ def energy_winter_heating(data_json):
     elem_dict['采暖度日']='HDD18'
     elem_dict['采暖起始日_日序']='HDTIME_NUM'
     
+    uuid4 = uuid.uuid4().hex
+    data_out = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
+    if not os.path.exists(data_out):
+        os.makedirs(data_out)
+        os.chmod(data_out, 0o007 | 0o070 | 0o700)
     #%% 统计计算模块
     
     # 评估数据
@@ -238,7 +247,52 @@ def energy_winter_heating(data_json):
     
     result_df_dict['时序图']['单模式' ]=pre_data_result
     result_df_dict['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()
+    
+    #%% 外附：分布图绘制 1：实时绘图
+    def find_keys_by_value(d, value):
+        return [key for key, val in d.items() if val == value]
 
+    if plot == 1:
+        # 观测绘图
+        all_png = dict()
+
+        all_png['历史']=dict()
+        data_pic=pd.DataFrame(result_df_dict['表格']['历史'][find_keys_by_value(elem_dict, element)[0]]).iloc[:,:-3:]
+        for i in np.arange(len(data_pic)):
+            mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, data_pic.iloc[i,1::], method)
+            png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, '历史', '观测', str(data_pic.iloc[i,0]), data_out)
+                    
+            png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+            png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+            all_png['历史'][str(data_pic.iloc[i,0])] = png_path
+            
+        # 预估
+        all_png['预估']=dict()
+        cmip_res=result_df_dict['表格']['预估']
+        
+        for exp, sub_dict1 in cmip_res.items():
+            all_png['预估'][exp] = dict()
+            for insti,stats_table in sub_dict1.items():
+                all_png['预估'][exp][insti] = dict()
+                stats_table = pd.DataFrame(stats_table[find_keys_by_value(elem_dict, element)[0]]).iloc[:,:-5:]
+                for i in range(len(stats_table)):
+                    value_list = stats_table.iloc[i,1::]
+                    year_name = stats_table.iloc[i,0]
+                    exp_name = exp
+                    insti_name = insti
+                    # 插值/掩膜/画图/保存
+                    mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
+                    
+                    # 转url
+                    png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+                    png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+
+                    all_png['预估'][exp][insti][year_name] = png_path
+    else:
+        all_png=None
+    
+    result_df_dict['分布图']=all_png
 
     return result_df_dict
         
@@ -253,6 +307,10 @@ if __name__ == '__main__':
     data_json['data_cource'] = 'original'
     data_json['insti'] = 'BCC-CSM2-MR,CanESM5'
     # data_json['res'] ='1'
+    data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
+    data_json['method'] = 'idw'
+    data_json['plot'] = 1
+
     
     result_df_dict=energy_winter_heating(data_json)
     
