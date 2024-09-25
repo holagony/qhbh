@@ -342,8 +342,8 @@ if __name__ == '__main__':
     
     
     data_json = dict()
-    data_json['main_element']='FRS_DEPTH'  # 评估要素
-    data_json['sta_ids']='51886,52737,52876' # 站点信息
+    data_json['main_element']='dwei'  # 评估要素
+    data_json['sta_ids']='52943,56021,56045,56065' # 站点信息
     data_json['time_freq_main']='Y' # 评估要素时间尺度
     data_json['time_freq_main_data']='0'
     data_json['refer_times'] = '2020,2022' # 参考时段
@@ -354,12 +354,12 @@ if __name__ == '__main__':
     data_json['factor_element']='TEM_Avg,PRE_Time_2020'     # 关键因子
     data_json['factor_time_freq']='Y,Q' # 关键因子时间尺度
     data_json['factor_time_freq_data']=['0','3,4,5']
-    data_json['verify_time']='2020,2021' # 验证日期
+    data_json['verify_time']='2015,2023' # 验证日期
 
     # 要素变量
     data_json['intercept']=1
     data_json['TEM_Avg']=2
     data_json['PRE_Time_2020']=3
     
-    result=ice_table_def(data_json)
+    result=grass_table_def(data_json)
     
