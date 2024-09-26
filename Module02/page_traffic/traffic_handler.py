@@ -107,9 +107,10 @@ def traffic_esti(data_json):
     cmip_res = data_json.get('cmip_res') # 分辨率 1/5/10/25/50/100 km
     cmip_model = data_json['cmip_model'] # 模式，列表：['CanESM5','CESM2']等
     plot = data_json['plot']
-    method = data_json['method']
+    # method = data_json['method']
     shp_path = data_json['shp_path']
 
+    method = 'idw'
     inpath = '/cmip_data'
     # inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6' # cmip6路径
 
