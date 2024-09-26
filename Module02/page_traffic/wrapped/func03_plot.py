@@ -109,7 +109,7 @@ def interp_and_mask(shp_path, lon_list, lat_list, value_list, method):
         lon_grid 掩膜后的经度网格
         lat_grid 掩膜后的纬度网格
     '''
-    shp = gpd.read_file(shp_path,encoding='utf-8')
+    shp = gpd.read_file(shp_path,encoding='gbk')
     bounds = shp['geometry'].total_bounds
     lon_max = bounds[2]
     lon_min = bounds[0]
@@ -230,7 +230,7 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     # cbar.set_label('气温 $\mathrm{degree}$', fontsize=12, loc='top')
     
     # 画边界
-    shp = gpd.read_file(shp_path,encoding='utf-8')
+    shp = gpd.read_file(shp_path,encoding='gbk')
     shp_feature = cfeat.ShapelyFeature(shp['geometry'], ccrs.PlateCarree(), edgecolor='k', facecolor='none')
     ax.add_feature(shp_feature, linewidth=0.7, alpha=0.4)
 
