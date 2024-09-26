@@ -250,50 +250,7 @@ def energy_winter_heating(data_json):
     result_df_dict['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()
     
     #%% 外附：分布图绘制 1：实时绘图
-    def find_keys_by_value(d, value):
-        return [key for key, val in d.items() if val == value]
-
-    if plot == 1:
-        # 观测绘图
-        all_png = dict()
-
-        all_png['历史']=dict()
-        data_pic=pd.DataFrame(result_df_dict['表格']['历史'][find_keys_by_value(elem_dict, element)[0]]).iloc[:,:-3:]
-        for i in np.arange(len(data_pic)):
-            mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, data_pic.iloc[i,1::], method)
-            png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, '历史', '观测', str(data_pic.iloc[i,0]), data_out)
-                    
-            png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-            png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-            all_png['历史'][str(data_pic.iloc[i,0])] = png_path
-            
-        # 预估
-        all_png['预估']=dict()
-        cmip_res=result_df_dict['表格']['预估']
-        
-        for exp, sub_dict1 in cmip_res.items():
-            all_png['预估'][exp] = dict()
-            for insti,stats_table in sub_dict1.items():
-                all_png['预估'][exp][insti] = dict()
-                stats_table = pd.DataFrame(stats_table[find_keys_by_value(elem_dict, element)[0]]).iloc[:,:-5:]
-                for i in range(len(stats_table)):
-                    value_list = stats_table.iloc[i,1::]
-                    year_name = stats_table.iloc[i,0]
-                    exp_name = exp
-                    insti_name = insti
-                    # 插值/掩膜/画图/保存
-                    mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
-                    
-                    # 转url
-                    png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-                    png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-
-                    all_png['预估'][exp][insti][year_name] = png_path
-    else:
-        all_png=None
     
-    result_df_dict['分布图']=all_png
 
     return result_df_dict
         
