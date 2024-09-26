@@ -17,6 +17,7 @@ from Module02.page_energy.wrapped.func00_function import percentile_std
 from Utils.config import cfg
 import re
 from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
+import os
 
 def clean_column_name(name):
     # 替换空格和特殊字符为下划线
@@ -100,7 +101,14 @@ def grass_table_def(data_json):
     verify_time=data_json['verify_time']
 
     time_scale='daily'
-    data_dir=r'D:\Project\qh\Evaluate_Energy\data'
+    
+    if os.name == 'nt':
+        data_dir=r'D:\Project\qh\Evaluate_Energy\data'
+    elif os.name == 'posix':
+        data_dir='/zipdata'
+    else:
+        data_dir='/zipdata'    
+    
     scene=['ssp126','ssp245']
     independent_columns=factor_element.split(',')
     
