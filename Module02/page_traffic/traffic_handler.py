@@ -113,7 +113,8 @@ def traffic_esti(data_json):
     method = 'idw'
     inpath = '/cmip_data'
     # inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6' # cmip6路径
-
+    if shp_path is not None:
+        shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
     # 2.参数处理
     uuid4 = uuid.uuid4().hex
     data_dir = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
