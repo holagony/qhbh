@@ -9,6 +9,7 @@ import pandas as pd
 from Module02.page_ice.wrapped.func00_data_read_sql import data_read_sql
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
+import re
 
 # 求得区域平均，区域指的是传进来的所有站点
 def data_proce(df,processing_methods, additional_method=None):
@@ -43,6 +44,14 @@ def data_proce(df,processing_methods, additional_method=None):
     average_data = grouped_data.iloc[:,2::].groupby('年份').mean()
     
     return station_data,average_data
+
+def clean_column_name(name):
+    # 替换空格和特殊字符为下划线
+    cleaned_name = re.sub(r'\W+', '_', name)
+    # 确保列名不以数字开头
+    if cleaned_name[0].isdigit():
+        cleaned_name = '_' + cleaned_name
+    return cleaned_name
     
 def factor_data_deal(element,train_time,sta_ids,time_freq,time_freq_data,time_freq_main,processing_methods):
 
@@ -61,18 +70,27 @@ def factor_data_deal(element,train_time,sta_ids,time_freq,time_freq_data,time_fr
     elements=element.split(',')
     time_freqs =time_freq.split(',')
     
-    result_dict = {}
+    # 要素名
+    # 组合字符串
+    factor_name = []
+    for i in range(len(elements)):
+        combined_str = f"{elements[i]}_{time_freqs[i]}_{time_freq_data[i]}"
+        cleaned_name = clean_column_name(combined_str)
+        factor_name.append(cleaned_name)
+    
+    # result_dict = {}
 
-    for element, time_freq in zip(elements, time_freqs):
-        if time_freq in result_dict:
-            result_dict[time_freq] += ',' + element
-        else:
-            result_dict[time_freq] = element
-    elements = []
-    time_freqs = []
-    for key, value in result_dict.items():
-        elements.append(value)
-        time_freqs.append(key)
+    # for element, time_freq in zip(elements, time_freqs):
+    #     if time_freq in result_dict:
+    #         result_dict[time_freq] += ',' + element
+    #     else:
+    #         result_dict[time_freq] = element
+            
+    # elements = []
+    # time_freqs = []
+    # for key, value in result_dict.items():
+    #     elements.append(value)
+    #     time_freqs.append(key)
 
     # 4. 读取数据
     # 针对每个要素的时间尺度
@@ -112,17 +130,24 @@ def factor_data_deal(element,train_time,sta_ids,time_freq,time_freq_data,time_fr
         if time_freq_main != 'D':
             if time_freqs[index] != 'D':
                 train_station_data,train_data_deal=data_proce(train_data,processing_methods)
+                train_station_data=train_station_data.rename(columns={ele:factor_name[index]})
+                train_data_deal=train_data_deal.rename(columns={ele:factor_name[index]})
+
             else:
                 train_station_data,train_data_deal=data_proce(train_data,processing_methods,additional_method='mean')
+                train_station_data=train_station_data.rename(columns={ele:factor_name[index]})
+                train_data_deal=train_data_deal.rename(columns={ele:factor_name[index]})
         else:
             train_station_data=train_data.copy()
             train_station_data.drop([ 'Station_Name'], axis=1,inplace=True)
+            train_station_data=train_station_data.rename(columns={ele:factor_name[index]})
 
             train_data['Datetime'] = pd.to_datetime(train_data['Datetime'])
             train_data=train_data.set_index(train_data['Datetime'])
             train_data.drop([ 'Station_Id_C','Station_Name','Datetime'], axis=1,inplace=True)
             train_data_deal = train_data.resample('D').mean()
-            
+            train_data_deal=train_data_deal.rename(columns={ele:factor_name[index]})
+
         train_dataframes.append(train_data_deal)
         train_station_dataframes.append(train_station_data)
 
@@ -140,12 +165,14 @@ def factor_data_deal(element,train_time,sta_ids,time_freq,time_freq_data,time_fr
 #%%
 if __name__=='__main__':
     
-    element='TEM_Avg,PRE_Time_2020'
+    element='TEM_Avg,PRE_Time_2020,TEM_Avg'
+    time_freq='Y,Q,Q'
+    time_freq_data=['0','3,4,5','1']
+
+    
     train_time='2020,2021'
     sta_ids='51886,52737,52876'
-    time_freq='Y,Q'
     time_freq_main='Y'
-    time_freq_data=['0','3,4,5']
     
     resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max', 'huangku']
     

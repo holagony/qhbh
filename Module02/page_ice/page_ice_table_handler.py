@@ -25,6 +25,16 @@ from Module02.page_ice.wrapped.func02_ice_evaluate_data_deal import ice_evaluate
 from Module02.page_ice.wrapped.func03_model_factor_data_deal import model_factor_data_deal
 from Module02.page_energy.wrapped.func00_function import percentile_std
 from Utils.config import cfg
+import re
+from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
+
+def clean_column_name(name):
+    # 替换空格和特殊字符为下划线
+    cleaned_name = re.sub(r'\W+', '_', name)
+    # 确保列名不以数字开头
+    if cleaned_name[0].isdigit():
+        cleaned_name = '_' + cleaned_name
+    return cleaned_name
 
 def trend_rate(x):
     '''
@@ -103,6 +113,15 @@ def ice_table_def(data_json):
     data_dir=r'D:\Project\qh\Evaluate_Energy\data'
     scene=['ssp126','ssp245']
     independent_columns=factor_element.split(',')
+    
+    elements=factor_element.split(',')
+    time_freqs =factor_time_freq.split(',')
+    
+    factor_name = []
+    for i in range(len(elements)):
+        combined_str = f"{elements[i]}_{time_freqs[i]}_{factor_time_freq_data[i]}"
+        cleaned_name = clean_column_name(combined_str)
+        factor_name.append(cleaned_name)
     #%% 固定字典表
     # 分辨率
     res_d=dict()
@@ -181,14 +200,14 @@ def ice_table_def(data_json):
     result_1=pd.DataFrame(index=np.arange(len(verify_data)),columns=station_id_c)
     for i in station_id_c:
         station_i=verify_station[verify_station['Station_Id_C']==i]
-        station_i = station_i[independent_columns].astype(float).reset_index(drop=True)
-        result_1[i] =(data_json['intercept'] + np.sum(station_i * pd.Series(data_json)[independent_columns],axis=1)).astype(float).round(2)
+        station_i = station_i[factor_name].astype(float).reset_index(drop=True)
+        result_1[i] =(data_json['intercept'] + np.sum(station_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
             
     datetime_column = verify_data.reset_index(drop=True)['Datetime']
     result_1.insert(0, '年', datetime_column)
     result_1[result_1<0]=0
-    verify_data_i=verify_data[independent_columns].astype(float).reset_index(drop=True)
-    result_1['区域均值']=(data_json['intercept'] + np.sum(verify_data_i * pd.Series(data_json)[independent_columns],axis=1)).astype(float).round(2)
+    verify_data_i=verify_data[factor_name].astype(float).reset_index(drop=True)
+    result_1['区域均值']=(data_json['intercept'] + np.sum(verify_data_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
     result_1_1=data_deal_2(result_1,refer_evaluate_station,2)
 
 
@@ -212,8 +231,9 @@ def ice_table_def(data_json):
         for scene_a in scene:
             pre_data_2[scene_a]=dict()
             a=pd.DataFrame()
-    
+            
             for index,var_a in enumerate(independent_columns):
+                
                 data_station_dataframes = []
                 for insti_a in instis:
                     stats_path=[choose_mod_path(data_dir, data_cource,insti_a, model_ele_dict[var_a], time_scale, year_a, scene_a,res_d[res]) for year_a in np.arange(int(verify_start_year),int(verify_end_year)+1,1)]
@@ -223,7 +243,8 @@ def ice_table_def(data_json):
                     
                 b=pd.concat(data_station_dataframes, axis=1)
                 a[var_a]=b[var_a].mean(axis=1).reset_index(drop=True) 
-                
+                a=a.rename(columns={var_a:factor_name[index]})
+
             a['年']=data_station['年']
             grouped = a.groupby('年')
             group_averages = grouped.mean()
@@ -232,13 +253,13 @@ def ice_table_def(data_json):
             result_2=pd.DataFrame(index=np.arange(len(verify_data)),columns=station_id_c)
             for i in station_id_c:
                 station_i=a[a['Station_Id_C']==i]
-                station_i = station_i[independent_columns].astype(float).reset_index(drop=True)
-                result_2[i] =(data_json['intercept'] + np.sum(station_i * pd.Series(data_json)[independent_columns],axis=1)).astype(float).round(2)
+                station_i = station_i[factor_name].astype(float).reset_index(drop=True)
+                result_2[i] =(data_json['intercept'] + np.sum(station_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
             result_2.insert(0, '年', datetime_column)
             result_2[result_2<0]=0  
             
-            group_averages_i=group_averages[independent_columns].astype(float).reset_index(drop=True)
-            result_2['区域均值']=(data_json['intercept'] + np.sum(group_averages_i * pd.Series(data_json)[independent_columns],axis=1)).astype(float).round(2)
+            group_averages_i=group_averages[factor_name].astype(float).reset_index(drop=True)
+            result_2['区域均值']=(data_json['intercept'] + np.sum(group_averages_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
             result_2_1=data_deal_2(result_2,refer_evaluate_station,2)
     
             pre_data_2[scene_a]=result_2_1.to_dict(orient='records')
@@ -265,7 +286,8 @@ def ice_table_def(data_json):
                     
                 b=pd.concat(data_station_dataframes, axis=1)
                 a[var_a]=b[var_a].mean(axis=1).reset_index(drop=True) 
-                
+                a=a.rename(columns={var_a:factor_name[index]})
+
             a['年']=data_station['年']
             grouped = a.groupby('年')
             group_averages = grouped.mean()
@@ -274,13 +296,13 @@ def ice_table_def(data_json):
             result_3=pd.DataFrame(index=np.arange(len(years_len)),columns=station_id_c)
             for i in station_id_c:
                 station_i=a[a['Station_Id_C']==i]
-                station_i = station_i[independent_columns].astype(float).reset_index(drop=True)
-                result_3[i] =(data_json['intercept'] + np.sum(station_i * pd.Series(data_json)[independent_columns],axis=1)).astype(float).round(2)
+                station_i = station_i[factor_name].astype(float).reset_index(drop=True)
+                result_3[i] =(data_json['intercept'] + np.sum(station_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
             result_3.insert(0, '年', years_len)
             result_3[result_3<0]=0  
             
-            group_averages_i=group_averages[independent_columns].astype(float).reset_index(drop=True)
-            result_3['区域均值']=(data_json['intercept'] + np.sum(group_averages_i * pd.Series(data_json)[independent_columns],axis=1)).astype(float).round(2)
+            group_averages_i=group_averages[factor_name].astype(float).reset_index(drop=True)
+            result_3['区域均值']=(data_json['intercept'] + np.sum(group_averages_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
             result_3_1=data_deal_2(result_3,refer_evaluate_station,2)
             pre_data_3[scene_a]=result_3_1.to_dict(orient='records')
         
@@ -300,22 +322,23 @@ def ice_table_def(data_json):
                     stats_path=[choose_mod_path(data_dir, data_cource,insti_a, model_ele_dict[var_a], time_scale, year_a, scene_a,res_d[res]) for year_a in np.arange(int(stats_start_year),int(stats_end_year)+1,1)]
                     data_station=model_factor_data_deal(stats_path,sta_ids2,model_ele_dict[var_a],var_a,var_factor_time_freq[index],factor_time_freq_data[index],time_freq_main,stats_times,processing_methods)
                     data_station = data_station.sort_values(by=['Station_Id_C', '年'], ascending=[True, True])
+                    data_station=data_station.rename(columns={var_a:factor_name[index]})
                     data_station_dataframes.append(data_station)
                 b=pd.concat(data_station_dataframes, axis=1)
                 b = b.loc[:, ~b.columns.duplicated()]
                 
                 grouped = b.groupby('年')
-                group_averages = grouped[independent_columns].mean()
+                group_averages = grouped[factor_name].mean()
                 
                 result_4=pd.DataFrame(index=np.arange(len(years_len)),columns=station_id_c)
                 for i in station_id_c:
                     station_i=b[b['Station_Id_C']==i]
-                    station_i = station_i[independent_columns].astype(float).reset_index(drop=True)
-                    result_4[i] =(data_json['intercept'] + np.sum(station_i * pd.Series(data_json)[independent_columns],axis=1)).astype(float).round(2)
+                    station_i = station_i[factor_name].astype(float).reset_index(drop=True)
+                    result_4[i] =(data_json['intercept'] + np.sum(station_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
                 result_4.insert(0, '年', years_len)
                 result_4[result_4<0]=0                     
-                group_averages_i=group_averages[independent_columns].astype(float).reset_index(drop=True)
-                result_4['区域均值']=(data_json['intercept'] + np.sum(group_averages_i * pd.Series(data_json)[independent_columns],axis=1)).astype(float).round(2)
+                group_averages_i=group_averages[factor_name].astype(float).reset_index(drop=True)
+                result_4['区域均值']=(data_json['intercept'] + np.sum(group_averages_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
                
                 pre_data_5[insti_a][scene_a][main_element]=dict()
                 pre_data_5[insti_a][scene_a][main_element]=result_4.copy()
@@ -361,15 +384,16 @@ if __name__ == '__main__':
     data_json['data_cource'] = 'original' # 模式信息
     data_json['insti']= 'BCC-CSM2-MR,CanESM5'
     data_json['res'] ='10'
-    data_json['factor_element']='TEM_Avg,PRE_Time_2020'     # 关键因子
-    data_json['factor_time_freq']='Y,Q' # 关键因子时间尺度
-    data_json['factor_time_freq_data']=['0','3,4,5']
+    data_json['factor_element']='TEM_Avg,PRE_Time_2020,TEM_Avg'     # 关键因子
+    data_json['factor_time_freq']='Y,Q,Q' # 关键因子时间尺度
+    data_json['factor_time_freq_data']=['0','3,4,5','1']
     data_json['verify_time']='2020,2021' # 验证日期
 
     # 要素变量
     data_json['intercept']=1
-    data_json['TEM_Avg']=2
-    data_json['PRE_Time_2020']=3
-    
+    data_json['TEM_Avg_Y_0']=2
+    data_json['PRE_Time_2020_Q_3_4_5']=3
+    data_json['TEM_Avg_Q_1']=3
+
     result=ice_table_def(data_json)
     

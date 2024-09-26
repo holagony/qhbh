@@ -150,11 +150,11 @@ def ice_model_def(data_json):
     result['系数']=dict()
     result['系数']['截距']=intercept[0]
     for index,i in enumerate(independent_columns):
-        result['系数'][i]=coef[0,index]
+        result['系数'][i]=coef[0,index].round(2)
     
-    result['相关系数']=R
-    result['绝对误差']=AE
-    result['均方根误差']=RMSE
+    result['相关系数']=R.round(2)
+    result['绝对误差']=AE.round(2)
+    result['均方根误差']=RMSE.round(2)
 
     return result
     
@@ -166,11 +166,11 @@ if __name__=='__main__':
     data_json['sta_ids'] = '51886,52737,52876'
     data_json['time_freq_main'] = 'Y'
     data_json['time_freq_main_data'] = '0'
-    data_json['factor_element'] ='TEM_Avg,PRE_Time_2020'
-    data_json['factor_time_freq'] = 'Y,Q'
-    data_json['factor_time_freq_data'] =['0','3,4,5']
+    data_json['factor_element'] ='TEM_Avg,PRE_Time_2020,TEM_Avg'
+    data_json['factor_time_freq'] = 'Y,Q,Q'
+    data_json['factor_time_freq_data'] =['0','3,4,5','1']
     data_json['train_time'] = '2020,2021'
-    data_json['verify_time'] = '2021,2022'
+    data_json['verify_time'] = '2020,2023'
 
 
     result=ice_model_def(data_json)
