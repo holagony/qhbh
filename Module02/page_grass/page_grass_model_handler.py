@@ -161,15 +161,15 @@ def grass_model_def(data_json):
 if __name__=='__main__':
     
     data_json = dict()
-    data_json['main_element'] ='dwei'
+    data_json['main_element'] ='grassland_coverage'
     data_json['sta_ids'] = '52943,56021,56045,56065'
     data_json['time_freq_main'] = 'Y'
     data_json['time_freq_main_data'] = '0'
     data_json['factor_element'] ='TEM_Avg,PRE_Time_2020,TEM_Avg'
     data_json['factor_time_freq'] = 'Y,Q,Q'
     data_json['factor_time_freq_data'] =['0','3,4,5','1']
-    data_json['train_time'] = '2016,2023'
-    data_json['verify_time'] = '2015,2023'
+    data_json['train_time'] = '2017,2020'
+    data_json['verify_time'] = '2017,2020'
 
 
     result=grass_model_def(data_json)
