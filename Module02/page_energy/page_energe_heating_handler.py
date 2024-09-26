@@ -82,10 +82,13 @@ def energy_winter_heating(data_json):
     if os.name == 'nt':
         data_dir=r'D:\Project\qh\Evaluate_Energy\data'
     elif os.name == 'posix':
-        data_dir='/zipdata'
+        data_dir='/cmip_data'
     else:
-        data_dir='/zipdata'
+        data_dir='/cmip_data'
 
+    if data_cource == 'original':
+        res='10'
+        
     res_d=dict()
     res_d['10']='0.10deg'
     res_d['25']='0.25deg'

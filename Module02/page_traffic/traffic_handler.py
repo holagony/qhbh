@@ -110,8 +110,8 @@ def traffic_esti(data_json):
     method = data_json['method']
     shp_path = data_json['shp_path']
 
-    inpath = '/zipdata'
-    inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6' # cmip6路径
+    inpath = '/cmip_data'
+    # inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6' # cmip6路径
 
     # 2.参数处理
     uuid4 = uuid.uuid4().hex
