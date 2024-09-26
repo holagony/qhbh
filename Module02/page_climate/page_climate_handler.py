@@ -119,6 +119,9 @@ def climate_esti(data_json):
     method = data_json['method']
     shp_path = data_json['shp_path']
 
+    if shp_path is not None:
+        shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+        
     inpath = '/zipdata'
     # inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6' # cmip6路径
 
