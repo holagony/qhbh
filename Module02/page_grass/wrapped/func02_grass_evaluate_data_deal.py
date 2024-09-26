@@ -93,8 +93,8 @@ def grass_evaluate_data_deal(element,train_time,sta_ids,time_freq,time_freq_data
     train_data_df=pd.DataFrame(result_df.mean(axis=1).round(2))
     train_data_df.columns=[element]
     
-    train_data_df.index = train_data_df.index.strftime('%Y')
-    train_station_data.index = train_station_data.index.strftime('%Y')
+    # train_data_df.index = train_data_df.index.strftime('%Y')
+    # train_station_data.index = train_station_data.index.strftime('%Y')
 
     return train_data_df,train_station_data
         
