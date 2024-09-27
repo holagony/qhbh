@@ -18,16 +18,21 @@ Created on Sun Sep 15 21:40:25 2024
 
 import pandas as pd
 import numpy as np
+import os
+from psycopg2 import sql
+import psycopg2
+from Utils.config import cfg
+import re
+import uuid
 from sklearn.linear_model import LinearRegression
 from Module02.page_energy.wrapped.func00_function import choose_mod_path
 from Module02.page_ice.wrapped.func01_factor_data_deal import factor_data_deal
 from Module02.page_ice.wrapped.func02_ice_evaluate_data_deal import ice_evaluate_data_deal
 from Module02.page_ice.wrapped.func03_model_factor_data_deal import model_factor_data_deal
 from Module02.page_energy.wrapped.func00_function import percentile_std
-from Utils.config import cfg
-import re
 from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
-import os
+from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
+
 
 def clean_column_name(name):
     # 替换空格和特殊字符为下划线
@@ -104,20 +109,27 @@ def ice_table_def(data_json):
     stats_times=data_json['stats_times']
     data_cource=data_json['data_cource']
     insti=data_json['insti']
-    res=data_json['res']
+    res = data_json.get('res', '10')
     factor_element=data_json['factor_element']
     factor_time_freq=data_json['factor_time_freq']
     factor_time_freq_data=data_json['factor_time_freq_data']
     verify_time=data_json['verify_time']
 
+    plot= data_json.get('plot')
+    shp_path=data_json['shp_path']
+    method='idw'
+    
     time_scale='daily'
     
+    if shp_path is not None:
+        shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+        
     if os.name == 'nt':
         data_dir=r'D:\Project\qh\Evaluate_Energy\data'
     elif os.name == 'posix':
-        data_dir='/zipdata'
+        data_dir='/cmip_data'
     else:
-        data_dir='/zipdata'    
+        data_dir='/cmip_data'    
     
     scene=['ssp126','ssp245']
     independent_columns=factor_element.split(',')
@@ -130,8 +142,12 @@ def ice_table_def(data_json):
         combined_str = f"{elements[i]}_{time_freqs[i]}_{factor_time_freq_data[i]}"
         cleaned_name = clean_column_name(combined_str)
         factor_name.append(cleaned_name)
+        
     #%% 固定字典表
     # 分辨率
+    if data_cource == 'original':
+        res='10'
+    
     res_d=dict()
     res_d['10']='0.10deg'
     res_d['25']='0.25deg'
@@ -163,6 +179,13 @@ def ice_table_def(data_json):
     processing_methods.update({element: 'max' for element in resample_max})
     processing_methods.update({element: 'min' for element in resample_min})
     
+
+
+    uuid4 = uuid.uuid4().hex
+    data_out = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
+    if not os.path.exists(data_out):
+        os.makedirs(data_out)
+        os.chmod(data_out, 0o007 | 0o070 | 0o700)
     #%% 验证期 因子数据 评估数据
     verify_station,verify_data=factor_data_deal(factor_element,verify_time,sta_ids,factor_time_freq,factor_time_freq_data,time_freq_main,processing_methods)
     verify_data=verify_data.reset_index()
@@ -226,6 +249,55 @@ def ice_table_def(data_json):
     result_df_dict['表格']['历史']=dict()
     result_df_dict['表格']['历史']['观测']=result_0_1.to_dict(orient='records')
     result_df_dict['表格']['历史']['模拟观测']=result_1_1.to_dict(orient='records')
+    
+    #%% 分布图
+    # 获取经纬度数据
+    if plot==1:
+        conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
+        cur = conn.cursor()
+        sta_id_lonat = tuple(sta_ids.split(','))
+    
+        query = sql.SQL("""
+                        SELECT station_id, station_name, lon, lat
+                        FROM public.qh_climate_station_info
+                        WHERE
+                            station_id IN %s
+                        """)
+        
+        # 执行查询并获取结果
+        cur.execute(query, (sta_id_lonat,))
+        station_lon_lat = cur.fetchall()
+        station_lon_lat=pd.DataFrame(station_lon_lat)
+        station_lon_lat.columns=['station_id', 'station_name', 'lon', 'lat']
+        
+        station_id=result_0_1.columns[1:-5:]
+        matched_stations = pd.merge(pd.DataFrame({'station_id': sta_id_lonat}),station_lon_lat,on='station_id')
+    
+        lon_list=matched_stations['lon'].values
+        lat_list=matched_stations['lat'].values
+        
+        all_png=dict()
+        all_png['历史']=dict()
+        all_png['历史']['观测']=dict()
+        data_pic=pd.DataFrame(result_df_dict['表格']['历史']['观测']).iloc[:,:-5:]
+        for i in np.arange(len(data_pic)):
+            mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, data_pic.iloc[i,1::], method)
+            png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, '历史', '观测', str(data_pic.iloc[i,0]), data_out)
+                    
+            png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+            png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+            all_png['历史']['观测'][str(data_pic.iloc[i,0])] = png_path
+        
+        
+        all_png['历史']['模拟观测']=dict()
+        data_pic=pd.DataFrame(result_df_dict['表格']['历史']['模拟观测']).iloc[:,:-5:]
+        for i in np.arange(len(data_pic)):
+            mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, data_pic.iloc[i,1::], method)
+            png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, '历史', '模拟观测', str(data_pic.iloc[i,0]), data_out)
+                    
+            png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+            png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+            all_png['历史']['模拟观测'][str(data_pic.iloc[i,0])] = png_path
 
     try:
         # 模拟模式
@@ -365,8 +437,16 @@ def ice_table_def(data_json):
         result_df_dict['表格']['历史']['模拟模式']=pre_data_2
     
         result_df_dict['表格']['预估']=dict()
-        result_df_dict['表格']['预估']=pre_data_4
-        result_df_dict['表格']['预估']['集合']=pre_data_3
+
+        for exp, sub_dict1 in pre_data_4.items():
+            for insti,stats_table in sub_dict1.items():
+                if insti not in result_df_dict['表格']['预估']:
+                    result_df_dict['表格']['预估'][insti]=dict()
+                result_df_dict['表格']['预估'][insti][exp]=stats_table
+                
+        for insti,stats_table in pre_data_3.items():
+            result_df_dict['表格']['预估'][insti]['集合']=stats_table        
+        
     
         result_df_dict['时序图']=dict()
         result_df_dict['时序图']['集合_多模式' ]=dict()
@@ -374,9 +454,58 @@ def ice_table_def(data_json):
         
         result_df_dict['时序图']['单模式' ]=pre_data_6
         result_df_dict['时序图']['单模式' ]['基准期']=refer_mean.to_dict(orient='records').copy()
-    except Exception as e:
-        print("发生了异常：", str(e))        
+        
+        
+        if plot==1:
+            
+            all_png['历史']['模拟模式']=dict()
+            
+            cmip_res=result_df_dict['表格']['历史']['模拟模式']
+            for insti,stats_table in cmip_res.items():
+                all_png['历史']['模拟模式'][insti] = dict()
+                stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
+                for i in np.arange(len(stats_table)):
+                    mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, stats_table.iloc[i,1::], method)
+                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, '历史', '模拟模式', str(stats_table.iloc[i,0]), data_out)
+                            
+                    png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+                    png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+                    all_png['历史']['模拟模式'][insti][str(stats_table.iloc[i,0])] = png_path
+                
+                
+            # 预估
+            all_png['预估']=dict()
+            cmip_res=result_df_dict['表格']['预估']
+            
+            for exp, sub_dict1 in cmip_res.items():
+                all_png['预估'][exp] = dict()
+                for insti,stats_table in sub_dict1.items():
+                    all_png['预估'][exp][insti] = dict()
+                    stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
+                    
+                    for i in range(len(stats_table)):
+                        value_list = stats_table.iloc[i,1::]
+                        year_name = stats_table.iloc[i,0]
+                        exp_name = exp
+                        insti_name = insti
+                        # 插值/掩膜/画图/保存
+                        mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+                        png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
+                        
+                        # 转url
+                        png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+                        png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
     
+                        all_png['预估'][exp][insti][year_name] = png_path
+                
+                
+    except Exception as e:
+        print("发生了异常：", str(e))  
+        
+    result_df_dict['分布图']=all_png
+        
+        
+        
     return result_df_dict
     
 if __name__ == '__main__':
@@ -391,7 +520,7 @@ if __name__ == '__main__':
     data_json['stats_times'] = '2020,2040' # 评估时段
     data_json['data_cource'] = 'original' # 模式信息
     data_json['insti']= 'BCC-CSM2-MR,CanESM5'
-    data_json['res'] ='10'
+    data_json['res'] ="None"
     data_json['factor_element']='TEM_Avg,PRE_Time_2020,TEM_Avg'     # 关键因子
     data_json['factor_time_freq']='Y,Q,Q' # 关键因子时间尺度
     data_json['factor_time_freq_data']=['0','3,4,5','1']
@@ -403,5 +532,11 @@ if __name__ == '__main__':
     data_json['PRE_Time_2020_Q_3_4_5']=3
     data_json['TEM_Avg_Q_1']=3
 
+
+    # 分布图
+    data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
+    data_json['plot'] = 1
+    
+    
     result=ice_table_def(data_json)
     
