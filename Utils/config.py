@@ -71,6 +71,8 @@ __C.FILES.FILE04 = os.path.join(data_file_dir, '行业数据/04_交通.xlsx')
 __C.FILES.LAKE = os.path.join(data_file_dir, 'shp/lake.shp')
 __C.FILES.ICE = os.path.join(data_file_dir, 'shp/ice.shp')
 
+# 气候变化风险预估-降水 承载体数据
+__C.FILES.DISASTER = os.path.join(data_file_dir, 'disaster.nc')
 
 
 

@@ -193,7 +193,7 @@ def get_database_data(sta_ids, element_str, table_name, time_freq, stats_times):
     '''
     conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
     cur = conn.cursor()
-    elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,' + element_str
+    elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,Alti,' + element_str
 
     if time_freq == 'Y':  # '%Y,%Y'
         query = sql.SQL(f"""
