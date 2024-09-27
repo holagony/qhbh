@@ -377,7 +377,11 @@ def risk_esti(data_json):
         all_png = dict()
         all_png1 = dict()
         all_png2 = dict()
-        
+    
+    result_dict['分布图']['预估单模式'] = all_png
+    result_dict['分布图']['预估集合'] = all_png1
+    result_dict['分布图']['历史'] = all_png2
+    
     return result_dict
 
 
