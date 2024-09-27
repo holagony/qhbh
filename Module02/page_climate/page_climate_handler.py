@@ -195,7 +195,10 @@ def climate_esti(data_json):
                 tmp_lst.append(ds_tmp)
             
             tmp_all = xr.concat(tmp_lst, dim='time')
-            tmp_all['time'] = tmp_all.indexes['time'].to_datetimeindex().normalize()
+            try:
+                tmp_all['time'] = tmp_all.indexes['time'].to_datetimeindex().normalize()
+            except:
+                tmp_all['time'] = tmp_all.indexes['time'].normalize()
             evaluate_cmip[exp][insti][var] = tmp_all
 
     ######################################################
