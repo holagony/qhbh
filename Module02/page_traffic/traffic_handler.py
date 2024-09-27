@@ -112,7 +112,7 @@ def traffic_esti(data_json):
 
     method = 'idw'
     inpath = '/cmip_data'
-    # inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6' # cmip6路径
+    inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata' # cmip6路径
     if shp_path is not None:
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
     # 2.参数处理
@@ -339,7 +339,7 @@ def traffic_esti(data_json):
 
         # 预估-集合数据画图
         all_png1 = dict()
-        for exp, stats_table1 in evaluate_cmip_res.items():
+        for exp, stats_table1 in res_table_multi.items():
             all_png1[exp] = dict()
             stats_table1 = pd.DataFrame(stats_table1)
             for i in tqdm(range(len(stats_table1))):
@@ -394,7 +394,7 @@ if __name__ == '__main__':
     data_json['cmip_type'] = 'original' # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None # 分辨率 1/5/10/25/50/100 km
     data_json['cmip_model'] = ['BCC-CSM2-MR', 'CanESM5']# 模式，列表：['CanESM5','CESM2']等
-    data_json['plot'] = 0
+    data_json['plot'] = 1
     data_json['method'] = 'kri'
     data_json['shp_path'] = r'C:/Users/MJY/Desktop/qhbh/zipdata/shp/qh/qh.shp'
     result = traffic_esti(data_json)
