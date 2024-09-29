@@ -58,12 +58,12 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
 
     # 插值
     # 网格参数设置
+    resolution = 0.5
     bounds = gdf['geometry'].total_bounds
     start_lon = bounds[0] + resolution
     start_lat = bounds[1] - resolution
     end_lon = bounds[2] + resolution
     end_lat = bounds[3] + resolution
-    resolution = 0.5
 
     gridx = np.arange(start_lon, end_lon + resolution, resolution)
     gridy = np.arange(start_lat, end_lat + resolution, resolution)
