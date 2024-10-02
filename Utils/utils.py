@@ -53,7 +53,7 @@ def tif_dataloader(tif_path, key='dem'):
     return data
 
 
-def array2nc(data, lat, lon, var_name, time=None, height=None):
+def array2nc(data, lat, lon, var_name, time=None, height=None, interp=cfg.INFO.PRODUCT_RESIZE):
 
     if len(data.shape) == 4:
         da = xr.DataArray(data, coords=[time, height, lat, lon], dims=['time', 'height', 'lat', 'lon'])
@@ -105,11 +105,12 @@ def array2nc(data, lat, lon, var_name, time=None, height=None):
     ds[var_name].attrs['units'] = units
     ds.attrs = dict(CreatedTime=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'))
 
-    # if len(data.shape) == 3 and interp:
-    #     new_lon = np.arange(ds.lon[0], ds.lon[-1]+0.01, 0.01).round(2)
-    #     new_lat = np.arange(ds.lat[-1], ds.lat[0]+0.01, 0.01).round(2)
-    #     new_lat = new_lat[::-1]
-    #     ds = ds.interp(lat=new_lat, lon=new_lon)
+    if len(data.shape) == 3 and interp:
+        # new_lon = np.linspace(ds.lon[0], ds.lon[-1], int(ds.dims['lon']/2))
+        # new_lat = np.linspace(ds.lat[0], ds.lat[-1], int(ds.dims['lat']/2))
+        new_lon = np.arange(ds.lon[0], ds.lon[-1]+0.001, 0.001).round(2)
+        new_lat = np.arange(ds.lat[0], ds.lat[-1]+0.001, 0.001).round(2)
+        ds = ds.interp(lat=new_lat, lon=new_lon)
 
     return ds
 
