@@ -1,4 +1,5 @@
 import warnings
+
 warnings.filterwarnings('ignore')
 
 import os
@@ -28,21 +29,21 @@ def pre_simulation(param_A, param_b, param_C, param_n, r, p, t, total_t, lon, la
     total_t 模拟时长 h
     lon/lat 经纬度一维序列
     '''
-    termination = int(t*r)
+    termination = int(t * r)
     pre_min = np.zeros(t)
 
     for k in range(t):
-        i = k+1
-        if i<= termination:
-            tb = termination - i 
-            pre_i = param_A*(1+param_C*np.log10(p))*((1-param_n)*tb/r + param_b) / (tb/r + param_b)**(1+param_n)
+        i = k + 1
+        if i <= termination:
+            tb = termination - i
+            pre_i = param_A * (1 + param_C * np.log10(p)) * ((1 - param_n) * tb / r + param_b) / (tb / r + param_b)**(1 + param_n)
         else:
             ta = i - termination
-            pre_i = param_A*(1+param_C*np.log10(p))*((1-param_n)*ta/(1-r) + param_b) / (ta/(1-r) + param_b)**(1+param_n)
+            pre_i = param_A * (1 + param_C * np.log10(p)) * ((1 - param_n) * ta / (1 - r) + param_b) / (ta / (1 - r) + param_b)**(1 + param_n)
 
         pre_min[k] = pre_i
 
-    pre_hour = np.nansum(pre_min.reshape(int(t/60),60), axis=1) # shaple:(num_hours,1) 每小时的降水量
+    pre_hour = np.nansum(pre_min.reshape(int(t / 60), 60), axis=1)  # shaple:(num_hours,1) 每小时的降水量
     sim_pre = np.zeros((total_t, lat.size, lon.size))
 
     for i in range(pre_hour.size):
@@ -50,7 +51,7 @@ def pre_simulation(param_A, param_b, param_C, param_n, r, p, t, total_t, lon, la
             sim_pre[i] = sim_pre[i] + pre_hour[i]
         else:
             raise ValueError("Invalid location of simulated PRE")
-            
+
     return sim_pre
 
 
@@ -61,10 +62,10 @@ class flood_model:
 
     def __init__(self, save_path, flag, pre_path, pre_type, previous, param_A, param_b, param_C, param_n, r, p, t, total_t):
         self.save_path = save_path
-        self.flag = flag # TY/SHANXI
+        self.flag = flag  # TY/SHANXI
         self.pre_path = pre_path
         self.pre_type = pre_type
-        self.previous = previous # 是否载入前一个时刻的CMPAS数据
+        self.previous = previous  # 是否载入前一个时刻的CMPAS数据
         self.param_A = param_A
         self.param_b = param_b
         self.param_C = param_C
@@ -87,8 +88,8 @@ class flood_model:
         dem_data = tif_dataloader(dem_path, key='dem')
         dem = dem_data['data']
         dem[np.isnan(dem)] = 0
-        lon = dem_data['lon_lat'][0][0, :] # 一维序列
-        lat = dem_data['lon_lat'][1][:, 0] # 一维序列
+        lon = dem_data['lon_lat'][0][0, :]  # 一维序列
+        lat = dem_data['lon_lat'][1][:, 0]  # 一维序列
 
         landuse_data = tif_dataloader(landuse_path, key='landuse')
         landuse = landuse_data['data']
@@ -110,26 +111,26 @@ class flood_model:
         pre_type=2 智能网格预报文件
         pre_type=4 根据雨型生成网格
         '''
-        if self.pre_type == 1: # nc里面纬度从小到大
+        if self.pre_type == 1:  # nc里面纬度从小到大
             ds = xr.open_dataset(self.pre_path)
-            pre = ds.qpf_ml*5
+            pre = ds.qpf_ml * 5
             data_out = pre.interp(latitude=lat, longitude=lon, method=cfg.PARAMS.PRE_PROCESS_METHOD)
             data_out = data_out.data
             time_list = pd.to_datetime(ds.time)
             self.time = time_list[0]
 
-        elif self.pre_type == 2: # nc里面纬度从小到大
+        elif self.pre_type == 2:  # nc里面纬度从小到大
             total_path = glob.glob(os.path.join(self.pre_path, '*.nc'))  # todo文件名排序
             ds_list = []
             time_list = []
             for num, path in enumerate(total_path):
                 ds = xr.open_dataset(path)
                 ds_list.append(ds)
-                time = path.split('.')[0].split('_')[-1] # ER_2024082720_2024082800.nc
+                time = path.split('.')[0].split('_')[-1]  # ER_2024082720_2024082800.nc
                 st = datetime.strptime(time, '%Y%m%d%H')
                 time_list.append(st)
-                
-                times = pd.date_range(st,st,freq='H')
+
+                times = pd.date_range(st, st, freq='H')
                 time_da = xr.DataArray(times, [('time', times)])
                 ds = ds.expand_dims(time=time_da)
 
@@ -138,9 +139,9 @@ class flood_model:
             data_out = pre.interp(lat=lat, lon=lon, method=cfg.PARAMS.PRE_PROCESS_METHOD)
             data_out = data_out.data
 
-        elif self.pre_type == 4: # 暴雨强度公式雨型
+        elif self.pre_type == 4:  # 暴雨强度公式雨型
             data_out = pre_simulation(self.param_A, self.param_b, self.param_C, self.param_n, self.r, self.p, self.t, self.total_t, lon, lat)
-            time = '2050010100' # 如果是仿真，起始时间固定2050-01-01 00时
+            time = '2050010100'  # 如果是仿真，起始时间固定2050-01-01 00时
             st = datetime.strptime(time, '%Y%m%d%H')
             et = st + dt.timedelta(hours=self.total_t - 1)
             time_list = pd.date_range(st, et, freq='1H')
@@ -162,7 +163,7 @@ class flood_model:
         elevations = [dem[catchment == i + 1] for i in range(len(catchment_mark))]
         locations = [np.where(catchment == i + 1) for i in range(len(catchment_mark))]
         row_loc, clo_loc = zip(*locations)
-        
+
         return elevations, row_loc, clo_loc
 
     def calc_flood(self):
@@ -180,14 +181,14 @@ class flood_model:
 
         # mqpf取前一个时刻的结果
         if self.pre_type == 1 and self.previous is not None:
-            last_time = self.time - dt.timedelta(hours=1/6)
+            last_time = self.time - dt.timedelta(hours=1 / 6)
             last_time_str = last_time.strftime('%Y%m%d%H%M')
             previous_flood = os.path.join(self.previous, f'FLOOD_{self.flag}_' + str(self.pre_type) + '_' + last_time_str + '_024.nc')
             print('读取前一个时刻结果路径：' + previous_flood)
 
             if os.path.exists(previous_flood):
                 previous_file = xr.open_dataset(previous_flood)
-                last_water_depth = previous_file.FLOOD.data[0] # 第0个时刻的结果
+                last_water_depth = previous_file.FLOOD.data[0]  # 第0个时刻的结果
                 print('读取前一个时刻的结果成功')
             else:
                 last_water_depth = np.zeros(pre_array[0].shape)
@@ -197,13 +198,13 @@ class flood_model:
 
         # 开始计算
         if self.pre_type == 1:
-            fh = 1/6
+            fh = 1 / 6
         else:
             fh = 1
 
         for i in tqdm(range(pre_array.shape[0])):
             pre_temp = pre_array[i, :, :]
-            
+
             # 针对山西智能网格数据 前24小时逐小时，后72小时逐3小时
             if (self.pre_type == 2) and (i > 23):
                 fh = 3
@@ -219,13 +220,13 @@ class flood_model:
             # print()
 
         result_dict = edict()
-        water_depth = water_depth*cfg.PARAMS.DEPTH_SCALE
+        water_depth = water_depth * cfg.PARAMS.DEPTH_SCALE
 
         # 先把原始数据保存为nc
         Data = {'PRE': pre_array, 'FLOOD': water_depth}
         ds = xr.Dataset()
         if cfg.INFO.SAVE_PRE:
-            elements = ['PRE', 'FLOOD'] 
+            elements = ['PRE', 'FLOOD']
         else:
             elements = ['FLOOD']
 
@@ -242,34 +243,43 @@ class flood_model:
             result_dict[var] = xarray_path
 
         # 然后根据路网的点插值
-        if self.flag == 'TY':
-            points = cfg.FILES.TY_ROAD_LEVEL1 # 1级道路
-        else:
-            points = cfg.FILES.SHANXI_ROAD_LEVEL1
+        try:
+            if self.flag == 'TY':
+                points = cfg.FILES.TY_ROAD_LEVEL1  # 1级道路
+            else:
+                points = cfg.FILES.SHANXI_ROAD_LEVEL1
 
-        gdf = gpd.read_file(points)
-        sta_list = gdf['useID'].tolist()
-        lon_list = gdf['lon'].tolist()
-        lat_list = gdf['lat'].tolist()
-        interp_lon = xr.DataArray(lon_list, dims="location", coords={"location": sta_list,})
-        interp_lat = xr.DataArray(lat_list, dims="location", coords={"location": sta_list,})
-        selected_data = ds.interp(lat=interp_lat, lon=interp_lon, method='nearest')
+            gdf = gpd.read_file(points)
+            sta_list = gdf['useID'].tolist()
+            lon_list = gdf['lon'].tolist()
+            lat_list = gdf['lat'].tolist()
+            interp_lon = xr.DataArray(lon_list, dims="location", coords={
+                "location": sta_list,
+            })
+            interp_lat = xr.DataArray(lat_list, dims="location", coords={
+                "location": sta_list,
+            })
+            selected_data = ds.interp(lat=interp_lat, lon=interp_lon, method='nearest')
 
-        flood_tab = selected_data.FLOOD.data
-        flood_tab = flood_tab.round(2)
-        flood_tab = np.where(flood_tab>1, flood_tab, 0)
-        flood_tab = pd.DataFrame(flood_tab, index=selected_data.time, columns=selected_data.location).T
-        flood_tab.columns = [col.strftime('%Y%m%d%H%M') for col in flood_tab.columns]
-        flood_tab = flood_tab.loc[~(flood_tab==0).all(axis=1)] # 删除全是0的行
+            flood_tab = selected_data.FLOOD.data
+            flood_tab = flood_tab.round(2)
+            flood_tab = np.where(flood_tab > 1, flood_tab, 0)
+            flood_tab = pd.DataFrame(flood_tab, index=selected_data.time, columns=selected_data.location).T
+            flood_tab = flood_tab.loc[~(flood_tab == 0).all(axis=1)]  # 删除全是0的行
 
-        if self.pre_type == 1:
-            csv_path = os.path.join(self.save_path,f"{var}_{self.flag}_{str(self.pre_type)}_{time_list[0].strftime('%Y%m%d%H%M')}_{'%03d'%len(time_list)}.csv")
-        else:
-            csv_path = os.path.join(self.save_path,f"{var}_{self.flag}_{str(self.pre_type)}_{time_list[0].strftime('%Y%m%d%H')}_{'%03d'%len(time_list)}.csv")
+            if self.pre_type == 1:  # mqpf
+                flood_tab.columns = [col.strftime('%Y%m%d%H%M') for col in flood_tab.columns]
+                csv_path = os.path.join(self.save_path, f"{var}_{self.flag}_{str(self.pre_type)}_{time_list[0].strftime('%Y%m%d%H%M')}_{'%03d'%len(time_list)}.csv")
+            else:
+                flood_tab.columns = [col.strftime('%Y%m%d%H') for col in flood_tab.columns]
+                csv_path = os.path.join(self.save_path, f"{var}_{self.flag}_{str(self.pre_type)}_{time_list[0].strftime('%Y%m%d%H')}_{'%03d'%len(time_list)}.csv")
 
-        flood_tab.to_csv(csv_path, encoding='utf-8')
-        csv_path = csv_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)
-        result_dict['FLOOD_CSV'] = csv_path
+            flood_tab.to_csv(csv_path, encoding='utf-8')
+            csv_path = csv_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)
+            result_dict['FLOOD_CSV'] = csv_path
+
+        except:
+            result_dict['FLOOD_CSV'] = None
 
         return result_dict
 
@@ -277,7 +287,7 @@ class flood_model:
 if __name__ == '__main__':
     startime = datetime.now()
     save_file = r'C:\Users\MJY\Desktop\result'
-    flag = 'TY' # TY or SHANXI
+    flag = 'TY'  # TY or SHANXI
     pre_path = 'C:/Users/MJY/Desktop/shanxi_flood/zipdata/MQPF/mqpfshanxi_20240721_1650B.nc'
     pre_type = 1
     sf = flood_model(save_file, flag, pre_path, pre_type, previous=None, param_A=None, param_b=None, param_C=None, param_n=None, r=None, p=None, t=None, total_t=None)
@@ -287,4 +297,3 @@ if __name__ == '__main__':
     print('spend time: %d seconds' % (runtime.seconds))
     print(u'memory_used: %.4f GB' % (psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024 / 1024))
     print("End : %s" % time.ctime())
-    
