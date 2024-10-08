@@ -45,49 +45,53 @@ def eemd(df, output_filepath):
         col = columns[i]
         name = ''.join(col)
 
-        if np.any(np.isnan(dat)):
-            # print(f'{columns[i]}存在nan值，时间序列不完整')
-            all_result[name] = '该站点的时间序列不完整，不能生成结果'
-            continue
+        try:
+            if np.any(np.isnan(dat)):
+                # print(f'{columns[i]}存在nan值，时间序列不完整')
+                all_result[name] = '该站点的时间序列不完整，不能生成结果'
+                continue
 
-        t0 = year[0]  # 开始的时间，以年为单位
-        dt = 1  # 采样间隔，以年为单位
-        N = dat.size  # 时间序列的长度
-        t = np.arange(0, N) * dt + t0  # 构造时间序列数组
+            t0 = year[0]  # 开始的时间，以年为单位
+            dt = 1  # 采样间隔，以年为单位
+            N = dat.size  # 时间序列的长度
+            t = np.arange(0, N) * dt + t0  # 构造时间序列数组
 
-        p = np.polyfit(t - t0, dat, 1)  # 线性拟合
-        dat_notrend = dat - np.polyval(p, t - t0)  # 去趋势
-        std = dat_notrend.std()  # 标准差
-        var = std**2  # 方差
-        dat_norm = dat_notrend / std  # 标准化
-        eemd = EEMD()
-        emd = eemd.EMD
-        eIMFs = eemd.eemd(dat_norm, t)
-        nIMFs = eIMFs.shape[0]
+            p = np.polyfit(t - t0, dat, 1)  # 线性拟合
+            dat_notrend = dat - np.polyval(p, t - t0)  # 去趋势
+            std = dat_notrend.std()  # 标准差
+            var = std**2  # 方差
+            dat_norm = dat_notrend / std  # 标准化
+            eemd = EEMD()
+            emd = eemd.EMD
+            eIMFs = eemd.eemd(dat_norm, t)
+            nIMFs = eIMFs.shape[0]
 
-        # Plot results
-        fig = plt.figure(figsize=(8, 6))
-        plt.subplot(nIMFs + 1, 1, 1)
-        plt.plot(t, dat_norm, 'r')
-        plt.title(columns[i])
+            # Plot results
+            fig = plt.figure(figsize=(8, 6))
+            plt.subplot(nIMFs + 1, 1, 1)
+            plt.plot(t, dat_norm, 'r')
+            plt.title(columns[i])
 
-        for n in range(nIMFs):
-            plt.subplot(nIMFs + 1, 1, n + 2)
-            plt.plot(t, eIMFs[n], 'g')
-            plt.ylabel("eIMF %i" % (n + 1))
-            plt.locator_params(axis='y', nbins=5)
+            for n in range(nIMFs):
+                plt.subplot(nIMFs + 1, 1, n + 2)
+                plt.plot(t, eIMFs[n], 'g')
+                plt.ylabel("eIMF %i" % (n + 1))
+                plt.locator_params(axis='y', nbins=5)
 
-        plt.xlabel("年份")
-        plt.tight_layout()
+            plt.xlabel("年份")
+            plt.tight_layout()
 
-        result_picture = os.path.join(output_filepath, name+'_eemd.png')
-        fig.savefig(result_picture, dpi=200, bbox_inches='tight')
-        plt.clf()
-        plt.close()
+            result_picture = os.path.join(output_filepath, name+'_eemd.png')
+            fig.savefig(result_picture, dpi=200, bbox_inches='tight')
+            plt.clf()
+            plt.close()
 
-        result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
-        result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-        all_result[name] = result_picture
+            result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+            result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+            all_result[name] = result_picture
+        
+        except:
+            all_result[name] = None
 
     return all_result
 

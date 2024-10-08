@@ -68,10 +68,13 @@ def time_analysis(df, save_file):
         data_tmp = df[col].to_frame()
         data_tmp.insert(loc=0, column='时间', value=data_tmp.index)
         data_tmp.reset_index(drop=True, inplace=True)
+        name = ''.join(col)
+        all_result[name] = dict()
         try:
             result_out, _ = mann_kendall_mutation_test(data_tmp)  # 调用计算
+            all_result[name]['mk_result'] = result_out.to_dict(orient='records')
         except:
-            result_out = None
+            all_result[name]['mk_result'] = None
 
         # # 画图
         # plt.figure(figsize=(8, 6))
@@ -101,14 +104,15 @@ def time_analysis(df, save_file):
         #     text.set_fontsize(12)  # 设置字体大小
         #     # text.set_fontfamily('MicroSoft YaHei')  # 设置字体名称
         
-        name = ''.join(col)
+        # name = ''.join(col)
+        # all_result[name] = dict()
         # save_path = os.path.join(save_file, name+'_mk检验.png')
         # plt.savefig(save_path, dpi=200, bbox_inches='tight')
         # plt.clf()
         # plt.close()
         
-        all_result[name] = dict()
-        all_result[name]['mk_result'] = result_out.to_dict(orient='records')
+    
+        # all_result[name]['mk_result'] = result_out.to_dict(orient='records')
         # all_result[name]['img'] = save_path
 
     return all_result
