@@ -77,6 +77,10 @@ __C.FILES.DISASTER = os.path.join(data_file_dir, 'disaster.nc')
 
 
 # 内涝
+__C.INFO.IN_FLOOD_DATA = '/flood_data'
+__C.INFO.OUT_FLOOD_DATA = '/share/data5/VIDEO_PIC/Shanxi'
+
+
 __C.INFO.PRODUCT_RESIZE = False # 是否对结果插值到0.001度
 __C.INFO.SAVE_PRE = True # 是否额外生成降水网格数据 (将原始降水数据处理成和积水深度结果相同时间尺度和网格大小的nc)
 

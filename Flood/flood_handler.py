@@ -33,7 +33,7 @@ def flood_calc(data_json):
         os.chmod(data_dir, 0o007 | 0o070 | 0o700)
 
     if pre_path is not None:
-        pre_path = pre_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+        pre_path = pre_path.replace(cfg.INFO.OUT_FLOOD_DATA, cfg.INFO.IN_FLOOD_DATA)  # inupt_path要转换为容器内的路径
         print('读取数据路径：' + pre_path)
 
     if previous_id is not None:
