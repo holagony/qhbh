@@ -162,8 +162,8 @@ def hbv_single_calc(data_json):
     ca = data_json['ca']
     l = data_json['l']
     
-    # inpath = '/cmip_data'
-    inpath = r'D:\Project\qh\Evaluate_Energy\data' # cmip6路径
+    inpath = '/cmip_data'
+    #inpath = r'D:\Project\qh\Evaluate_Energy\data' # cmip6路径
 
     # 2.参数处理
     uuid4 = uuid.uuid4().hex
