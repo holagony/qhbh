@@ -123,7 +123,7 @@ def climate_esti(data_json):
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
         
     inpath = '/cmip_data'
-    # inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6' # cmip6路径
+    # inpath = r'D:\Project\qh\Evaluate_Energy\data' # cmip6路径
 
     # 2.参数处理
     degree = None
@@ -221,7 +221,7 @@ def climate_esti(data_json):
 
     elif time_freq in ['Q', 'M2']:
         s = evaluate_times[0].split(',')[0]
-        e = evaluate_times[1].split(',')[1]
+        e = evaluate_times[0].split(',')[1]
         mon_list = [int(val) for val in evaluate_times[1].split(',')]
         time_index = pd.date_range(start=s, end=e, freq='D')[:-1]  # 'Q' or 'M2'
         time_index = time_index[time_index.month.isin(mon_list)]
@@ -416,10 +416,10 @@ def climate_esti(data_json):
 
 if __name__ == '__main__':
     data_json = dict()
-    data_json['time_freq'] = 'Y'
-    data_json['evaluate_times'] = '1950,1980' # 预估时段时间条
-    data_json['refer_years'] = '2000,2024'# 参考时段时间条
-    data_json['sta_ids'] = '52943,52955,52957,52968,56033,56043,56045,56046,56065,56067'
+    data_json['time_freq'] = 'M2'
+    data_json['evaluate_times'] = ["2024,2025","1,2"] # 预估时段时间条
+    data_json['refer_years'] = ['1995,2014','1,2']# 参考时段时间条
+    data_json['sta_ids'] = '51886,52602,52633,52645,52657,52707 52713'
     data_json['cmip_type'] = 'original' # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None # 分辨率 1/5/10/25/50/100 km
     data_json['cmip_model'] = ['BCC-CSM2-MR', 'CanESM5']# 模式，列表：['CanESM5','CESM2']等
