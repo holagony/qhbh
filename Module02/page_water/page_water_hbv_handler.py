@@ -291,7 +291,7 @@ def hbv_single_calc(data_json):
         end_year = int(evaluate_times.split(',')[1])
     elif time_freq in ['Q', 'M2', 'D2']:
         start_year = int(evaluate_times[0].split(',')[0])
-        end_year = int(evaluate_times[1].split(',')[1])
+        end_year = int(evaluate_times[0].split(',')[1])
     elif time_freq in ['M1', 'D1']:
         start_year = int(evaluate_times.split(',')[0][:4])
         end_year = int(evaluate_times.split(',')[1][:4])
