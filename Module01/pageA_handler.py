@@ -23,6 +23,7 @@ from Module01.wrapped.func07_correlation_analysis import correlation_analysis
 from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
 import time
+from Utils.data_loader_with_threads import get_database_data
 
 # 气候要素
 
@@ -126,11 +127,11 @@ def climate_features_stats(data_json):
     
     # 确定表名
     if time_freq == 'Y':
-        table_name = 'qh_qhbh_cmadaas_year'
+        table_name = 'qh_climate_cmadaas_year'
     elif time_freq in ['Q', 'M1', 'M2']:
-        table_name = 'qh_qhbh_cmadaas_month'
+        table_name = 'qh_climate_cmadaas_month'
     elif time_freq in ['D1', 'D2']:
-        table_name = 'qh_qhbh_cmadaas_day'
+        table_name = 'qh_climate_cmadaas_day'
     element_str = element
     
     if element == 'EVP_Penman' and time_freq == 'Y':
@@ -152,172 +153,15 @@ def climate_features_stats(data_json):
         element_str = 'TEM_Avg,PRE_Time_2020'
     
     if element == 'Rad':
-        table_name = 'qh_climate_radi_hour_new'
+        table_name = 'qh_climate_radi_hour'
         element_str = 'V14311'
 
-    # 从数据库截数据
-    conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
-    cur = conn.cursor()
     sta_ids = tuple(sta_ids.split(','))
-    elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,' + element_str
-
-    if time_freq == 'Y':  # '%Y,%Y'
-        query = sql.SQL(f"""
-                        SELECT {elements}
-                        FROM public.{table_name}
-                        WHERE
-                            CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                            AND station_id_c IN %s
-                        """)
-
-        # 根据sql获取统计年份data
-        start_year = stats_times.split(',')[0]
-        end_year = stats_times.split(',')[1]
-        cur.execute(query, (start_year, end_year, sta_ids))
-        data = cur.fetchall()
-
-    elif time_freq == 'Q':  # ['%Y,%Y','3,4,5']
-        
-        mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
-        mon_ = tuple(mon_list)
-        years = stats_times[0]
-        start_year = years.split(',')[0]
-        end_year = years.split(',')[1]
-
-        if 12 in mon_list:
-            
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{table_name}
-                                WHERE (SUBSTRING(datetime, 1, 4) BETWEEN %s AND %s) 
-                                AND SUBSTRING(datetime, 6, 2) IN ('12', '01', '02')
-                                OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) = '12')
-                                OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) IN ('01', '02'))
-                                AND station_id_c IN %s
-                            """)
-            cur.execute(query, (start_year, end_year,str(int(start_year)-1),str(int(end_year)+1), sta_ids))
-
-        else:    
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{table_name}
-                            WHERE
-                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
-                                AND station_id_c IN %s
-                            """)  
-            cur.execute(query, (start_year, end_year, mon_, sta_ids))
-
-        data = cur.fetchall()
-
-    elif time_freq == 'M1':  # '%Y%m,%Y%m'
-        query = sql.SQL(f"""
-                        SELECT {elements}
-                        FROM public.{table_name}
-                        WHERE
-                            ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) >= %s)
-                            OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
-                            OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) <= %s))
-                            AND station_id_c IN %s
-                        """)
-
-        start_year = stats_times.split(',')[0][:4]
-        end_year = stats_times.split(',')[1][:4]
-        start_month = stats_times.split(',')[0][4:]
-        end_month = stats_times.split(',')[1][4:]
-        cur.execute(query, (start_year, start_month, start_year, end_year, end_year, end_month, sta_ids))
-        data = cur.fetchall()
-
-    elif time_freq == 'M2':  # ['%Y,%Y','11,12,1,2']
-        mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
-        mon_ = tuple(mon_list)
-        query = sql.SQL(f"""
-                        SELECT {elements}
-                        FROM public.{table_name}
-                        WHERE
-                            (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                            AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
-                            AND station_id_c IN %s
-                        """)
-
-        years = stats_times[0]
-        start_year = years.split(',')[0]
-        end_year = years.split(',')[1]
-        cur.execute(query, (start_year, end_year, mon_, sta_ids))
-        data = cur.fetchall()
-
-    elif time_freq == 'D1':  # '%Y%m%d,%Y%m%d'
-        query = sql.SQL(f"""
-                        SELECT {elements}
-                        FROM public.{table_name}
-                        WHERE
-                            ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) >= %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
-                            OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
-                            OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) <= %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s))
-                            AND station_id_c IN %s
-                        """)
-
-        start_year = stats_times.split(',')[0][:4]
-        end_year = stats_times.split(',')[1][:4]
-        start_month = stats_times.split(',')[0][4:6]
-        end_month = stats_times.split(',')[1][4:6]
-        start_date = stats_times.split(',')[0][6:]
-        end_date = stats_times.split(',')[1][6:]
-        cur.execute(query, (start_year, start_month, start_date, start_year, end_year, end_year, end_month, end_date, sta_ids))
-        data = cur.fetchall()
-
-    elif time_freq == 'D2':  # ['%Y,%Y','%m%d,%m%d']
-        query = sql.SQL(f"""
-                        SELECT {elements}
-                        FROM public.{table_name}
-                        WHERE
-                            (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                            AND (
-                                (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
-                                OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) < %s)
-                                OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s)
-                            ))
-                            AND station_id_c IN %s
-                        """)
-
-        years = stats_times[0]
-        dates = stats_times[1]
-        start_year = years.split(',')[0]
-        end_year = years.split(',')[1]
-        start_mon = dates.split(',')[0][:2]
-        end_mon = dates.split(',')[1][:2]
-        start_date = dates.split(',')[0][2:]
-        end_date = dates.split(',')[1][2:]
-        cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_mon, end_date, sta_ids))
-        data = cur.fetchall()
-
-    # 统计年份数据处理为df
-    data_df = pd.DataFrame(data)
-    data_df.columns = elements.split(',')
     
-    # 下载参考时段的数据
-    query = sql.SQL(f"""
-                    SELECT {elements}
-                    FROM public.{table_name}
-                    WHERE
-                        CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                        AND station_id_c IN %s
-                    """)
-
-    start_year = refer_years.split(',')[0]
-    end_year = refer_years.split(',')[1]
-    cur.execute(query, (start_year, end_year, sta_ids))
-    data = cur.fetchall()
-    refer_df = pd.DataFrame(data)
-    refer_df.columns = elements.split(',')
-
-    # 下载近10年的数据
-    start_year = nearly_years.split(',')[0]
-    end_year = nearly_years.split(',')[1]
-    cur.execute(query, (start_year, end_year, sta_ids))
-    data = cur.fetchall()
-    nearly_df = pd.DataFrame(data)
-    nearly_df.columns = elements.split(',')
+    # 从数据库截数据
+    data_df = get_database_data(sta_ids, element_str, table_name, time_freq, stats_times)
+    refer_df = get_database_data(sta_ids, element_str, table_name, time_freq, refer_years)
+    nearly_df = get_database_data(sta_ids, element_str, table_name, time_freq, nearly_years)
 
     # 数据处理
     if element == 'EVP_Taka':
@@ -335,9 +179,7 @@ def climate_features_stats(data_json):
         refer_df['V14311'] = refer_df['V14311'].map(float)*3600/1e6
         nearly_df['V14311'] = nearly_df['V14311'].map(float)*3600/1e6
         
-    # 关闭数据库
-    cur.close()
-    conn.close()
+ 
 
     ######################################################
     # 开始计算
@@ -435,15 +277,15 @@ def climate_features_stats(data_json):
 if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
-    data_json['element'] = 'Rad'
-    data_json['refer_years'] = '2023,2025'
-    data_json['nearly_years'] = '2023,2025'
+    data_json['element'] = 'TEM_Avg'
+    data_json['refer_years'] = '1994,2023'
+    data_json['nearly_years'] = '1994,2022'
     data_json['time_freq'] = 'Y'
-    data_json['stats_times'] = '2023,2025'  # '198105,202009' # '1981,2023'
+    data_json['stats_times'] = '2011,2021'  # '198105,202009' # '1981,2023'
     data_json['sta_ids'] = '52866,56029,52863,52754,52818,52874,56043,52713,56065'
     data_json['interp_method'] = 'idw2'
     data_json['ci'] = 95
-    data_json['shp_path'] = r'C:\Users\MJY\Desktop\qhbh\文档\03-边界矢量\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
+    data_json['shp_path'] =r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
     data_json['degree'] = None
     
     result = climate_features_stats(data_json)

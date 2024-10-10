@@ -25,6 +25,7 @@ from Module01.wrapped.func06_wavelet_analyse import wavelet_main
 from Module01.wrapped.func07_correlation_analysis import correlation_analysis
 from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
+from Utils.data_loader_with_threads import get_database_data
 
 # 极端指数
 
@@ -242,723 +243,81 @@ def extreme_climate_features(data_json):
     sql_dict['year']='qh_qhbh_cmadaas_year'
     sql_dict['year_cal']='qh_qhbh_calc_elements_year'
 
-    if not cfg.INFO.READ_LOCAL:
-
-        # 3.解析要下载的参数
-        ele = ''
-        elements_list = ['TEM_Avg', 'TEM_Max', 'TEM_Min', 'PRE_Time_2020', 'PRE_Days', 'PRE_Max_Day', 'PRS_Avg', 'PRS_Max', 'PRS_Min', 
-                         'WIN_S_2mi_Avg', 'WIN_S_Max', 'WIN_S_Inst_Max', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Max', 'GST_Min', 'GST_Avg_5cm', 'GST_Avg_10cm',
-                         'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 
-                         'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'RHU_Min']
-        resample_max = ['TEM_Max', 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max']
-        resample_min = ['TEM_Min', 'PRS_Min', 'GST_Min', 'RHU_Min']
-        resample_sum = ['PRE_Time_2020', 'PRE_Days']
-        resample_mean = ['TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 
-                         'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSH', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg']
-
-        if element in elements_list:
-            ele += element
-
-        elif element == 'WIND':
-            if time_freq in ['D1', 'D2']:
-                ele += 'WIN_D_S_Max'
-            else:
-                ele += 'WIN_D_S_Max_C'
-
-        elif element == 'EVP_Taka':
-            ele += 'PRE_Time_2020,TEM_Avg'
-
-        elif element == 'EVP_Penman':
-            ele += 'PRS_Avg,WIN_S_2mi_Avg,TEM_Max,TEM_Min,RHU_Avg,SSH'
-
-        # 4.下载 and 后处理
-        if time_freq == 'Y':
-            # 下载统计年份的数据
-            years = stats_times
-            data_df = get_cmadaas_yearly_data(years, ele, sta_ids)
-            data_df = data_processing(data_df, element,degree)
-
-            # 下载参考时段的数据
-            refer_df = get_cmadaas_yearly_data(refer_years, ele, sta_ids)
-            refer_df = data_processing(refer_df, element,degree)
-
-            # 下载近10年的数据
-            nearly_df = get_cmadaas_yearly_data(nearly_years, ele, sta_ids)
-            nearly_df = data_processing(nearly_df, element,degree)
-
-        elif time_freq == 'Q':
-            # 下载统计年份的数据
-            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
-            years = stats_times[0]
-            mon = '01,12'
-            data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
+    sta_ids = tuple(sta_ids.split(','))
+    if time_freq == 'Y':
         
-            # TODO if element in ['EVP_Penman', 'EVP_taka']:
-            data_df = data_df[data_df['Mon'].isin(mon_list)]
-            data_df = data_processing(data_df, element,degree)
+        if element in ele_caculate:
+            sql_choose=sql_dict['year_cal']
+        else:
+            sql_choose=sql_dict['year']
+            
+        if element not in other_table:
+            sql_choose=sql_dict['day']
+    
+    elif time_freq == 'Q': # ['%Y,%Y','3,4,5']
+    
+        if element in ele_caculate:
+            sql_choose=sql_dict['mon_cal']
+        else:
+            sql_choose=sql_dict['mon']
+            
+        if element not in other_table:
+            sql_choose=sql_dict['day']
 
-            # 下载参考时段的数据
-            refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
-            refer_df = refer_df[refer_df['Mon'].isin(mon_list)]
-            refer_df = data_processing(refer_df, element,degree)
+    elif time_freq in ['M1','M2']: # '%Y%m,%Y%m'
+    
+        if element in ele_caculate:
+            sql_choose=sql_dict['mon_cal']
+        else:
+            sql_choose=sql_dict['mon']
+            
+        if element not in other_table:
+            sql_choose=sql_dict['day']
 
-            # 下载近10年的数据
-            nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
-            nearly_df = nearly_df[nearly_df['Mon'].isin(mon_list)]
-            nearly_df = data_processing(nearly_df, element,degree)
+    elif time_freq in ['D1','D2']: # '%Y%m%d,%Y%m%d'
+    
+        if element in ele_caculate:
+            sql_choose=sql_dict['day_cal']
+        else:
+            sql_choose=sql_dict['day']
+    
+        if element in ele_day:
+            ele_dict[element]=element
 
-        elif time_freq == 'M1':
-            # 下载统计年份的数据
-            start_time = stats_times.split(',')[0]
-            end_time = stats_times.split(',')[1]
-            years = start_time[:4] + ',' + end_time[:4]
-            mon = start_time[4:] + ',' + end_time[4:]
-            data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
-            data_df = data_processing(data_df, element,degree)
+    data_df = get_database_data(sta_ids, ele_dict[element], sql_choose, time_freq, stats_times)
+    refer_df = get_database_data(sta_ids, ele_dict[element], sql_choose, time_freq, refer_years)
+    nearly_df = get_database_data(sta_ids, ele_dict[element], sql_choose, time_freq, nearly_years)
 
-            # 下载参考时段的数据
-            refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
-            refer_df = data_processing(refer_df, element,degree)
-
-            # 下载近10年的数据
-            nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
-            nearly_df = data_processing(nearly_df, element,degree)
-
-        elif time_freq == 'M2':
-            # 下载统计年份的数据
-            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]
-            years = stats_times[0]
-            mon = '01,12'
-            data_df = get_cmadaas_monthly_data(years, mon, ele, sta_ids)
-            data_df = data_df[data_df['Mon'].isin(mon_list)]  # 按区间提取月份
-            data_df = data_processing(data_df, element,degree)
-
-            # 下载参考时段的数据
-            refer_df = get_cmadaas_monthly_data(refer_years, mon, ele, sta_ids)
-            refer_df = refer_df[refer_df['Mon'].isin(mon_list)]
-            refer_df = data_processing(refer_df, element,degree)
-
-            # 下载近10年的数据
-            nearly_df = get_cmadaas_monthly_data(nearly_years, mon, ele, sta_ids)
-            nearly_df = nearly_df[nearly_df['Mon'].isin(mon_list)]
-            nearly_df = data_processing(nearly_df, element,degree)
-
-        elif time_freq == 'D1':
-            # 下载统计年份的数据
-            start_time = stats_times.split(',')[0]
-            end_time = stats_times.split(',')[1]
-            years = start_time[:4] + ',' + end_time[:4]
-            date = start_time[4:] + ',' + end_time[4:]
-            data_df = get_cmadaas_daily_data(years, date, ele, sta_ids)
-            data_df = data_processing(data_df, element,degree)
-
-            # 下载参考时段的数据
-            refer_df = get_cmadaas_daily_data(refer_years, date, ele, sta_ids)
-            refer_df = data_processing(refer_df, element,degree)
-
-            # 下载近10年的数据
-            nearly_df = get_cmadaas_daily_data(nearly_years, date, ele, sta_ids)
-            nearly_df = data_processing(nearly_df, element,degree)
-
-        elif time_freq == 'D2':
-            # 下载统计年份的数据
-            years = stats_times[0]
-            date = stats_times[1]
-            data_df = get_cmadaas_daily_period_data(years, date, ele, sta_ids)
-            data_df = data_processing(data_df, element,degree)
-
-            # 下载参考时段的数据
-            refer_df = get_cmadaas_daily_period_data(refer_years, date, ele, sta_ids)
-            refer_df = data_processing(refer_df, element,degree)
-
-            # 下载近10年的数据
-            nearly_df = get_cmadaas_daily_period_data(nearly_years, date, ele, sta_ids)
-            nearly_df = data_processing(nearly_df, element,degree)
-
-    # 走数据库
+    if element in other_table:
+        data_df = data_processing(data_df, ele_dict[element],degree)
     else:
-        conn = psycopg2.connect(database=cfg.INFO.DB_NAME, 
-                                user=cfg.INFO.DB_USER, 
-                                password=cfg.INFO.DB_PWD, 
-                                host=cfg.INFO.DB_HOST, 
-                                port=cfg.INFO.DB_PORT)
-        cur = conn.cursor()
-        
-        if time_freq == 'Y':
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,' + ele_dict[element]
-            sta_ids = tuple(sta_ids.split(','))
+        data_df.set_index('Datetime', inplace=True)
+        data_df.index = pd.DatetimeIndex(data_df.index)
+        data_df['Station_Id_C'] = data_df['Station_Id_C'].astype(str)
+
+        if 'Unnamed: 0' in data_df.columns:
+            data_df.drop(['Unnamed: 0'], axis=1, inplace=True)       
+
+
+    if element in other_table:
+        refer_df = data_processing(refer_df, ele_dict[element],degree)
+    else:
+        refer_df.set_index('Datetime', inplace=True)
+        refer_df.index = pd.DatetimeIndex(refer_df.index)
+        refer_df['Station_Id_C'] = refer_df['Station_Id_C'].astype(str)
+
+        if 'Unnamed: 0' in refer_df.columns:
+            refer_df.drop(['Unnamed: 0'], axis=1, inplace=True)
             
-            if element in ele_caculate:
-                sql_choose=sql_dict['year_cal']
-            else:
-                sql_choose=sql_dict['year']
-                
-            if element not in other_table:
-                sql_choose=sql_dict['day']
+    if element in other_table:
+        nearly_df = data_processing(nearly_df, ele_dict[element],degree)
+    else:
+        nearly_df.set_index('Datetime', inplace=True)
+        nearly_df.index = pd.DatetimeIndex(nearly_df.index)
+        nearly_df['Station_Id_C'] = nearly_df['Station_Id_C'].astype(str)
 
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{sql_choose}
-                            WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND station_id_c IN %s
-                            """)
-
-            # 下载统计年份的数据
-            start_year = stats_times.split(',')[0]
-            end_year = stats_times.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            data_df = pd.DataFrame(data)
-            data_df.columns = elements.split(',')
-            
-            if element in other_table:
-                data_df = data_processing(data_df, ele_dict[element],degree)
-            else:
-                data_df.set_index('Datetime', inplace=True)
-                data_df.index = pd.DatetimeIndex(data_df.index)
-                data_df['Station_Id_C'] = data_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in data_df.columns:
-                    data_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-
-            # 下载参考时段的数据
-            start_year = refer_years.split(',')[0]
-            end_year = refer_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            refer_df = pd.DataFrame(data)
-            refer_df.columns = elements.split(',')
-            
-            if element in other_table:
-                refer_df = data_processing(refer_df, ele_dict[element],degree)
-            else:
-                refer_df.set_index('Datetime', inplace=True)
-                refer_df.index = pd.DatetimeIndex(refer_df.index)
-                refer_df['Station_Id_C'] = refer_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in refer_df.columns:
-                    refer_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-            # 下载近10年的数据
-            start_year = nearly_years.split(',')[0]
-            end_year = nearly_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            nearly_df = pd.DataFrame(data)
-            nearly_df.columns = elements.split(',')
-                                  
-            if element in other_table:
-                nearly_df = data_processing(nearly_df, ele_dict[element],degree)
-            else:
-                nearly_df.set_index('Datetime', inplace=True)
-                nearly_df.index = pd.DatetimeIndex(nearly_df.index)
-                nearly_df['Station_Id_C'] = nearly_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in nearly_df.columns:
-                    nearly_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-                    
-                    
-
-        elif time_freq == 'Q': # ['%Y,%Y','3,4,5']
-        
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,' + ele_dict[element]
-
-
-            if element in ele_caculate:
-                sql_choose=sql_dict['mon_cal']
-            else:
-                sql_choose=sql_dict['mon']
-                
-            if element not in other_table:
-                sql_choose=sql_dict['day']
-
-            sta_ids = tuple(sta_ids.split(','))
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,' + ele_dict[element]
-            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
-            mon_ = tuple(mon_list)
-            years = stats_times[0]
-            start_year = years.split(',')[0]
-            end_year = years.split(',')[1]
-    
-            if 12 in mon_list:
-                
-                query = sql.SQL(f"""
-                                SELECT {elements}
-                                FROM public.{sql_choose}
-                                    WHERE (SUBSTRING(datetime, 1, 4) BETWEEN %s AND %s) 
-                                    AND SUBSTRING(datetime, 6, 2) IN ('12', '01', '02')
-                                    OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) = '12')
-                                    OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) IN ('01', '02'))
-                                    AND station_id_c IN %s
-                                """)
-                cur.execute(query, (start_year, end_year,str(int(start_year)-1),str(int(end_year)+1), sta_ids))
-    
-            else:    
-                query = sql.SQL(f"""
-                                SELECT {elements}
-                                FROM public.{sql_choose}
-                                WHERE
-                                    (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                    AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
-                                    AND station_id_c IN %s
-                                """)  
-                cur.execute(query, (start_year, end_year, mon_, sta_ids))
-    
-            data = cur.fetchall()
-            data_df = pd.DataFrame(data)
-            data_df.columns = elements.split(',')
-            if element in other_table:
-                data_df = data_processing(data_df, ele_dict[element],degree)
-            else:
-                data_df.set_index('Datetime', inplace=True)
-                data_df.index = pd.DatetimeIndex(data_df.index)
-                data_df['Station_Id_C'] = data_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in data_df.columns:
-                    data_df.drop(['Unnamed: 0'], axis=1, inplace=True)            
-            
-            # 下载参考时段的数据
-            if element in ele_caculate:
-                sql_choose=sql_dict['year_cal']
-            else:
-                sql_choose=sql_dict['year']
-                
-            if element not in other_table:
-                sql_choose=sql_dict['day']
-
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,' + ele_dict[element]
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{sql_choose}
-                            WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND station_id_c IN %s
-                            """)
-
-            start_year = refer_years.split(',')[0]
-            end_year = refer_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            refer_df = pd.DataFrame(data)
-            refer_df.columns = elements.split(',')
-            
-            if element in other_table:
-                refer_df = data_processing(refer_df, ele_dict[element],degree)
-            else:
-                refer_df.set_index('Datetime', inplace=True)
-                refer_df.index = pd.DatetimeIndex(refer_df.index)
-                refer_df['Station_Id_C'] = refer_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in refer_df.columns:
-                    refer_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-                    
-            # 下载近10年的数据
-            start_year = nearly_years.split(',')[0]
-            end_year = nearly_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            nearly_df = pd.DataFrame(data)
-            nearly_df.columns = elements.split(',')
-                      
-            if element in other_table:
-                nearly_df = data_processing(nearly_df, ele_dict[element],degree)
-            else:
-                nearly_df.set_index('Datetime', inplace=True)
-                nearly_df.index = pd.DatetimeIndex(nearly_df.index)
-                nearly_df['Station_Id_C'] = nearly_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in nearly_df.columns:
-                    nearly_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-                    
-        elif time_freq == 'M1': # '%Y%m,%Y%m'
-        
-            if element in ele_caculate:
-                sql_choose=sql_dict['mon_cal']
-            else:
-                sql_choose=sql_dict['mon']
-                
-            if element not in other_table:
-                sql_choose=sql_dict['day']
-                
-            sta_ids = tuple(sta_ids.split(','))
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,' + ele_dict[element]
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{sql_choose}
-                            WHERE
-                                ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) >= %s)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) <= %s))
-                                AND station_id_c IN %s
-                            """)
-
-            # 下载统计年份的数据
-            start_year = stats_times.split(',')[0][:4]
-            end_year = stats_times.split(',')[1][:4]
-            start_month = stats_times.split(',')[0][4:]
-            end_month = stats_times.split(',')[1][4:]
-            cur.execute(query, (start_year, start_month, start_year, end_year, end_year, end_month, sta_ids))
-            data = cur.fetchall()
-            data_df = pd.DataFrame(data)
-            data_df.columns = elements.split(',')
-            
-            if element in other_table:
-                data_df = data_processing(data_df, ele_dict[element],degree)
-            else:
-                data_df.set_index('Datetime', inplace=True)
-                data_df.index = pd.DatetimeIndex(data_df.index)
-                data_df['Station_Id_C'] = data_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in data_df.columns:
-                    data_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-                    
-            # 下载参考时段的数据
-            if element in ele_caculate:
-                sql_choose=sql_dict['year_cal']
-            else:
-                sql_choose=sql_dict['year']
-                
-            if element not in other_table:
-                sql_choose=sql_dict['day']
-
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,' + ele_dict[element]
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{sql_choose}
-                            WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND station_id_c IN %s
-                            """)
-
-            start_year = refer_years.split(',')[0]
-            end_year = refer_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            refer_df = pd.DataFrame(data)
-            refer_df.columns = elements.split(',')
-            
-            if element in other_table:
-                refer_df = data_processing(refer_df, ele_dict[element],degree)
-            else:
-                refer_df.set_index('Datetime', inplace=True)
-                refer_df.index = pd.DatetimeIndex(refer_df.index)
-                refer_df['Station_Id_C'] = refer_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in refer_df.columns:
-                    refer_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-                    
-            # 下载近10年的数据
-            start_year = nearly_years.split(',')[0]
-            end_year = nearly_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            nearly_df = pd.DataFrame(data)
-            nearly_df.columns = elements.split(',')
-                      
-            if element in other_table:
-                nearly_df = data_processing(nearly_df, ele_dict[element],degree)
-            else:
-                nearly_df.set_index('Datetime', inplace=True)
-                nearly_df.index = pd.DatetimeIndex(nearly_df.index)
-                nearly_df['Station_Id_C'] = nearly_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in nearly_df.columns:
-                    nearly_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-                    
-        elif time_freq == 'M2': # ['%Y,%Y','11,12,1,2']
-        
-            if element in ele_caculate:
-                sql_choose=sql_dict['mon_cal']
-            else:
-                sql_choose=sql_dict['mon']
-                
-            if element not in other_table:
-                sql_choose=sql_dict['day']
-                
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,' + ele_dict[element]
-            sta_ids = tuple(sta_ids.split(','))
-            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
-            mon_ = tuple(mon_list)
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{sql_choose}
-                            WHERE
-                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
-                                AND station_id_c IN %s
-                            """)
-
-            # 下载统计年份的数据
-            years = stats_times[0]
-            start_year = years.split(',')[0]
-            end_year = years.split(',')[1]
-            cur.execute(query, (start_year, end_year, mon_, sta_ids))
-            data = cur.fetchall()
-            data_df = pd.DataFrame(data)
-            data_df.columns = elements.split(',')
-            if element not in other_table:
-                data_df = data_processing(data_df, ele_dict[element],degree)
-            else:
-                data_df.set_index('Datetime', inplace=True)
-                data_df.index = pd.DatetimeIndex(data_df.index)
-                data_df['Station_Id_C'] = data_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in data_df.columns:
-                    data_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-            # 下载参考时段的数据
-            if element in ele_caculate:
-                sql_choose=sql_dict['year_cal']
-            else:
-                sql_choose=sql_dict['year']
-                
-            if element not in other_table:
-                sql_choose=sql_dict['day']
-                
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,' + ele_dict[element]
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{sql_choose}
-                            WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND station_id_c IN %s
-                            """)
-
-            start_year = refer_years.split(',')[0]
-            end_year = refer_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            refer_df = pd.DataFrame(data)
-            refer_df.columns = elements.split(',')
-            
-            if element in other_table:
-                refer_df = data_processing(refer_df, ele_dict[element],degree)
-            else:
-                refer_df.set_index('Datetime', inplace=True)
-                refer_df.index = pd.DatetimeIndex(refer_df.index)
-                refer_df['Station_Id_C'] = refer_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in refer_df.columns:
-                    refer_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-            # 下载近10年的数据
-            start_year = nearly_years.split(',')[0]
-            end_year = nearly_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            nearly_df = pd.DataFrame(data)
-            nearly_df.columns = elements.split(',')
-                      
-            if element in other_table:
-                nearly_df = data_processing(nearly_df, ele_dict[element],degree)
-            else:
-                nearly_df.set_index('Datetime', inplace=True)
-                nearly_df.index = pd.DatetimeIndex(nearly_df.index)
-                nearly_df['Station_Id_C'] = nearly_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in nearly_df.columns:
-                    nearly_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-                    
-        elif time_freq == 'D1': # '%Y%m%d,%Y%m%d'
-        
-            if element in ele_caculate:
-                sql_choose=sql_dict['day_cal']
-            else:
-                sql_choose=sql_dict['day']
-        
-            if element in ele_day:
-                ele_dict[element]=element
-                
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,' + ele_dict[element]
-            sta_ids = tuple(sta_ids.split(','))
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{sql_choose}
-                            WHERE
-                                ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) >= %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) <= %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s))
-                                AND station_id_c IN %s
-                            """)
-                            
-                
-            # 下载统计年份的数据
-            start_year = stats_times.split(',')[0][:4]
-            end_year = stats_times.split(',')[1][:4]
-            start_month = stats_times.split(',')[0][4:6]
-            end_month = stats_times.split(',')[1][4:6]
-            start_date = stats_times.split(',')[0][6:]
-            end_date = stats_times.split(',')[1][6:]
-            
-            cur.execute(query, (start_year, start_month, start_date, start_year, end_year, end_year, end_month, end_date, sta_ids))
-            data = cur.fetchall()
-            data_df = pd.DataFrame(data)
-            data_df.columns = elements.split(',')
-            if element in other_table:
-                data_df = data_processing(data_df, ele_dict[element],degree)
-            else:
-                data_df.set_index('Datetime', inplace=True)
-                data_df.index = pd.DatetimeIndex(data_df.index)
-                data_df['Station_Id_C'] = data_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in data_df.columns:
-                    data_df.drop(['Unnamed: 0'], axis=1, inplace=True)            
-            
-            if element in ele_caculate:
-                sql_choose=sql_dict['year_cal']
-            else:
-                sql_choose=sql_dict['year']
-
-            if element in ele_day:
-                ele_dict[element]=element+'_Days'
-                
-            # 下载参考时段的数据
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,' + ele_dict[element]
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{sql_choose}
-                            WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND station_id_c IN %s
-                            """)
-                            
-            start_year = refer_years.split(',')[0]
-            end_year = refer_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            refer_df = pd.DataFrame(data)
-            refer_df.columns = elements.split(',')
-            
-            if element in other_table:
-                refer_df = data_processing(refer_df, ele_dict[element],degree)
-            else:
-                refer_df.set_index('Datetime', inplace=True)
-                refer_df.index = pd.DatetimeIndex(refer_df.index)
-                refer_df['Station_Id_C'] = refer_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in refer_df.columns:
-                    refer_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-            # 下载近10年的数据
-            start_year = nearly_years.split(',')[0]
-            end_year = nearly_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            nearly_df = pd.DataFrame(data)
-            nearly_df.columns = elements.split(',')
-                      
-            if element in other_table:
-                nearly_df = data_processing(nearly_df, ele_dict[element],degree)
-            else:
-                nearly_df.set_index('Datetime', inplace=True)
-                nearly_df.index = pd.DatetimeIndex(nearly_df.index)
-                nearly_df['Station_Id_C'] = nearly_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in nearly_df.columns:
-                    nearly_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-                    
-        elif time_freq == 'D2': # ['%Y,%Y','%m%d,%m%d']
-        
-            if element in ele_caculate:
-                sql_choose=sql_dict['day_cal']
-            else:
-                sql_choose=sql_dict['day']
-        
-            if element in ele_day:
-                ele_dict[element]=element
-            
-            sta_ids = tuple(sta_ids.split(','))
-            elements = 'Station_Id_C,Station_Name,Datetime,' + ele_dict[element]
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{sql_choose}
-                            WHERE
-                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND (
-                                    (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
-                                    OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) < %s)
-                                    OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s)
-                                ))
-                                AND station_id_c IN %s
-                            """)
-
-            # 下载统计年份的数据 ['%Y,%Y','%m%d,%m%d']
-            years = stats_times[0]
-            dates = stats_times[1]
-            start_year = years.split(',')[0]
-            end_year = years.split(',')[1]
-            start_mon = dates.split(',')[0][:2]
-            end_mon = dates.split(',')[1][:2]
-            start_date = dates.split(',')[0][2:]
-            end_date = dates.split(',')[1][2:]
-            cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_mon, end_date, sta_ids))
-            data = cur.fetchall()
-            data_df = pd.DataFrame(data)
-            data_df.columns = elements.split(',')
-            
-            if element in other_table:
-                data_df = data_processing(data_df, ele_dict[element],degree)
-            else:
-                data_df.set_index('Datetime', inplace=True)
-                data_df.index = pd.DatetimeIndex(data_df.index)
-                data_df['Station_Id_C'] = data_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in data_df.columns:
-                    data_df.drop(['Unnamed: 0'], axis=1, inplace=True)            
-            
-            if element in ele_caculate:
-                sql_choose=sql_dict['year_cal']
-            else:
-                sql_choose=sql_dict['year']
-
-            if element in ele_day:
-                ele_dict[element]=element+'_Days'
-                
-            # 下载参考时段的数据
-            elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,' +ele_dict[element]
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{sql_choose}
-                            WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND station_id_c IN %s
-                            """)
-
-            start_year = refer_years.split(',')[0]
-            end_year = refer_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            refer_df = pd.DataFrame(data)
-            refer_df.columns = elements.split(',')
-            
-            if element in other_table:
-                refer_df = data_processing(refer_df, ele_dict[element],degree)
-            else:
-                refer_df.set_index('Datetime', inplace=True)
-                refer_df.index = pd.DatetimeIndex(refer_df.index)
-                refer_df['Station_Id_C'] = refer_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in refer_df.columns:
-                    refer_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-
-            # 下载近10年的数据
-            start_year = nearly_years.split(',')[0]
-            end_year = nearly_years.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
-            nearly_df = pd.DataFrame(data)
-            nearly_df.columns = elements.split(',')
-                      
-            if element in other_table:
-                nearly_df = data_processing(nearly_df, ele_dict[element],degree)
-            else:
-                nearly_df.set_index('Datetime', inplace=True)
-                nearly_df.index = pd.DatetimeIndex(nearly_df.index)
-                nearly_df['Station_Id_C'] = nearly_df['Station_Id_C'].astype(str)
-    
-                if 'Unnamed: 0' in nearly_df.columns:
-                    nearly_df.drop(['Unnamed: 0'], axis=1, inplace=True)
-                            
-        # 关闭数据库
-        cur.close()
-        conn.close()
+        if 'Unnamed: 0' in nearly_df.columns:
+            nearly_df.drop(['Unnamed: 0'], axis=1, inplace=True)
 
     #################################################
     # 开始计算
@@ -1064,7 +423,7 @@ if __name__ == '__main__':
     data_json['sta_ids'] = '52754,56151,52855,52862,56065,52645,56046,52955,52968,52963,52825,56067,52713,52943,52877,52633,52866,52737,52745,52957,56018,56033,52657,52765,52972,52868,56016,52874,51886,56021,52876,56029,56125,52856,52836,52842,56004,52974,52863,56043,52908,56045,52818,56034,52853,52707,52602,52869,52833,52875,52859,52942,52851'
     data_json['interp_method'] = 'ukri'
     data_json['ci'] = 95
-    data_json['shp_path'] =r'C:\Users\MJY\Desktop\qhbh\文档\03-边界矢量\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
+    data_json['shp_path'] =r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
     result = extreme_climate_features(data_json)
     return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result['表格']}, ensure_ascii=False, ignore_nan=True)
 

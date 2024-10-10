@@ -92,7 +92,7 @@ def data_processing(data_in, element, degree=None):
 
     df_data['Lon'] = df_data['Lon'].astype(float)
     df_data['Lat'] = df_data['Lat'].astype(float)
-    df_data[element] = df_data[element].astype(float)
+    df_data[element] =  pd.to_numeric(df_data[element], errors='coerce')
 
 
     if 'Unnamed: 0' in df_data.columns:

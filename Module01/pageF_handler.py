@@ -18,6 +18,7 @@ from Module01.wrapped.func06_wavelet_analyse import wavelet_main
 from Module01.wrapped.func07_correlation_analysis import correlation_analysis
 from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
+from Utils.data_loader_with_threads import get_database_data
 
 # 农牧业 因为数据不确定，暂时不做
 
@@ -105,240 +106,86 @@ def agriculture_features_stats(data_json):
     element_dict['desert_area'] = '待定'
     element_str = element_dict[element]
 
-    if not cfg.INFO.READ_LOCAL:
-        pass
-    else:  # 走数据库
-        conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
-        cur = conn.cursor()
-        sta_ids = tuple(sta_ids.split(','))
-        elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,' + element_str
 
-        if time_freq == 'Y':  # '%Y,%Y'
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{table_name}
-                            WHERE
-                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND station_id_c IN %s
-                            """)
+    conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
+    cur = conn.cursor()
+    sta_ids = tuple(sta_ids.split(','))
+    elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,' + element_str
 
-            # 根据sql获取统计年份data
-            start_year = stats_times.split(',')[0]
-            end_year = stats_times.split(',')[1]
-            cur.execute(query, (start_year, end_year, sta_ids))
-            data = cur.fetchall()
+    data_df = get_database_data(sta_ids, elements, table_name, time_freq, stats_times)
+    refer_df = get_database_data(sta_ids, elements, table_name, time_freq, refer_years)
+    nearly_df = get_database_data(sta_ids, elements, table_name, time_freq, nearly_years)
 
-        elif time_freq == 'Q':  # ['%Y,%Y','3,4,5']
-            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
-            mon_ = tuple(mon_list)
-            years = stats_times[0]
-            start_year = years.split(',')[0]
-            end_year = years.split(',')[1]
-    
-            if 12 in mon_list:
-                
-                query = sql.SQL(f"""
-                                SELECT {elements}
-                                FROM public.{table_name}
-                                    WHERE (SUBSTRING(datetime, 1, 4) BETWEEN %s AND %s) 
-                                    AND SUBSTRING(datetime, 6, 2) IN ('12', '01', '02')
-                                    OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) = '12')
-                                    OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) IN ('01', '02'))
-                                    AND station_id_c IN %s
-                                """)
-                cur.execute(query, (start_year, end_year,str(int(start_year)-1),str(int(end_year)+1), sta_ids))
-    
-            else:    
-                query = sql.SQL(f"""
-                                SELECT {elements}
-                                FROM public.{table_name}
-                                WHERE
-                                    (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                    AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
-                                    AND station_id_c IN %s
-                                """)  
-                cur.execute(query, (start_year, end_year, mon_, sta_ids))
-            data = cur.fetchall()
+    # 数据处理
+    # 二次计算处理
+    if element == 'grassland_green_period':
+        # 一年一个记录，应该不用resample('1A')
+        data_df['Crop_Name'] = data_df['Crop_Name'].map(int)
+        data_df['Datetime'] = pd.to_datetime(data_df['Datetime'])
+        data_df.set_index('Datetime', inplace=True, drop=False)
+        data_df = data_df[data_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
+        data_df = data_df[data_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
+        data_df = data_df[~data_df.index.duplicated()]
+        data_df['fanqing'] = data_df.index.dayofyear
+        data_df['fanqing_date'] = data_df.index.year
 
-        elif time_freq == 'M1':  # '%Y%m,%Y%m'
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{table_name}
-                            WHERE
-                                ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) >= %s)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) <= %s))
-                                AND station_id_c IN %s
-                            """)
+        refer_df['Crop_Name'] = refer_df['Crop_Name'].map(int)
+        refer_df['Datetime'] = pd.to_datetime(refer_df['Datetime'])
+        refer_df.set_index('Datetime', inplace=True, drop=False)
+        refer_df = refer_df[refer_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
+        refer_df = refer_df[refer_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
+        refer_df = refer_df[~refer_df.index.duplicated()]
+        refer_df['fanqing'] = refer_df.index.dayofyear
+        refer_df['fanqing_date'] = refer_df.index.year
 
-            start_year = stats_times.split(',')[0][:4]
-            end_year = stats_times.split(',')[1][:4]
-            start_month = stats_times.split(',')[0][4:]
-            end_month = stats_times.split(',')[1][4:]
-            cur.execute(query, (start_year, start_month, start_year, end_year, end_year, end_month, sta_ids))
-            data = cur.fetchall()
+        nearly_df['Crop_Name'] = nearly_df['Crop_Name'].map(int)
+        nearly_df['Datetime'] = pd.to_datetime(nearly_df['Datetime'])
+        nearly_df.set_index('Datetime', inplace=True, drop=False)
+        nearly_df = nearly_df[nearly_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
+        nearly_df = nearly_df[nearly_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
+        nearly_df = nearly_df[~nearly_df.index.duplicated()]
+        nearly_df['fanqing'] = nearly_df.index.dayofyear
+        nearly_df['fanqing_date'] = nearly_df.index.year
+        element_str = 'fanqing'
 
-        elif time_freq == 'M2':  # ['%Y,%Y','11,12,1,2']
-            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
-            mon_ = tuple(mon_list)
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{table_name}
-                            WHERE
-                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
-                                AND station_id_c IN %s
-                            """)
+    elif element == 'grassland_yellow_period':
+        # 一年一个记录，应该不用resample('1A')
+        data_df['Crop_Name'] = data_df['Crop_Name'].map(int)
+        data_df['Datetime'] = pd.to_datetime(data_df['Datetime'])
+        data_df.set_index('Datetime', inplace=True, drop=False)
+        data_df = data_df[data_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
+        data_df = data_df[data_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
+        data_df = data_df[~data_df.index.duplicated()]
+        data_df['huangku'] = data_df.index.dayofyear
+        data_df['huangku_date'] = data_df.index.year
 
-            years = stats_times[0]
-            start_year = years.split(',')[0]
-            end_year = years.split(',')[1]
-            cur.execute(query, (start_year, end_year, mon_, sta_ids))
-            data = cur.fetchall()
+        refer_df['Crop_Name'] = refer_df['Crop_Name'].map(int)
+        refer_df['Datetime'] = pd.to_datetime(refer_df['Datetime'])
+        refer_df.set_index('Datetime', inplace=True, drop=False)
+        refer_df = refer_df[refer_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
+        refer_df = refer_df[refer_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
+        refer_df = refer_df[~refer_df.index.duplicated()]
+        refer_df['huangku'] = refer_df.index.dayofyear
+        refer_df['huangku_date'] = refer_df.index.year
 
-        elif time_freq == 'D1':  # '%Y%m%d,%Y%m%d'
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{table_name}
-                            WHERE
-                                ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
-                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s))
-                                AND station_id_c IN %s
-                            """)
+        nearly_df['Crop_Name'] = nearly_df['Crop_Name'].map(int)
+        nearly_df['Datetime'] = pd.to_datetime(nearly_df['Datetime'])
+        nearly_df.set_index('Datetime', inplace=True, drop=False)
+        nearly_df = nearly_df[nearly_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
+        nearly_df = nearly_df[nearly_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
+        nearly_df = nearly_df[~nearly_df.index.duplicated()]
+        nearly_df['huangku'] = nearly_df.index.dayofyear
+        nearly_df['huangku_date'] = nearly_df.index.year
+        element_str = 'huangku'
 
-            start_year = stats_times.split(',')[0][:4]
-            end_year = stats_times.split(',')[1][:4]
-            start_month = stats_times.split(',')[0][4:6]
-            end_month = stats_times.split(',')[1][4:6]
-            start_date = stats_times.split(',')[0][6:]
-            end_date = stats_times.split(',')[1][6:]
-            cur.execute(query, (start_year, start_month, start_date, start_year, end_year, end_year, end_month, end_date, sta_ids))
-            data = cur.fetchall()
+    else:
+        data_df = data_processing(data_df, element_str, degree)
+        refer_df = data_processing(refer_df, element_str, degree)
+        nearly_df = data_processing(nearly_df, element_str, degree)
 
-        elif time_freq == 'D2':  # ['%Y,%Y','%m%d,%m%d']
-            query = sql.SQL(f"""
-                            SELECT {elements}
-                            FROM public.{table_name}
-                            WHERE
-                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                                AND (
-                                    (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
-                                    OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) < %s)
-                                    OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s)
-                                ))
-                                AND station_id_c IN %s
-                            """)
-
-            years = stats_times[0]
-            dates = stats_times[1]
-            start_year = years.split(',')[0]
-            end_year = years.split(',')[1]
-            start_mon = dates.split(',')[0][:2]
-            end_mon = dates.split(',')[1][:2]
-            start_date = dates.split(',')[0][2:]
-            end_date = dates.split(',')[1][2:]
-            cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_mon, end_date, sta_ids))
-            data = cur.fetchall()
-
-        # 统计年份数据处理为df
-        data_df = pd.DataFrame(data)
-        data_df.columns = elements.split(',')
-
-        # 下载参考时段的数据
-        query = sql.SQL(f"""
-                        SELECT {elements}
-                        FROM public.{table_name}
-                        WHERE
-                            CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                            AND station_id_c IN %s
-                        """)
-
-        start_year = refer_years.split(',')[0]
-        end_year = refer_years.split(',')[1]
-        cur.execute(query, (start_year, end_year, sta_ids))
-        data = cur.fetchall()
-        refer_df = pd.DataFrame(data)
-        refer_df.columns = elements.split(',')
-
-        # 下载近10年的数据
-        start_year = nearly_years.split(',')[0]
-        end_year = nearly_years.split(',')[1]
-        cur.execute(query, (start_year, end_year, sta_ids))
-        data = cur.fetchall()
-        nearly_df = pd.DataFrame(data)
-        nearly_df.columns = elements.split(',')
-
-        # 数据处理
-        # 二次计算处理
-        if element == 'grassland_green_period':
-            # 一年一个记录，应该不用resample('1A')
-            data_df['Crop_Name'] = data_df['Crop_Name'].map(int)
-            data_df['Datetime'] = pd.to_datetime(data_df['Datetime'])
-            data_df.set_index('Datetime', inplace=True, drop=False)
-            data_df = data_df[data_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
-            data_df = data_df[data_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
-            data_df = data_df[~data_df.index.duplicated()]
-            data_df['fanqing'] = data_df.index.dayofyear
-            data_df['fanqing_date'] = data_df.index.year
-
-            refer_df['Crop_Name'] = refer_df['Crop_Name'].map(int)
-            refer_df['Datetime'] = pd.to_datetime(refer_df['Datetime'])
-            refer_df.set_index('Datetime', inplace=True, drop=False)
-            refer_df = refer_df[refer_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
-            refer_df = refer_df[refer_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
-            refer_df = refer_df[~refer_df.index.duplicated()]
-            refer_df['fanqing'] = refer_df.index.dayofyear
-            refer_df['fanqing_date'] = refer_df.index.year
-
-            nearly_df['Crop_Name'] = nearly_df['Crop_Name'].map(int)
-            nearly_df['Datetime'] = pd.to_datetime(nearly_df['Datetime'])
-            nearly_df.set_index('Datetime', inplace=True, drop=False)
-            nearly_df = nearly_df[nearly_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
-            nearly_df = nearly_df[nearly_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
-            nearly_df = nearly_df[~nearly_df.index.duplicated()]
-            nearly_df['fanqing'] = nearly_df.index.dayofyear
-            nearly_df['fanqing_date'] = nearly_df.index.year
-            element_str = 'fanqing'
-
-        elif element == 'grassland_yellow_period':
-            # 一年一个记录，应该不用resample('1A')
-            data_df['Crop_Name'] = data_df['Crop_Name'].map(int)
-            data_df['Datetime'] = pd.to_datetime(data_df['Datetime'])
-            data_df.set_index('Datetime', inplace=True, drop=False)
-            data_df = data_df[data_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
-            data_df = data_df[data_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
-            data_df = data_df[~data_df.index.duplicated()]
-            data_df['huangku'] = data_df.index.dayofyear
-            data_df['huangku_date'] = data_df.index.year
-
-            refer_df['Crop_Name'] = refer_df['Crop_Name'].map(int)
-            refer_df['Datetime'] = pd.to_datetime(refer_df['Datetime'])
-            refer_df.set_index('Datetime', inplace=True, drop=False)
-            refer_df = refer_df[refer_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
-            refer_df = refer_df[refer_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
-            refer_df = refer_df[~refer_df.index.duplicated()]
-            refer_df['huangku'] = refer_df.index.dayofyear
-            refer_df['huangku_date'] = refer_df.index.year
-
-            nearly_df['Crop_Name'] = nearly_df['Crop_Name'].map(int)
-            nearly_df['Datetime'] = pd.to_datetime(nearly_df['Datetime'])
-            nearly_df.set_index('Datetime', inplace=True, drop=False)
-            nearly_df = nearly_df[nearly_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
-            nearly_df = nearly_df[nearly_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
-            nearly_df = nearly_df[~nearly_df.index.duplicated()]
-            nearly_df['huangku'] = nearly_df.index.dayofyear
-            nearly_df['huangku_date'] = nearly_df.index.year
-            element_str = 'huangku'
-
-        else:
-            data_df = data_processing(data_df, element_str, degree)
-            refer_df = data_processing(refer_df, element_str, degree)
-            nearly_df = data_processing(nearly_df, element_str, degree)
-
-        # 关闭数据库
-        cur.close()
-        conn.close()
+    # 关闭数据库
+    cur.close()
+    conn.close()
 
     # 开始计算
     # 首先获取站号对应的站名
@@ -440,7 +287,7 @@ if __name__ == '__main__':
     data_json['sta_ids'] = '52943,56021,56045,56065'
     data_json['interp_method'] = 'ukri'
     data_json['ci'] = 95
-    data_json['shp_path'] = r'C:\Users\MJY\Desktop\qhbh\文档\03-边界矢量\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
+    data_json['shp_path'] =r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
 
     result = agriculture_features_stats(data_json)
     t2 = time.time()
