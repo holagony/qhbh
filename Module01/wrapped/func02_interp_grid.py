@@ -147,7 +147,7 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
     nc_file.close()
 
     # 变率、最大值、最小值、距平、距平百分率、气候值、与上一年比较值、近10年均值、与近10年比较值
-    ele_choose = ['变率', '最大值', '最小值', '距平', '距平百分率%', '参考时段均值', '与上一年比较值', '近10年均值', '与近10年比较值']
+    ele_choose = ['变率', '最大值', '最小值', '距平', '距平百分率', '参考时段均值', '与上一年比较值', '近10年均值', '与近10年比较值']
 
     df_sta_1=df_sta_1.T
     df_sta_1.columns = df_sta_1.iloc[0]

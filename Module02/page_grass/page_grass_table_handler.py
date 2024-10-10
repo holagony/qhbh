@@ -63,7 +63,7 @@ def data_deal_2(data_df,refer_df,flag):
         tmp_df.loc['最小值'] = data_df.iloc[:, :].min(axis=0)
         tmp_df.loc['参考时段均值'] =  np.round(refer_df.iloc[:, :].mean(axis=0).astype(float),2)
         tmp_df.loc['距平'] =  np.round((tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']).astype(float),2)
-        tmp_df.loc['距平百分率%'] =  np.round(((tmp_df.loc['距平'] / tmp_df.loc['参考时段均值']) * 100).astype(float),2)
+        tmp_df.loc['距平百分率'] =  np.round(((tmp_df.loc['距平'] / tmp_df.loc['参考时段均值']) * 100).astype(float),2)
     
         # 合并所有结果
         stats_result = data_df.copy()
@@ -72,7 +72,7 @@ def data_deal_2(data_df,refer_df,flag):
         elif flag ==2 or flag==3:
             stats_result['区域均值']=a
         stats_result['区域距平'] = np.round((data_df.iloc[:, :].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).astype(float),2)
-        stats_result['区域距平百分率%'] = np.round(((stats_result['区域距平']/tmp_df.loc['参考时段均值'].mean())*100).astype(float),2)
+        stats_result['区域距平百分率'] = np.round(((stats_result['区域距平']/tmp_df.loc['参考时段均值'].mean())*100).astype(float),2)
         stats_result['区域最大值'] = data_df.iloc[:, :].max(axis=1)
         stats_result['区域最小值'] = data_df.iloc[:, :].min(axis=1)
     

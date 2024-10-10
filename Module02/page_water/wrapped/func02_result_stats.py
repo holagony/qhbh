@@ -39,7 +39,7 @@ def stats_result_1(df_in, refer_df):
     tmp_df.loc['最大值'] = df_in.iloc[:, :].max(axis=0)
     tmp_df.loc['最小值'] = df_in.iloc[:, :].min(axis=0)
     tmp_df.loc['距平'] = (tmp_df.loc['平均'] - refer_df['Q'].mean(axis=0)).round(1)
-    tmp_df.loc['距平百分率%'] = ((tmp_df.loc['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
+    tmp_df.loc['距平百分率'] = ((tmp_df.loc['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
     tmp_df.loc['参考时段'] = refer_df['Q'].mean(axis=0).round(1)
 
     result = pd.concat([df_in,tmp_df],axis=0)
@@ -77,7 +77,7 @@ def stats_result_2(dict_in, refer_df):
         tmp_df.loc['最大值'] = df_in.iloc[:, :].max(axis=0)
         tmp_df.loc['最小值'] = df_in.iloc[:, :].min(axis=0)
         tmp_df.loc['距平'] = (tmp_df.loc['平均'] - refer_df['Q'].mean(axis=0)).round(1)
-        tmp_df.loc['距平百分率%'] = ((tmp_df.loc['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
+        tmp_df.loc['距平百分率'] = ((tmp_df.loc['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
         tmp_df.loc['参考时段'] = refer_df['Q'].mean(axis=0).round(1)
 
         result = pd.concat([df_in,tmp_df],axis=0)
@@ -116,7 +116,7 @@ def stats_result_3(dict_in, refer_df):
             tmp_df.loc['最大值'] = df_in.iloc[:, :].max(axis=0)
             tmp_df.loc['最小值'] = df_in.iloc[:, :].min(axis=0)
             tmp_df.loc['距平'] = (tmp_df.loc['平均'] - refer_df['Q'].mean(axis=0)).round(1)
-            tmp_df.loc['距平百分率%'] = ((tmp_df.loc['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
+            tmp_df.loc['距平百分率'] = ((tmp_df.loc['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
             tmp_df.loc['参考时段'] = refer_df['Q'].mean(axis=0).round(1)
     
             result = pd.concat([df_in,tmp_df],axis=0)

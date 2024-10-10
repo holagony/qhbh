@@ -40,7 +40,7 @@ def stats_q(data_df, refer_df):
     tmp_df.loc['最大值'] = data_df_Q.iloc[:, :].max(axis=0)
     tmp_df.loc['最小值'] = data_df_Q.iloc[:, :].min(axis=0)
     tmp_df.loc['距平'] = (tmp_df.loc['平均'] - refer_df['Q'].mean(axis=0)).round(1)
-    tmp_df.loc['距平百分率%'] = ((tmp_df.loc['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
+    tmp_df.loc['距平百分率'] = ((tmp_df.loc['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
     tmp_df.loc['参考时段'] = refer_df['Q'].mean(axis=0).round(1)
 
     result = pd.concat([data_df_Q,tmp_df],axis=0)
