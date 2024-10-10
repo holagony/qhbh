@@ -62,6 +62,7 @@ from Module02.page_energy.wrapped.func00_function import percentile_std_time
 
 from Module02.page_energy.wrapped.func05_solar_power_his import energy_solar_his
 # from Module02.page_energy.wrapped.func02_winter_heating_his import winter_heating_his
+from Utils.data_loader_with_threads import get_database_data
 
 #%% main
 def energy_solar_power(data_json):
@@ -122,29 +123,32 @@ def energy_solar_power(data_json):
         table_name='qh_climate_cmadaas_day'
 
     # 评估数据
-    conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
-    cur = conn.cursor()
+    
     sta_ids1 = tuple(sta_ids.split(','))
-    query = sql.SQL(f"""
-                    SELECT {elements}
-                    FROM public.{table_name}
-                    WHERE
-                        CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                        AND station_id_c IN %s
-                    """)
+
+    # conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
+    # cur = conn.cursor()
+    # query = sql.SQL(f"""
+    #                 SELECT {elements}
+    #                 FROM public.{table_name}
+    #                 WHERE
+    #                     CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+    #                     AND station_id_c IN %s
+    #                 """)
     
-    start_year = refer_times.split(',')[0]
-    end_year = refer_times.split(',')[1]
+    # start_year = refer_times.split(',')[0]
+    # end_year = refer_times.split(',')[1]
     
-    cur.execute(query, (start_year, end_year,sta_ids1))
-    data = cur.fetchall()
-    refer_df = pd.DataFrame(data)
-    refer_df.columns = elements.split(',')
+    # cur.execute(query, (start_year, end_year,sta_ids1))
+    # data = cur.fetchall()
+    # refer_df = pd.DataFrame(data)
+    # refer_df.columns = elements.split(',')
     
-    cur.close()
-    conn.close()
+    # cur.close()
+    # conn.close()
     
-    
+    refer_df = get_database_data(sta_ids1, elements, table_name, time_freq, refer_times)
+
     refer_result= energy_solar_his(element,refer_df)
         
     refer_result['年'] = refer_result['年'].astype(str)

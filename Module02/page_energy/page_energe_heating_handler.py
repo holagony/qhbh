@@ -56,6 +56,7 @@ from Module02.page_energy.wrapped.func00_function import percentile_std_time
 from Module02.page_energy.wrapped.func01_winter_heating_pre import winter_heating_pre
 from Module02.page_energy.wrapped.func02_winter_heating_his import winter_heating_his
 from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
+from Utils.data_loader_with_threads import get_database_data
 
 #%% main
 def energy_winter_heating(data_json):
@@ -119,29 +120,33 @@ def energy_winter_heating(data_json):
     #%% 统计计算模块
     
     # 评估数据
-    conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
-    cur = conn.cursor()
     elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,TEM_Avg'
     sta_ids1 = tuple(sta_ids.split(','))
-    query = sql.SQL(f"""
-                    SELECT {elements}
-                    FROM public.qh_qhbh_cmadaas_day
-                    WHERE
-                        CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                        AND station_id_c IN %s
-                    """)
     
-    start_year = refer_times.split(',')[0]
-    end_year = str(int(refer_times.split(',')[1])+1)
+    # conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
+    # cur = conn.cursor()
+
+    # query = sql.SQL(f"""
+    #                 SELECT {elements}
+    #                 FROM public.qh_qhbh_cmadaas_day
+    #                 WHERE
+    #                     CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+    #                     AND station_id_c IN %s
+    #                 """)
     
-    cur.execute(query, (start_year, end_year,sta_ids1))
-    data = cur.fetchall()
-    refer_df = pd.DataFrame(data)
-    refer_df.columns = elements.split(',')
+    # start_year = refer_times.split(',')[0]
+    # end_year = str(int(refer_times.split(',')[1])+1)
     
-    cur.close()
-    conn.close()
+    # cur.execute(query, (start_year, end_year,sta_ids1))
+    # data = cur.fetchall()
+    # refer_df = pd.DataFrame(data)
+    # refer_df.columns = elements.split(',')
     
+    # cur.close()
+    # conn.close()
+    
+    refer_df = get_database_data(sta_ids1, elements, 'qh_qhbh_cmadaas_day', time_freq, refer_times)
+
     refer_df.set_index('Datetime', inplace=True)
     refer_df.index = pd.DatetimeIndex(refer_df.index)
     refer_df['Station_Id_C'] = refer_df['Station_Id_C'].astype(str)
