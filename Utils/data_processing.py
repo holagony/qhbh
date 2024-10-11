@@ -162,7 +162,7 @@ def data_processing(data_in, element, degree=None):
         elif element in resample_sum:
             x_res = x[element].resample('1A').sum()
         elif element in resample_mean:
-            x_res = x[element].resample('1A').mean().round(1)
+            x_res = x[element].resample('1A').mean().astype(float).round(1)
 
         x_concat = pd.concat([x_info, x_res], axis=1)
         return x_concat

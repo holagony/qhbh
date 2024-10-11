@@ -5,7 +5,7 @@ from Utils.data_processing import data_processing
 
 
 def table_stats_simple_cmip(ds, var, sta_list):
-    data_df = pd.DataFrame(ds[var].data.round(1))
+    data_df = pd.DataFrame(ds[var].data.astype(float).round(1))
     data_df.index = ds.time.dt.strftime('%Y')
     data_df.columns = sta_list
     
@@ -27,17 +27,17 @@ def table_stats_simple_cmip(ds, var, sta_list):
 
     # 创建临时下方统计的df
     tmp_df = pd.DataFrame(columns=data_df.columns)
-    tmp_df.loc['平均'] = data_df.iloc[:, :].mean(axis=0).round(1)
-    tmp_df.loc['变率'] = data_df.apply(trend_rate, axis=0).round(5)
-    tmp_df.loc['最大值'] = data_df.iloc[:, :].max(axis=0).round(1)
-    tmp_df.loc['最小值'] = data_df.iloc[:, :].min(axis=0).round(1)
+    tmp_df.loc['平均'] = data_df.iloc[:, :].mean(axis=0).astype(float).round(1)
+    tmp_df.loc['变率'] = data_df.apply(trend_rate, axis=0).astype(float).round(5)
+    tmp_df.loc['最大值'] = data_df.iloc[:, :].max(axis=0).astype(float).round(1)
+    tmp_df.loc['最小值'] = data_df.iloc[:, :].min(axis=0).astype(float).round(1)
 
     # 合并所有结果
     stats_result = data_df.copy()
-    stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).round(1)
-    stats_result['区域最大值'] = stats_result.iloc[:, :-3].max(axis=1).round(1)
-    stats_result['区域最小值'] = stats_result.iloc[:, :-4].min(axis=1).round(1)
-    stats_result = stats_result.round(1)
+    stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).astype(float).round(1)
+    stats_result['区域最大值'] = stats_result.iloc[:, :-3].max(axis=1).astype(float).round(1)
+    stats_result['区域最小值'] = stats_result.iloc[:, :-4].min(axis=1).astype(float).round(1)
+    stats_result = stats_result.astype(float).round(1)
     
     # concat
     stats_result = pd.concat((stats_result, tmp_df), axis=0)

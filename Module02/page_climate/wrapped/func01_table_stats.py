@@ -27,14 +27,14 @@ def table_stats_simple(data_df, ele):
 
     # 创建临时下方统计的df
     tmp_df = pd.DataFrame(columns=data_df.columns)
-    tmp_df.loc['平均'] = data_df.iloc[:, :].mean(axis=0).round(1)
+    tmp_df.loc['平均'] = data_df.iloc[:, :].mean(axis=0).astype(float).round(1)
     tmp_df.loc['变率'] = data_df.apply(trend_rate, axis=0).round(5)
     tmp_df.loc['最大值'] = data_df.iloc[:, :].max(axis=0)
     tmp_df.loc['最小值'] = data_df.iloc[:, :].min(axis=0)
 
     # 合并所有结果
     stats_result = data_df.copy()
-    stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).round(1)
+    stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).astype(float).round(1)
     stats_result['区域最大值'] = stats_result.iloc[:, :-3].max(axis=1)
     stats_result['区域最小值'] = stats_result.iloc[:, :-4].min(axis=1)
     
@@ -48,8 +48,8 @@ def table_stats_simple(data_df, ele):
             train_x = x.iloc[:, -1].values.reshape(-1, 1)
             train_y = x.iloc[:, 0].values.reshape(-1, 1)
             model = LinearRegression(fit_intercept=True).fit(train_x, train_y)
-            weight = model.coef_[0][0].round(3)
-            bias = model.intercept_[0].round(3)
+            weight = model.coef_[0][0].astype(float).round(3)
+            bias = model.intercept_[0].astype(float).round(3)
             return weight, bias
         except:
             return np.nan, np.nan
