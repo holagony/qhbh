@@ -190,8 +190,8 @@ def data_deal_2(data_df,refer_df,flag):
         tmp_df = pd.DataFrame(columns=data_df.columns)
         tmp_df.loc['平均'] = np.round(data_df.iloc[:, :].mean(axis=0).astype(float),2)
         tmp_df.loc['变率'] = np.round(data_df.apply(trend_rate, axis=0),2)
-        tmp_df.loc['最大值'] = data_df.iloc[:, :].max(axis=0)
-        tmp_df.loc['最小值'] = data_df.iloc[:, :].min(axis=0)
+        tmp_df.loc['最大值'] = data_df.iloc[:, :].max(axis=0).astype(float).round(1)
+        tmp_df.loc['最小值'] = data_df.iloc[:, :].min(axis=0).astype(float).round(1)
         tmp_df.loc['参考时段均值'] =  np.round(refer_df.iloc[:, 1:].mean(axis=0).astype(float),2)
         tmp_df.loc['距平'] =  np.round((tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']).astype(float),2)
         tmp_df.loc['距平百分率'] =  np.round(((tmp_df.loc['距平'] / tmp_df.loc['参考时段均值']) * 100).astype(float),2)
@@ -201,8 +201,8 @@ def data_deal_2(data_df,refer_df,flag):
         stats_result['区域均值'] = np.round(data_df.iloc[:, :].mean(axis=1).astype(float),2)
         stats_result['区域距平'] = np.round((data_df.iloc[:, :].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).astype(float),2)
         stats_result['区域距平百分率'] = np.round(((stats_result['区域距平']/tmp_df.loc['参考时段均值'].mean())*100).astype(float),2)
-        stats_result['区域最大值'] = data_df.iloc[:, :].max(axis=1)
-        stats_result['区域最小值'] = data_df.iloc[:, :].min(axis=1)
+        stats_result['区域最大值'] = data_df.iloc[:, :].max(axis=1).astype(float).round(1)
+        stats_result['区域最小值'] = data_df.iloc[:, :].min(axis=1).astype(float).round(1)
     
         stats_days_result = pd.concat((stats_result, tmp_df), axis=0)
     elif flag==2:
@@ -217,8 +217,8 @@ def data_deal_2(data_df,refer_df,flag):
         stats_result['区域均值'] = np.round(data_df.iloc[:, :].mean(axis=1).astype(float),2)
         stats_result['区域距平'] = np.round((data_df.iloc[:, :].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).astype(float),2)
         stats_result['区域距平百分率'] = np.round(((stats_result['区域距平']/tmp_df.loc['参考时段均值'].mean())*100).astype(float),2)
-        stats_result['区域最大值'] = data_df.iloc[:, :].max(axis=1)
-        stats_result['区域最小值'] = data_df.iloc[:, :].min(axis=1)
+        stats_result['区域最大值'] = data_df.iloc[:, :].max(axis=1).astype(float).round(1)
+        stats_result['区域最小值'] = data_df.iloc[:, :].min(axis=1).astype(float).round(1)
     
         stats_days_result = stats_result
     
@@ -336,7 +336,7 @@ def calculate_average_hd(pre_data,ele):
             scene_hd_sum_count[scene_a][1] += 1
 
     # 计算平均值
-    scene_hd_average = {scene: total / count for scene, (total, count) in scene_hd_sum_count.items()}
+    scene_hd_average = {scene: (total / count).astype(float).round(1) for scene, (total, count) in scene_hd_sum_count.items()}
     
     for df_name, df in scene_hd_average.items():
         df['年'] = df['年'].astype(int).astype(str)
