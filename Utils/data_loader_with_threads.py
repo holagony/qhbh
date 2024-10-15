@@ -330,7 +330,8 @@ def get_database_data(sta_ids, element_str, table_name, time_freq, stats_times):
     # 统计年份数据处理为df
     df = pd.DataFrame(data)
     df.columns = elements.split(',')
-    
+    df[element_str] = df[element_str].apply(lambda x: np.nan if x > 9999 else x)
+
     # 关闭数据库
     cur.close()
     conn.close()
