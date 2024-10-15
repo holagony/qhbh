@@ -49,8 +49,8 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
     # 冷夜日数 TN10p or 冷昼日数 TX10p
     if ele == 'TN10p' or ele == 'TX10p':
         for i in np.arange(np.size(data_df,1)):
-            
-            l_data=l_data/100
+            if i==0:
+                l_data=l_data/100
             
             last_sta=last_df.iloc[:,i]
             last_percentile_10 = last_sta.quantile(l_data)    
@@ -71,8 +71,8 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
     # 暖夜日数 TN90p or 暖昼日数 TX90p
     elif ele == 'TN90p' or ele == 'TX90p':
         for i in np.arange(np.size(data_df,1)):
-            
-            n_data=n_data/100
+            if i==0:
+                n_data=n_data/100
 
             last_sta=last_df.iloc[:,i]
             last_percentile_90 = last_sta.quantile(n_data)    

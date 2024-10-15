@@ -164,7 +164,7 @@ def extreme_climate_features(data_json):
     tem_table=['TN10p','TX10p','TN90p','TX90p','ID','FD','TNx','TXx','TNn','TXn',
                'DTR','WSDI','CSDI','SU','TR','GSL']
     
-    pre_table=['CDD','CWD','RZ','RZD','SDII','R95','R95','R50','R50D','R10D',
+    pre_table=['CDD','CWD','RZ','RZD','SDII','R95%','R95%D','R50','R50D','R10D',
                'R25D','Rx1day','Rx5day','R','RD','Rxxday']
     
     other_table=['Hail','GaWIN','Thund','SaSt','FlSa','FlDu','sa','rainstorm',
@@ -198,7 +198,7 @@ def extreme_climate_features(data_json):
     ele_dict['RZ']='PRE_Time_2020'
     ele_dict['RZD']='PRE_Time_2020'
     ele_dict['SDII']='PRE_Time_2020'
-    ele_dict['R95']='PRE_Time_2020'
+    ele_dict['R95%']='PRE_Time_2020'
     ele_dict['R95%D']='PRE_Time_2020'
     ele_dict['R50']='PRE_Time_2020'
     ele_dict['R50D']='PRE_Time_2020'
@@ -415,7 +415,8 @@ def extreme_climate_features(data_json):
 
 if __name__ == '__main__':
     data_json = dict()
-    data_json['element'] ='drought'
+    data_json['element'] ='TN10p'
+    data_json['l_data'] =10
     data_json['refer_years'] = '1991,2020'
     data_json['nearly_years'] = '2014,2021'
     data_json['time_freq'] = 'Y'
