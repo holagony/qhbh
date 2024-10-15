@@ -111,14 +111,14 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
             grid = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, str(year[i]))
 
             # 新增掩膜
-            multi_polygon = gdf['geometry'].unary_union
-            lon_grid, lat_grid = np.meshgrid(gridx, gridy)
-            mask = polygon_to_mask(multi_polygon, lon_grid, lat_grid)
-            mask = np.where(mask == False, 1, 0)  # 生成mask，并将True/False转化为0/1
-            mask_grid = np.ma.masked_array(grid, mask, fill_value=np.nan)
-            mask_grid = mask_grid.filled()
-            data[i, :, :] = mask_grid
-
+            # multi_polygon = gdf['geometry'].unary_union
+            # lon_grid, lat_grid = np.meshgrid(gridx, gridy)
+            # mask = polygon_to_mask(multi_polygon, lon_grid, lat_grid)
+            # mask = np.where(mask == False, 1, 0)  # 生成mask，并将True/False转化为0/1
+            # mask_grid = np.ma.masked_array(grid, mask, fill_value=np.nan)
+            # mask_grid = mask_grid.filled()
+            # data[i, :, :] = mask_grid
+            data[i, :, :] = grid
         except:
             data[i, :, :] = np.nan
 
@@ -180,14 +180,14 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
             data2 = station_to_grid(lon_clean, lat_clean, value_clean, gridx, gridy, method, ele)
 
             # 新增掩膜
-            multi_polygon = gdf['geometry'].unary_union
-            lon_grid, lat_grid = np.meshgrid(gridx, gridy)
-            mask = polygon_to_mask(multi_polygon, lon_grid, lat_grid)
-            mask = np.where(mask == False, 1, 0)  # 生成mask，并将True/False转化为0/1
-            mask_grid = np.ma.masked_array(data2, mask, fill_value=np.nan)
-            mask_grid = mask_grid.filled()
-            data[i, :, :] = mask_grid
-        
+            # multi_polygon = gdf['geometry'].unary_union
+            # lon_grid, lat_grid = np.meshgrid(gridx, gridy)
+            # mask = polygon_to_mask(multi_polygon, lon_grid, lat_grid)
+            # mask = np.where(mask == False, 1, 0)  # 生成mask，并将True/False转化为0/1
+            # mask_grid = np.ma.masked_array(data2, mask, fill_value=np.nan)
+            # mask_grid = mask_grid.filled()
+            # data[i, :, :] = mask_grid
+
         except:
             data2 = np.nan
 
