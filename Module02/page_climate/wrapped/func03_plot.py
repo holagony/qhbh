@@ -120,7 +120,18 @@ def interp_and_mask(shp_path, lon_list, lat_list, value_list, method):
     gridy = np.arange(lat_min, lat_max + 0.01, 0.01)
 
     # 散点数据插值
-    grid = station_to_grid(lon_list, lat_list, value_list, gridx, gridy, method, name=None)
+    # 数据清洗，洗掉nan
+    lon_array = np.array(lon_list)
+    lat_array = np.array(lat_list)
+    value_array = np.array(value_list, dtype=float)
+    
+    valid_values = np.isfinite(value_array)
+    
+    lon_filtered = lon_array[valid_values]
+    lat_filtered = lat_array[valid_values]
+    value_filtered = value_array[valid_values]
+
+    grid = station_to_grid(lon_filtered, lat_filtered, value_filtered, gridx, gridy, method, name=None)
 
     # 对插值的grid掩膜
     multi_polygon = shp['geometry'].unary_union
