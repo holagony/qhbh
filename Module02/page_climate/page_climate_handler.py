@@ -325,21 +325,21 @@ def climate_esti(data_json):
             res_df.set_index('时间',inplace=True)
             array_list.append(res_df.iloc[:-4, :].values[None])
             array = np.concatenate(array_list,axis=0)
-            std = np.std(array, ddof=1, axis=0).round(2)
-            per25 = np.percentile(array, 25, axis=0).round(2)
-            per75 = np.percentile(array, 75, axis=0).round(2)
-            
-            std = pd.DataFrame(std, index=res_df.index[:-4], columns=res_df.columns)
-            per25 = pd.DataFrame(per25, index=res_df.index[:-4], columns=res_df.columns)
-            per75 = pd.DataFrame(per75, index=res_df.index[:-4], columns=res_df.columns)
-            
-            std.reset_index(drop=False,inplace=True)
-            per25.reset_index(drop=False,inplace=True)
-            per75.reset_index(drop=False,inplace=True)
-            
-            std_percent[exp]['1倍标准差'] = std.to_dict(orient='records')
-            std_percent[exp]['百分位数25'] = per25.to_dict(orient='records')
-            std_percent[exp]['百分位数75'] = per75.to_dict(orient='records')
+        std = np.std(array, ddof=1, axis=0).round(2)
+        per25 = np.percentile(array, 25, axis=0).round(2)
+        per75 = np.percentile(array, 75, axis=0).round(2)
+        
+        std = pd.DataFrame(std, index=res_df.index[:-4], columns=res_df.columns)
+        per25 = pd.DataFrame(per25, index=res_df.index[:-4], columns=res_df.columns)
+        per75 = pd.DataFrame(per75, index=res_df.index[:-4], columns=res_df.columns)
+        
+        std.reset_index(drop=False,inplace=True)
+        per25.reset_index(drop=False,inplace=True)
+        per75.reset_index(drop=False,inplace=True)
+        
+        std_percent[exp]['1倍标准差'] = std.to_dict(orient='records')
+        std_percent[exp]['百分位数25'] = per25.to_dict(orient='records')
+        std_percent[exp]['百分位数75'] = per75.to_dict(orient='records')
     
     result_dict['时序图'] = std_percent
     
