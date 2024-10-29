@@ -136,7 +136,7 @@ def data_processing(data_in, element, degree=None):
         element = 'Accum_Tem'
 
     # 2.时间转换
-    resample_max = [ 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max', 'Crop_Heigh']
+    resample_max = [ 'PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max', 'Crop_Heigh','PRE_Max_Day']
     resample_min = [ 'PRS_Min', 'GST_Min', 'RHU_Min']
     resample_sum = ['v14311','ssh','PRE_Time_2020', 'PRE_Days', 'EVP_Big', 'EVP', 'EVP_Taka', 'PMET','sa','rainstorm','light_snow','snow',
                     'medium_snow','heavy_snow','severe_snow','Hail_Days','Hail','GaWIN',
