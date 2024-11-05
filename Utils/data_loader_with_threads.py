@@ -199,6 +199,9 @@ def get_database_data(sta_ids, element_str, table_name, time_freq, stats_times):
     else:
         elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,Alti,' + element_str
 
+    if element_str == 'V14311':
+        elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,' + element_str
+    
     if time_freq == 'Y':  # '%Y,%Y'
         query = sql.SQL(f"""
                         SELECT {elements}
