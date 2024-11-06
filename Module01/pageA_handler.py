@@ -168,6 +168,11 @@ def climate_features_stats(data_json):
         data_df['EVP_Taka'] = 3100*data_df['TEM_Avg']/(3100+1.8*(data_df['PRE_Time_2020']**2)*np.exp((-34.4*data_df['TEM_Avg'])/(235+data_df['TEM_Avg'])))
         refer_df['EVP_Taka'] = 3100*refer_df['TEM_Avg']/(3100+1.8*(refer_df['PRE_Time_2020']**2)*np.exp((-34.4*refer_df['TEM_Avg'])/(235+refer_df['TEM_Avg'])))
         nearly_df['EVP_Taka'] = 3100*nearly_df['TEM_Avg']/(3100+1.8*(nearly_df['PRE_Time_2020']**2)*np.exp((-34.4*nearly_df['TEM_Avg'])/(235+nearly_df['TEM_Avg'])))
+
+        data_df['EVP_Taka'] = np.where(data_df['EVP_Taka']<0,0,data_df['EVP_Taka'])
+        refer_df['EVP_Taka'] = np.where(refer_df['EVP_Taka']<0,0,refer_df['EVP_Taka'])
+        nearly_df['EVP_Taka'] = np.where(nearly_df['EVP_Taka']<0,0,nearly_df['EVP_Taka'])
+
         element_str = 'EVP_Taka'
 
     data_df = data_processing(data_df, element_str, degree)
@@ -178,8 +183,6 @@ def climate_features_stats(data_json):
         data_df['V14311'] = data_df['V14311'].map(float)*3600/1e6
         refer_df['V14311'] = refer_df['V14311'].map(float)*3600/1e6
         nearly_df['V14311'] = nearly_df['V14311'].map(float)*3600/1e6
-        
- 
 
     ######################################################
     # 开始计算

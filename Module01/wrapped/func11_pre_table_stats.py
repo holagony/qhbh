@@ -42,7 +42,8 @@ def pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=No
     data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Id_C'], values='PRE_Time_2020') # 统计时段df
     refer_df = refer_df.pivot_table(index=refer_df.index, columns=['Station_Id_C'], values='PRE_Time_2020') # 参考时段df
     nearly_df = nearly_df.pivot_table(index=nearly_df.index, columns=['Station_Id_C'], values='PRE_Time_2020') # 近10年df
-    
+    data_df = data_df.round(1)
+
     D=dict()
     D['RZD']=0
     D['SDII']=1

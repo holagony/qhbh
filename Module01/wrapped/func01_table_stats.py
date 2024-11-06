@@ -19,6 +19,7 @@ def table_stats(data_df, refer_df, nearly_df, ele, last_year):
     refer_df = refer_df.pivot_table(index=refer_df.index, columns=['Station_Id_C'], values=ele)  # 参考时段df
     nearly_df = nearly_df.pivot_table(index=nearly_df.index, columns=['Station_Id_C'], values=ele)  # 近10年df
     
+    data_df = data_df.round(1)
     data_df.index = data_df.index.strftime('%Y')
     refer_df.index = refer_df.index.strftime('%Y')
     nearly_df.index = nearly_df.index.strftime('%Y')

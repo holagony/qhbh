@@ -286,9 +286,9 @@ class flood_model:
 
 if __name__ == '__main__':
     startime = datetime.now()
-    save_file = r'C:\Users\MJY\Desktop\result'
-    flag = 'TY'  # TY or SHANXI
-    pre_path = 'C:/Users/MJY/Desktop/shanxi_flood/zipdata/MQPF/mqpfshanxi_20240721_1650B.nc'
+    save_file = r'C:\Users\MJY\Desktop\flood_result'
+    flag = 'SHANXI'  # TY or SHANXI
+    pre_path = r'C:\Users\MJY\Desktop\2024101708'
     pre_type = 1
     sf = flood_model(save_file, flag, pre_path, pre_type, previous=None, param_A=None, param_b=None, param_C=None, param_n=None, r=None, p=None, t=None, total_t=None)
     flood_ds = sf.calc_flood()
