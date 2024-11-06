@@ -67,7 +67,7 @@ def pre_table_stats(data_df, time_freq, ele,GaWIN=None,GaWIN_flag=None,R=None,R_
             data_sta.columns = data_sta.columns.get_level_values(0)
             data_sta_1= ((data_sta > 0)).astype(int)
             data_sta_2=persistent_time(data_sta_1,time_freq)
-            data_df.iloc[:,i] =data_sta_2['result']
+            data_df.iloc[:,i] =data_sta_2['result'].astype(float).round(1)
 
     # 降雨日数 降水强度 大雨日数 中雨日数 特强降水日数
     elif ele in ['RZD','SDII','R25D','R50D','R10D']:

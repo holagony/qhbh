@@ -75,7 +75,7 @@ def tem_table_stats(data_df, time_freq, ele,l_data=None,n_data=None):
              data_sta=data_df.iloc[:,i]
              data_percentile_10 = data_sta.quantile(0.9)  
              data_rolling = data_sta.rolling(window=6)
-             data_rolling_min = data_rolling.min()
+             data_rolling_min = data_rolling.min().astype(float).round(1)
              data_df.iloc[:,i] = ((data_rolling_min > data_percentile_10)).astype(int)
 
     # 冷持续指数 CSDI:
@@ -86,7 +86,7 @@ def tem_table_stats(data_df, time_freq, ele,l_data=None,n_data=None):
              data_sta=data_df.iloc[:,i]
              data_percentile_10 = data_sta.quantile(0.1)  
              data_rolling = data_sta.rolling(window=6)
-             data_rolling_min = data_rolling.min()
+             data_rolling_min = data_rolling.min().astype(float).round(1)
              data_df.iloc[:,i] = ((data_rolling_min < data_percentile_10)).astype(int)
 
     # 夏季日数 SU
@@ -112,7 +112,7 @@ def tem_table_stats(data_df, time_freq, ele,l_data=None,n_data=None):
              
              data_sta=data_df.iloc[:,i]
              data_rolling = data_sta.rolling(window=6)
-             data_rolling_min = data_rolling.min()
+             data_rolling_min = data_rolling.min().astype(float).round(1)
              data_df.iloc[:,i] = ((data_rolling_min > 5)).astype(int)
                     
     #%% 数据转换
@@ -130,7 +130,7 @@ def tem_table_stats(data_df, time_freq, ele,l_data=None,n_data=None):
         
         # if time_freq in ['Y','Q']:
             
-        data_df = data_df.resample('Y').max()
+        data_df = data_df.resample('Y').max().astype(float).round(1)
     
         data_df.index = data_df.index.strftime('%Y')
 
@@ -139,20 +139,20 @@ def tem_table_stats(data_df, time_freq, ele,l_data=None,n_data=None):
         
         # if time_freq in ['Y','Q']:
             
-        data_df = data_df.resample('Y').min()   
+        data_df = data_df.resample('Y').min().astype(float).round(1)   
         data_df.index = data_df.index.strftime('%Y')
         
     elif ele == 'TNn' or ele == 'TXn' :
         
         # if time_freq in ['Y','Q']:
             
-        data_df = data_df.resample('Y').min()
+        data_df = data_df.resample('Y').min().astype(float).round(1)
     
         data_df.index = data_df.index.strftime('%Y')
         
     if ele in ['DTR','WSDI','CSDI']:
         
-        data_df = data_df.resample('Y').mean()
+        data_df = data_df.resample('Y').mean().astype(float).round(1)
     
         data_df.index = data_df.index.strftime('%Y')
 
