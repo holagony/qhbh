@@ -211,7 +211,7 @@ def extreme_climate_features(data_json):
     ele_dict['Rxxday']='PRE_Time_2020'
     
     # 其他气候指数
-    ele_dict['Hail ']='Hail_Days'
+    ele_dict['Hail']='Hail_Days'
     ele_dict['GaWIN']='GaWIN_Days'
     ele_dict['sa']='sa'
     ele_dict['SaSt']='SaSt_Days'
