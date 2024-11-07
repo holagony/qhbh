@@ -60,25 +60,25 @@ def pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=No
             last_sta.columns = last_sta.columns.get_level_values(0)
             last_sta_1= ((last_sta == 0)).astype(int)
             last_sta_2=persistent_time(last_sta_1,time_freq)
-            last_df.iloc[:,i] =last_sta_2['result']
+            last_df.iloc[:,i] =last_sta_2['result'].astype(float).round(1)
         
             data_sta=data_df.iloc[:,i].to_frame()
             data_sta.columns = data_sta.columns.get_level_values(0)
             data_sta_1= ((data_sta == 0)).astype(int)
             data_sta_2=persistent_time(data_sta_1,time_freq)
-            data_df.iloc[:,i] =data_sta_2['result']
+            data_df.iloc[:,i] =data_sta_2['result'].astype(float).round(1)
 
             refer_sta=refer_df.iloc[:,i].to_frame()
             refer_sta.columns = refer_sta.columns.get_level_values(0)
             refer_sta_1= ((refer_sta == 0)).astype(int)
             refer_sta_2=persistent_time(refer_sta_1,time_freq)
-            refer_df.iloc[:,i] =refer_sta_2['result']
+            refer_df.iloc[:,i] =refer_sta_2['result'].astype(float).round(1)
             
             nearly_sta=nearly_df.iloc[:,i].to_frame()
             nearly_sta.columns = nearly_sta.columns.get_level_values(0)
             nearly_sta_1= ((nearly_sta == 0)).astype(int)
             nearly_sta_2=persistent_time(nearly_sta_1,time_freq)
-            nearly_df.iloc[:,i] =nearly_sta_2['result']
+            nearly_df.iloc[:,i] =nearly_sta_2['result'].astype(float).round(1)
                         
     # 持续湿期 CWD
     if ele == 'CWD':
@@ -88,25 +88,25 @@ def pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=No
             last_sta.columns = last_sta.columns.get_level_values(0)
             last_sta_1= ((last_sta > 0)).astype(int)
             last_sta_2=persistent_time(last_sta_1,time_freq)
-            last_df.iloc[:,i] =last_sta_2['result']
+            last_df.iloc[:,i] =last_sta_2['result'].astype(float).round(1)
         
             data_sta=data_df.iloc[:,i].to_frame()
             data_sta.columns = data_sta.columns.get_level_values(0)
             data_sta_1= ((data_sta > 0)).astype(int)
             data_sta_2=persistent_time(data_sta_1,time_freq)
-            data_df.iloc[:,i] =data_sta_2['result']
+            data_df.iloc[:,i] =data_sta_2['result'].astype(float).round(1)
 
             refer_sta=refer_df.iloc[:,i].to_frame()
             refer_sta.columns = refer_sta.columns.get_level_values(0)
             refer_sta_1= ((refer_sta > 0)).astype(int)
             refer_sta_2=persistent_time(refer_sta_1,time_freq)
-            refer_df.iloc[:,i] =refer_sta_2['result']
+            refer_df.iloc[:,i] =refer_sta_2['result'].astype(float).round(1)
             
             nearly_sta=nearly_df.iloc[:,i].to_frame()
             nearly_sta.columns = nearly_sta.columns.get_level_values(0)
             nearly_sta_1= ((nearly_sta > 0)).astype(int)
             nearly_sta_2=persistent_time(nearly_sta_1,time_freq)
-            nearly_df.iloc[:,i] =nearly_sta_2['result']        
+            nearly_df.iloc[:,i] =nearly_sta_2['result'].astype(float).round(1)       
 
     # 降雨日数 降水强度 大雨日数 中雨日数 特强降水日数
     elif ele in ['RZD','SDII','R25D','R50D','R10D']:
@@ -183,22 +183,22 @@ def pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=No
              last_sta=last_df.iloc[:,i]
              last_rolling = last_sta.rolling(window=5)
              last_rolling_sum =  last_rolling.sum()
-             last_df.iloc[:,i] =last_rolling_sum
+             last_df.iloc[:,i] =last_rolling_sum.astype(float).round(1)
          
              data_sta=data_df.iloc[:,i]
              data_rolling = data_sta.rolling(window=5)
              data_rolling_sum = data_rolling.sum()
-             data_df.iloc[:,i] = data_rolling_sum
+             data_df.iloc[:,i] = data_rolling_sum.astype(float).round(1)
              
              refer_sta=refer_df.iloc[:,i]
              refer_rolling = refer_sta.rolling(window=5)
              refer_rolling_sum = refer_rolling.sum()
-             refer_df.iloc[:,i] = refer_rolling_sum
+             refer_df.iloc[:,i] = refer_rolling_sum.astype(float).round(1)
              
              nearly_sta=nearly_df.iloc[:,i]
              nearly_rolling = nearly_sta.rolling(window=5)
              nearly_rolling_sum = nearly_rolling.sum()
-             nearly_df.iloc[:,i] = nearly_rolling_sum
+             nearly_df.iloc[:,i] = nearly_rolling_sum.astype(float).round(1)
 
     # 自定义降水
     elif ele =='R':
@@ -291,32 +291,32 @@ def pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=No
              last_sta=last_df.iloc[:,i]
              last_rolling = last_sta.rolling(window=Rxxday)
              last_rolling_sum =  last_rolling.sum()
-             last_df.iloc[:,i] =last_rolling_sum
+             last_df.iloc[:,i] =last_rolling_sum.astype(float).round(1)
          
              data_sta=data_df.iloc[:,i]
              data_rolling = data_sta.rolling(window=Rxxday)
              data_rolling_sum = data_rolling.sum()
-             data_df.iloc[:,i] = data_rolling_sum
+             data_df.iloc[:,i] = data_rolling_sum.astype(float).round(1)
              
              refer_sta=refer_df.iloc[:,i]
              refer_rolling = refer_sta.rolling(window=Rxxday)
              refer_rolling_sum = refer_rolling.sum()
-             refer_df.iloc[:,i] = refer_rolling_sum
+             refer_df.iloc[:,i] = refer_rolling_sum.astype(float).round(1)
              
              nearly_sta=nearly_df.iloc[:,i]
              nearly_rolling = nearly_sta.rolling(window=Rxxday)
              nearly_rolling_sum = nearly_rolling.sum()
-             nearly_df.iloc[:,i] = nearly_rolling_sum
+             nearly_df.iloc[:,i] = nearly_rolling_sum.astype(float).round(1)
     #%% 数据转换
       
     if ele in ['RZ','RZD','SDII','R25D','R50D','R10D','R95%D','R95%','R50','R','RD']:
        
         # if time_freq in ['Y','Q']:
             
-        data_df = data_df.resample('Y').sum()
-        refer_df = refer_df.resample('Y').sum()
-        nearly_df = nearly_df.resample('Y').sum()
-        last_df = last_df.resample('Y').sum()
+        data_df = data_df.resample('Y').sum().astype(float).round(1)
+        refer_df = refer_df.resample('Y').sum().astype(float).round(1)
+        nearly_df = nearly_df.resample('Y').sum().astype(float).round(1)
+        last_df = last_df.resample('Y').sum().astype(float).round(1)
     
         data_df.index = data_df.index.strftime('%Y')
         refer_df.index = refer_df.index.strftime('%Y')
@@ -339,10 +339,10 @@ def pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=No
         
         # if time_freq in ['Y','Q']:
             
-        data_df = data_df.resample('Y').max()
-        refer_df = refer_df.resample('Y').max()
-        nearly_df = nearly_df.resample('Y').max()
-        last_df = last_df.resample('Y').max()
+        data_df = data_df.resample('Y').max().astype(float).round(1)
+        refer_df = refer_df.resample('Y').max().astype(float).round(1)
+        nearly_df = nearly_df.resample('Y').max().astype(float).round(1)
+        last_df = last_df.resample('Y').max().astype(float).round(1)
     
         data_df.index = data_df.index.strftime('%Y')
         refer_df.index = refer_df.index.strftime('%Y')

@@ -230,10 +230,10 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
        
         # if time_freq in ['Y','Q']:
             
-        data_df = data_df.resample('Y').sum()
-        refer_df = refer_df.resample('Y').sum()
-        nearly_df = nearly_df.resample('Y').sum()
-        last_df = last_df.resample('Y').sum()
+        data_df = data_df.resample('Y').sum().astype(float).round(1)
+        refer_df = refer_df.resample('Y').sum().astype(float).round(1)
+        nearly_df = nearly_df.resample('Y').sum().astype(float).round(1)
+        last_df = last_df.resample('Y').sum().astype(float).round(1)
     
         data_df.index = data_df.index.strftime('%Y')
         refer_df.index = refer_df.index.strftime('%Y')
@@ -256,10 +256,10 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
         
         # if time_freq in ['Y','Q']:
             
-        data_df = data_df.resample('Y').max()
-        refer_df = refer_df.resample('Y').max()
-        nearly_df = nearly_df.resample('Y').max()
-        last_df = last_df.resample('Y').max()
+        data_df = data_df.resample('Y').max().astype(float).round(1)
+        refer_df = refer_df.resample('Y').max().astype(float).round(1)
+        nearly_df = nearly_df.resample('Y').max().astype(float).round(1)
+        last_df = last_df.resample('Y').max().astype(float).round(1)
     
         data_df.index = data_df.index.strftime('%Y')
         refer_df.index = refer_df.index.strftime('%Y')
@@ -282,10 +282,10 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
         
         # if time_freq in ['Y','Q']:
             
-        data_df = data_df.resample('Y').min()
-        refer_df = refer_df.resample('Y').min()
-        nearly_df = nearly_df.resample('Y').min()
-        last_df = last_df.resample('Y').min()
+        data_df = data_df.resample('Y').min().astype(float).round(1)
+        refer_df = refer_df.resample('Y').min().astype(float).round(1)
+        nearly_df = nearly_df.resample('Y').min().astype(float).round(1)
+        last_df = last_df.resample('Y').min().astype(float).round(1)
     
         data_df.index = data_df.index.strftime('%Y')
         refer_df.index = refer_df.index.strftime('%Y')
@@ -296,10 +296,10 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
         
         # if time_freq in ['Y','Q']:
             
-        data_df = data_df.resample('Y').min()
-        refer_df = refer_df.resample('Y').min()
-        nearly_df = nearly_df.resample('Y').min()
-        last_df = last_df.resample('Y').min()
+        data_df = data_df.resample('Y').min().astype(float).round(1)
+        refer_df = refer_df.resample('Y').min().astype(float).round(1)
+        nearly_df = nearly_df.resample('Y').min().astype(float).round(1)
+        last_df = last_df.resample('Y').min().astype(float).round(1)
     
         data_df.index = data_df.index.strftime('%Y')
         refer_df.index = refer_df.index.strftime('%Y')
@@ -319,10 +319,10 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
         
     if ele in ['DTR','WSDI','CSDI']:
         
-        data_df = data_df.resample('Y').mean()
-        refer_df = refer_df.resample('Y').mean()
-        nearly_df = nearly_df.resample('Y').mean()
-        last_df = last_df.resample('Y').mean()
+        data_df = data_df.resample('Y').mean().astype(float).round(1)
+        refer_df = refer_df.resample('Y').mean().astype(float).round(1)
+        nearly_df = nearly_df.resample('Y').mean().astype(float).round(1)
+        last_df = last_df.resample('Y').mean().astype(float).round(1)
     
         data_df.index = data_df.index.strftime('%Y')
         refer_df.index = refer_df.index.strftime('%Y')
