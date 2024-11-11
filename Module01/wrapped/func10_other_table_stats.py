@@ -20,11 +20,31 @@ def other_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year):
     ele 计算的要素
     last_year 近1年年份
     '''
+    ele_dict=dict()
+    ele_dict['Hail']='Hail_Days'
+    ele_dict['GaWIN']='GaWIN_Days'
+    ele_dict['sa']='sa'
+    ele_dict['SaSt']='SaSt_Days'
+    ele_dict['FlSa']='FlSa_Days'
+    ele_dict['FlDu']='FlDu_Days'
+    ele_dict['rainstorm']='rainstorm'
+    ele_dict['snow']='snow'
+    ele_dict['light_snow']='light_snow'
+    ele_dict['medium_snow']='medium_snow'
+    ele_dict['heavy_snow']='heavy_snow'
+    ele_dict['severe_snow']='severe_snow'
+    ele_dict['high_tem']='high_tem'
+    ele_dict['Thund']='Thund_Days'
+    ele_dict['drought']='drought'
+    ele_dict['light_drought']='light_drought'
+    ele_dict['medium_drought']='medium_drought'
+    ele_dict['heavy_drought']='heavy_drought'
+    ele_dict['severe_drought']='severe_drought'
     last_df = nearly_df[nearly_df.index.year==last_year]
-    last_df = last_df.pivot_table(index=last_df.index, columns=['Station_Id_C'], values=ele) # 近1年df
-    data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Id_C'], values=ele) # 统计时段df
-    refer_df = refer_df.pivot_table(index=refer_df.index, columns=['Station_Id_C'], values=ele) # 参考时段df
-    nearly_df = nearly_df.pivot_table(index=nearly_df.index, columns=['Station_Id_C'], values=ele) # 近10年df
+    last_df = last_df.pivot_table(index=last_df.index, columns=['Station_Id_C'], values=ele_dict[ele]) # 近1年df
+    data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Id_C'], values=ele_dict[ele]) # 统计时段df
+    refer_df = refer_df.pivot_table(index=refer_df.index, columns=['Station_Id_C'], values=ele_dict[ele]) # 参考时段df
+    nearly_df = nearly_df.pivot_table(index=nearly_df.index, columns=['Station_Id_C'], values=ele_dict[ele]) # 近10年df
     data_df = data_df.round(1)
 
     # if time_freq in ['Y','Q']:
