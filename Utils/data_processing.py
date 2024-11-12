@@ -141,7 +141,7 @@ def data_processing(data_in, element, degree=None):
     resample_sum = ['v14311','ssh','PRE_Time_2020', 'PRE_Days', 'EVP_Big', 'EVP', 'EVP_Taka', 'PMET','sa','rainstorm','light_snow','snow',
                     'medium_snow','heavy_snow','severe_snow','Hail_Days','Hail','GaWIN',
                     'GaWIN_Days','SaSt','SaSt_Days','FlSa','FlSa_Days','FlDu','FlDu_Days',
-                    'Thund','Thund_Days''high_tem','drought','light_drought','medium_drought',
+                    'Thund','Thund_Days','high_tem','drought','light_drought','medium_drought',
                     'heavy_drought','severe_drought','Accum_Tem','V14311']
     
     resample_mean = ['q','TEM_Max','TEM_Min','TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 
