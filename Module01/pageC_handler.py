@@ -247,7 +247,10 @@ def grass_features_stats(data_json):
         data_df.index = data_df.index.year
         df_dict = dict()
         for sta in data_df['Station_Id_C'].unique():
-            df_tmp = data_df[data_df['Station_Id_C']==sta]['fanqing_date']
+            if element=='grassland_green_period':
+                df_tmp = data_df[data_df['Station_Id_C']==sta]['fanqing_date']
+            if element=='grassland_yellow_period':
+                df_tmp = data_df[data_df['Station_Id_C']==sta]['huangku_date']
             df_dict[sta] = df_tmp
 
         date_df = pd.DataFrame(df_dict)
@@ -320,7 +323,7 @@ def grass_features_stats(data_json):
 if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
-    data_json['element'] = 'grassland_green_period'
+    data_json['element'] = 'grassland_yellow_period'
     data_json['refer_years'] = '1991,2020'
     data_json['nearly_years'] = '2014,2023'
     data_json['time_freq'] = 'Y'
