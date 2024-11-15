@@ -216,15 +216,34 @@ def grass_features_stats(data_json):
     ######################################
     # 开始计算
     # 首先获取站号对应的站名
-    station_df = pd.DataFrame()
-    station_df['站号'] = [52955, 56080, 56079, 56074, 56065, 56045, 56021, 54102, 53821, 53817, 53723, 53644, 53505, 53384, 53289, 53231, 52943, 52876, 52869, 
-                        52868, 52863, 52862, 52856, 52855, 52852, 52825, 52818, 52765, 52737, 52681, 52101, 51711, 51469, 51437, 50954, 50936, 50928, 50854, 
-                        50742, 50618, 50525, 50425]
-    station_df['站名'] = ['贵南', '合作', '若尔盖', '玛曲', '河南', '甘德', '曲麻莱', '锡林浩特', '环县', '固原', '盐池', '乌审旗', '孪井滩', '察哈尔右翼后旗', '镶黄旗', 
-                        '海力素', '兴海', '民和', '湟中', '贵德', '互助', '大通', '共和', '湟源', '海北', '诺木洪', '格尔木', '门源', '德令哈', '民勤', '巴里坤', '阿合奇', 
-                        '牧业', '昭苏', '肇源', '白城', '巴雅尔吐胡硕', '安达', '富裕', '新巴尔虎左旗', '鄂温克', '额尔古纳']
-    station_df['站号'] = station_df['站号'].map(str)
-    new_station = station_df[station_df['站号'].isin(sta_ids)]
+    # station_df = pd.DataFrame()
+    # station_df['站号'] = [52955, 56080, 56079, 56074, 56065, 56045, 56021, 54102, 53821, 53817, 53723, 53644, 53505, 53384, 53289, 53231, 52943, 52876, 52869, 
+    #                     52868, 52863, 52862, 52856, 52855, 52852, 52825, 52818, 52765, 52737, 52681, 52101, 51711, 51469, 51437, 50954, 50936, 50928, 50854, 
+    #                     50742, 50618, 50525, 50425]
+    # station_df['站名'] = ['贵南', '合作', '若尔盖', '玛曲', '河南', '甘德', '曲麻莱', '锡林浩特', '环县', '固原', '盐池', '乌审旗', '孪井滩', '察哈尔右翼后旗', '镶黄旗', 
+    #                     '海力素', '兴海', '民和', '湟中', '贵德', '互助', '大通', '共和', '湟源', '海北', '诺木洪', '格尔木', '门源', '德令哈', '民勤', '巴里坤', '阿合奇', 
+    #                     '牧业', '昭苏', '肇源', '白城', '巴雅尔吐胡硕', '安达', '富裕', '新巴尔虎左旗', '鄂温克', '额尔古纳']
+    # station_df['站号'] = station_df['站号'].map(str)
+    # new_station = station_df[station_df['站号'].isin(sta_ids)]
+    
+    # 加一个 站点站名字典
+    station_id=refer_df['Station_Id_C'].unique()
+    
+    matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name','Lon','Lat']],on='Station_Id_C')
+    matched_stations_unique = matched_stations.drop_duplicates(subset='Station_Id_C')
+
+    station_name = matched_stations_unique['Station_Name'].values
+    station_id=matched_stations_unique['Station_Id_C'].values
+    lon_list=matched_stations_unique['Lon'].values
+    lat_list=matched_stations_unique['Lat'].values
+    new_station=pd.DataFrame(columns=['站名','站号','经度','纬度'])
+    new_station['站名']=station_name
+    new_station['站号']=station_id
+    new_station['经度']=lon_list
+    new_station['纬度']=lat_list
+
+    
+    
 
     result_dict = dict()
     result_dict['uuid'] = uuid4
