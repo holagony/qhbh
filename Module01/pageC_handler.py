@@ -3,15 +3,7 @@ import uuid
 import time
 import pandas as pd
 import xarray as xr
-import psycopg2
-from io import StringIO
-from psycopg2 import sql
 from Utils.config import cfg
-from Utils.ordered_easydict import OrderedEasyDict as edict
-from Utils.data_loader_with_threads import get_cmadaas_yearly_data
-from Utils.data_loader_with_threads import get_cmadaas_monthly_data
-from Utils.data_loader_with_threads import get_cmadaas_daily_data
-from Utils.data_loader_with_threads import get_cmadaas_daily_period_data
 from Utils.data_processing import data_processing
 from Module01.wrapped.func01_table_stats import table_stats
 from Module01.wrapped.func02_interp_grid import contour_picture
@@ -22,6 +14,7 @@ from Module01.wrapped.func06_wavelet_analyse import wavelet_main
 from Module01.wrapped.func07_correlation_analysis import correlation_analysis
 from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
+from Module01.wrapped.func15_grass_table_stat import grass_table_stats
 from Utils.data_loader_with_threads import get_database_data
 
 # 草地植被
@@ -102,179 +95,193 @@ def grass_features_stats(data_json):
         os.makedirs(data_dir)
         os.chmod(data_dir, 0o007 | 0o070 | 0o700)
 
-    # 确定表名
-    table_dict = dict()
-    table_dict['grassland_green_period'] = 'qh_climate_crop_growth'
-    table_dict['grassland_yellow_period'] = 'qh_climate_crop_growth'
-    table_dict['grassland_growth_period'] = '待定'
-    table_dict['grassland_coverage'] = 'qh_climate_grass_cover'
-    table_dict['grass_height'] = 'qh_climate_grass_height'
-    table_dict['dwei'] = 'qh_climate_grass_yield'  # 草地产量干重
-    table_dict['fwei'] = 'qh_climate_grass_yield'  # 草地产量湿重
-    table_dict['vegetation_index'] = '待定'
-    table_dict['vegetation_pri_productivity'] = '待定'
-    table_dict['vegetation_coverage'] = '待定'
-    table_dict['vegetation_carbon'] = '待定'
-    table_dict['wet_vegetation_carbon'] = '待定'
-    table_dict['desert_level'] = '待定'
-    table_dict['desert_area'] = '待定'
-    table_name = table_dict[element]
-
-    # 确定要素
-    element_dict = dict()
-    element_dict['grassland_green_period'] = 'Crop_Name,GroPer_Name_Ten'
-    element_dict['grassland_yellow_period'] = 'Crop_Name,GroPer_Name_Ten'
-    element_dict['grassland_growth_period'] = '待定'
-    element_dict['grassland_coverage'] = 'Cov'
-    element_dict['grass_height'] = 'Crop_Heigh'
-    element_dict['dwei'] = 'dwei'
-    element_dict['fwei'] = 'fwei'
-    element_dict['vegetation_index'] = '待定'
-    element_dict['vegetation_pri_productivity'] = '待定'
-    element_dict['vegetation_coverage'] = '待定'
-    element_dict['vegetation_carbon'] = '待定'
-    element_dict['wet_vegetation_carbon'] = '待定'
-    element_dict['desert_level'] = '待定'
-    element_dict['desert_area'] = '待定'
-    element_str = element_dict[element]
-    elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,' + element_str
-
-    sta_ids = tuple(sta_ids.split(','))
-    data_df = get_database_data(sta_ids, elements, table_name, time_freq, stats_times)
-    refer_df = get_database_data(sta_ids, elements, table_name, time_freq, refer_years)
-    nearly_df = get_database_data(sta_ids, elements, table_name, time_freq, nearly_years)
-    
-
-    # 数据处理
-    # 二次计算处理
-    if element == 'grassland_green_period':
-        # 一年一个记录，应该不用resample('1A')
-        data_df['Crop_Name'] = data_df['Crop_Name'].map(int)
-        data_df['Datetime'] = pd.to_datetime(data_df['Datetime'])
-        data_df.set_index('Datetime', inplace=True, drop=False)
-        data_df = data_df[data_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
-        data_df = data_df[data_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
-        data_df = data_df[~data_df.index.duplicated()]
-        data_df['fanqing'] = data_df.index.dayofyear
-        data_df['fanqing_date'] = data_df.index.strftime('%Y-%m-%d')
-        
-        refer_df['Crop_Name'] = refer_df['Crop_Name'].map(int)
-        refer_df['Datetime'] = pd.to_datetime(refer_df['Datetime'])
-        refer_df.set_index('Datetime', inplace=True, drop=False)
-        refer_df = refer_df[refer_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
-        refer_df = refer_df[refer_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
-        refer_df = refer_df[~refer_df.index.duplicated()]
-        refer_df['fanqing'] = refer_df.index.dayofyear
-        refer_df['fanqing_date'] = refer_df.index.strftime('%Y-%m-%d')
-
-        nearly_df['Crop_Name'] = nearly_df['Crop_Name'].map(int)
-        nearly_df['Datetime'] = pd.to_datetime(nearly_df['Datetime'])
-        nearly_df.set_index('Datetime', inplace=True, drop=False)
-        nearly_df = nearly_df[nearly_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
-        nearly_df = nearly_df[nearly_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
-        nearly_df = nearly_df[~nearly_df.index.duplicated()]
-        nearly_df['fanqing'] = nearly_df.index.dayofyear
-        nearly_df['fanqing_date'] = nearly_df.index.strftime('%Y-%m-%d')
-        element_str = 'fanqing'
-
-    elif element == 'grassland_yellow_period':
-        # 一年一个记录，应该不用resample('1A')
-        data_df['Crop_Name'] = data_df['Crop_Name'].map(int)
-        data_df['Datetime'] = pd.to_datetime(data_df['Datetime'])
-        data_df.set_index('Datetime', inplace=True, drop=False)
-        data_df = data_df[data_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
-        data_df = data_df[data_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
-        data_df = data_df[~data_df.index.duplicated()]
-        data_df['huangku'] = data_df.index.dayofyear
-        data_df['huangku_date'] = data_df.index.strftime('%Y-%m-%d')
-
-        refer_df['Crop_Name'] = refer_df['Crop_Name'].map(int)
-        refer_df['Datetime'] = pd.to_datetime(refer_df['Datetime'])
-        refer_df.set_index('Datetime', inplace=True, drop=False)
-        refer_df = refer_df[refer_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
-        refer_df = refer_df[refer_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
-        refer_df = refer_df[~refer_df.index.duplicated()]
-        refer_df['huangku'] = refer_df.index.dayofyear
-        refer_df['huangku_date'] = refer_df.index.strftime('%Y-%m-%d')
-        
-        nearly_df['Crop_Name'] = nearly_df['Crop_Name'].map(int)
-        nearly_df['Datetime'] = pd.to_datetime(nearly_df['Datetime'])
-        nearly_df.set_index('Datetime', inplace=True, drop=False)
-        nearly_df = nearly_df[nearly_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
-        nearly_df = nearly_df[nearly_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
-        nearly_df = nearly_df[~nearly_df.index.duplicated()]
-        nearly_df['huangku'] = nearly_df.index.dayofyear
-        nearly_df['huangku_date'] = nearly_df.index.strftime('%Y-%m-%d')
-        element_str = 'huangku'
-
-    else:
-        data_df = data_processing(data_df, element_str, degree)
-        refer_df = data_processing(refer_df, element_str, degree)
-        nearly_df = data_processing(nearly_df, element_str, degree)
-
-    
-    ######################################
-    # 开始计算
-    # 首先获取站号对应的站名
-    # station_df = pd.DataFrame()
-    # station_df['站号'] = [52955, 56080, 56079, 56074, 56065, 56045, 56021, 54102, 53821, 53817, 53723, 53644, 53505, 53384, 53289, 53231, 52943, 52876, 52869, 
-    #                     52868, 52863, 52862, 52856, 52855, 52852, 52825, 52818, 52765, 52737, 52681, 52101, 51711, 51469, 51437, 50954, 50936, 50928, 50854, 
-    #                     50742, 50618, 50525, 50425]
-    # station_df['站名'] = ['贵南', '合作', '若尔盖', '玛曲', '河南', '甘德', '曲麻莱', '锡林浩特', '环县', '固原', '盐池', '乌审旗', '孪井滩', '察哈尔右翼后旗', '镶黄旗', 
-    #                     '海力素', '兴海', '民和', '湟中', '贵德', '互助', '大通', '共和', '湟源', '海北', '诺木洪', '格尔木', '门源', '德令哈', '民勤', '巴里坤', '阿合奇', 
-    #                     '牧业', '昭苏', '肇源', '白城', '巴雅尔吐胡硕', '安达', '富裕', '新巴尔虎左旗', '鄂温克', '额尔古纳']
-    # station_df['站号'] = station_df['站号'].map(str)
-    # new_station = station_df[station_df['站号'].isin(sta_ids)]
-    
-    # 加一个 站点站名字典
-    station_id=refer_df['Station_Id_C'].unique()
-    
-    matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name','Lon','Lat']],on='Station_Id_C')
-    matched_stations_unique = matched_stations.drop_duplicates(subset='Station_Id_C')
-
-    station_name = matched_stations_unique['Station_Name'].values
-    station_id=matched_stations_unique['Station_Id_C'].values
-    lon_list=matched_stations_unique['Lon'].values
-    lat_list=matched_stations_unique['Lat'].values
-    new_station=pd.DataFrame(columns=['站名','站号','经度','纬度'])
-    new_station['站名']=station_name
-    new_station['站号']=station_id
-    new_station['经度']=lon_list
-    new_station['纬度']=lat_list
-
-    
-    
-
     result_dict = dict()
     result_dict['uuid'] = uuid4
     result_dict['表格'] = dict()
     result_dict['分布图'] = dict()
     result_dict['统计分析'] = dict()
-    result_dict['站号'] = new_station.to_dict(orient='records')
-
-
-    # stats_result 展示结果表格
-    # post_data_df 统计年份数据，用于后续计算
-    # post_refer_df 参考年份数据，用于后续计算
-    stats_result, post_data_df, post_refer_df, reg_params = table_stats(data_df, refer_df, nearly_df, element_str, last_year)
-    result_dict['表格'] = stats_result.to_dict(orient='records')
-    result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
-    print('统计表完成')
+        
+    if time_freq == 'Y':
+        if element in ['grassland_green_period','grassland_yellow_period']:
+           stats_result, post_data_df, post_refer_df, reg_params,station_df,data_r_df=grass_table_stats(element,refer_years,nearly_years,time_freq,stats_times,sta_ids)
+           result_dict['站号'] = station_df.to_dict(orient='records')
+           result_dict['表格'] = stats_result.to_dict(orient='records')
+           result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
+           print('统计表完成')
+           result_dict['日期表格'] = data_r_df.to_dict(orient='records')
+        else:
+            stats_result, post_data_df, post_refer_df, reg_params,station_df=grass_table_stats(element,refer_years,nearly_years,time_freq,stats_times,sta_ids)
+            
+            result_dict['站号'] = station_df.to_dict(orient='records')
+            result_dict['表格'] = stats_result.to_dict(orient='records')
+            result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
+            print('统计表完成')
+    else:
+        # 确定表名
+        table_dict = dict()
+        table_dict['grassland_green_period'] = 'qh_climate_crop_growth'
+        table_dict['grassland_yellow_period'] = 'qh_climate_crop_growth'
+        table_dict['grassland_growth_period'] = '待定'
+        table_dict['grassland_coverage'] = 'qh_climate_grass_cover'
+        table_dict['grass_height'] = 'qh_climate_grass_height'
+        table_dict['dwei'] = 'qh_climate_grass_yield'  # 草地产量干重
+        table_dict['fwei'] = 'qh_climate_grass_yield'  # 草地产量湿重
+        table_dict['vegetation_index'] = '待定'
+        table_dict['vegetation_pri_productivity'] = '待定'
+        table_dict['vegetation_coverage'] = '待定'
+        table_dict['vegetation_carbon'] = '待定'
+        table_dict['wet_vegetation_carbon'] = '待定'
+        table_dict['desert_level'] = '待定'
+        table_dict['desert_area'] = '待定'
+        table_name = table_dict[element]
     
-    # 增加日期表
-    if element in ['grassland_green_period', 'grassland_yellow_period']:
-        data_df.index = data_df.index.year
-        df_dict = dict()
-        for sta in data_df['Station_Id_C'].unique():
-            if element=='grassland_green_period':
-                df_tmp = data_df[data_df['Station_Id_C']==sta]['fanqing_date']
-            if element=='grassland_yellow_period':
-                df_tmp = data_df[data_df['Station_Id_C']==sta]['huangku_date']
-            df_dict[sta] = df_tmp
-
-        date_df = pd.DataFrame(df_dict)
-        date_df.reset_index(drop=False, inplace=True)
-        result_dict['日期表格'] = date_df.to_dict(orient='records')
+        # 确定要素
+        element_dict = dict()
+        element_dict['grassland_green_period'] = 'Crop_Name,GroPer_Name_Ten'
+        element_dict['grassland_yellow_period'] = 'Crop_Name,GroPer_Name_Ten'
+        element_dict['grassland_growth_period'] = '待定'
+        element_dict['grassland_coverage'] = 'Cov'
+        element_dict['grass_height'] = 'Crop_Heigh'
+        element_dict['dwei'] = 'dwei'
+        element_dict['fwei'] = 'fwei'
+        element_dict['vegetation_index'] = '待定'
+        element_dict['vegetation_pri_productivity'] = '待定'
+        element_dict['vegetation_coverage'] = '待定'
+        element_dict['vegetation_carbon'] = '待定'
+        element_dict['wet_vegetation_carbon'] = '待定'
+        element_dict['desert_level'] = '待定'
+        element_dict['desert_area'] = '待定'
+        element_str = element_dict[element]
+        elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,' + element_str
+    
+        sta_ids = tuple(sta_ids.split(','))
+        data_df = get_database_data(sta_ids, elements, table_name, time_freq, stats_times)
+        refer_df = get_database_data(sta_ids, elements, table_name, time_freq, refer_years)
+        nearly_df = get_database_data(sta_ids, elements, table_name, time_freq, nearly_years)
+        
+    
+        # 数据处理
+        # 二次计算处理
+        if element == 'grassland_green_period':
+            # 一年一个记录，应该不用resample('1A')
+            data_df['Crop_Name'] = data_df['Crop_Name'].map(int)
+            data_df['Datetime'] = pd.to_datetime(data_df['Datetime'])
+            data_df.set_index('Datetime', inplace=True, drop=False)
+            data_df = data_df[data_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
+            data_df = data_df[data_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
+            data_df = data_df[~data_df.index.duplicated()]
+            data_df['fanqing'] = data_df.index.dayofyear
+            data_df['fanqing_date'] = data_df.index.strftime('%Y-%m-%d')
+            
+            refer_df['Crop_Name'] = refer_df['Crop_Name'].map(int)
+            refer_df['Datetime'] = pd.to_datetime(refer_df['Datetime'])
+            refer_df.set_index('Datetime', inplace=True, drop=False)
+            refer_df = refer_df[refer_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
+            refer_df = refer_df[refer_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
+            refer_df = refer_df[~refer_df.index.duplicated()]
+            refer_df['fanqing'] = refer_df.index.dayofyear
+            refer_df['fanqing_date'] = refer_df.index.strftime('%Y-%m-%d')
+    
+            nearly_df['Crop_Name'] = nearly_df['Crop_Name'].map(int)
+            nearly_df['Datetime'] = pd.to_datetime(nearly_df['Datetime'])
+            nearly_df.set_index('Datetime', inplace=True, drop=False)
+            nearly_df = nearly_df[nearly_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
+            nearly_df = nearly_df[nearly_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
+            nearly_df = nearly_df[~nearly_df.index.duplicated()]
+            nearly_df['fanqing'] = nearly_df.index.dayofyear
+            nearly_df['fanqing_date'] = nearly_df.index.strftime('%Y-%m-%d')
+            element_str = 'fanqing'
+    
+        elif element == 'grassland_yellow_period':
+            # 一年一个记录，应该不用resample('1A')
+            data_df['Crop_Name'] = data_df['Crop_Name'].map(int)
+            data_df['Datetime'] = pd.to_datetime(data_df['Datetime'])
+            data_df.set_index('Datetime', inplace=True, drop=False)
+            data_df = data_df[data_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
+            data_df = data_df[data_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
+            data_df = data_df[~data_df.index.duplicated()]
+            data_df['huangku'] = data_df.index.dayofyear
+            data_df['huangku_date'] = data_df.index.strftime('%Y-%m-%d')
+    
+            refer_df['Crop_Name'] = refer_df['Crop_Name'].map(int)
+            refer_df['Datetime'] = pd.to_datetime(refer_df['Datetime'])
+            refer_df.set_index('Datetime', inplace=True, drop=False)
+            refer_df = refer_df[refer_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
+            refer_df = refer_df[refer_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
+            refer_df = refer_df[~refer_df.index.duplicated()]
+            refer_df['huangku'] = refer_df.index.dayofyear
+            refer_df['huangku_date'] = refer_df.index.strftime('%Y-%m-%d')
+            
+            nearly_df['Crop_Name'] = nearly_df['Crop_Name'].map(int)
+            nearly_df['Datetime'] = pd.to_datetime(nearly_df['Datetime'])
+            nearly_df.set_index('Datetime', inplace=True, drop=False)
+            nearly_df = nearly_df[nearly_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
+            nearly_df = nearly_df[nearly_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
+            nearly_df = nearly_df[~nearly_df.index.duplicated()]
+            nearly_df['huangku'] = nearly_df.index.dayofyear
+            nearly_df['huangku_date'] = nearly_df.index.strftime('%Y-%m-%d')
+            element_str = 'huangku'
+    
+        else:
+            data_df = data_processing(data_df, element_str, degree)
+            refer_df = data_processing(refer_df, element_str, degree)
+            nearly_df = data_processing(nearly_df, element_str, degree)
+    
+        
+        ######################################
+        # 开始计算
+        # 首先获取站号对应的站名
+        # station_df = pd.DataFrame()
+        # station_df['站号'] = [52955, 56080, 56079, 56074, 56065, 56045, 56021, 54102, 53821, 53817, 53723, 53644, 53505, 53384, 53289, 53231, 52943, 52876, 52869, 
+        #                     52868, 52863, 52862, 52856, 52855, 52852, 52825, 52818, 52765, 52737, 52681, 52101, 51711, 51469, 51437, 50954, 50936, 50928, 50854, 
+        #                     50742, 50618, 50525, 50425]
+        # station_df['站名'] = ['贵南', '合作', '若尔盖', '玛曲', '河南', '甘德', '曲麻莱', '锡林浩特', '环县', '固原', '盐池', '乌审旗', '孪井滩', '察哈尔右翼后旗', '镶黄旗', 
+        #                     '海力素', '兴海', '民和', '湟中', '贵德', '互助', '大通', '共和', '湟源', '海北', '诺木洪', '格尔木', '门源', '德令哈', '民勤', '巴里坤', '阿合奇', 
+        #                     '牧业', '昭苏', '肇源', '白城', '巴雅尔吐胡硕', '安达', '富裕', '新巴尔虎左旗', '鄂温克', '额尔古纳']
+        # station_df['站号'] = station_df['站号'].map(str)
+        # new_station = station_df[station_df['站号'].isin(sta_ids)]
+        
+        # 加一个 站点站名字典
+        station_id=refer_df['Station_Id_C'].unique()
+        
+        matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name','Lon','Lat']],on='Station_Id_C')
+        matched_stations_unique = matched_stations.drop_duplicates(subset='Station_Id_C')
+    
+        station_name = matched_stations_unique['Station_Name'].values
+        station_id=matched_stations_unique['Station_Id_C'].values
+        lon_list=matched_stations_unique['Lon'].values
+        lat_list=matched_stations_unique['Lat'].values
+        new_station=pd.DataFrame(columns=['站名','站号','经度','纬度'])
+        new_station['站名']=station_name
+        new_station['站号']=station_id
+        new_station['经度']=lon_list
+        new_station['纬度']=lat_list
+    
+        result_dict['站号'] = new_station.to_dict(orient='records')
+    
+    
+        # stats_result 展示结果表格
+        # post_data_df 统计年份数据，用于后续计算
+        # post_refer_df 参考年份数据，用于后续计算
+        stats_result, post_data_df, post_refer_df, reg_params = table_stats(data_df, refer_df, nearly_df, element_str, last_year)
+        result_dict['表格'] = stats_result.to_dict(orient='records')
+        result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
+        print('统计表完成')
+        
+        # 增加日期表
+        if element in ['grassland_green_period', 'grassland_yellow_period']:
+            data_df.index = data_df.index.year
+            df_dict = dict()
+            for sta in data_df['Station_Id_C'].unique():
+                if element=='grassland_green_period':
+                    df_tmp = data_df[data_df['Station_Id_C']==sta]['fanqing_date']
+                if element=='grassland_yellow_period':
+                    df_tmp = data_df[data_df['Station_Id_C']==sta]['huangku_date']
+                df_dict[sta] = df_tmp
+    
+            date_df = pd.DataFrame(df_dict)
+            date_df.reset_index(drop=False, inplace=True)
+            result_dict['日期表格'] = date_df.to_dict(orient='records')
     
     # 分布图 try在里面了
     if shp_path is not None:
