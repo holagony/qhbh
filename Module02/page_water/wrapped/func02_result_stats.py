@@ -67,7 +67,7 @@ def stats_result_2(dict_in, refer_df):
         
         # 横向的距平和距平百分率
         df = pd.DataFrame(index=df_in.index)
-        df['距平'] = df_in['Q'] - refer_df['Q'].mean(axis=0)
+        df['距平'] = df_in['Q'] - refer_df['Q'].mean(axis=0).round(1)
         df['距平百分率'] = ((df['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
     
         # 创建临时下方统计的df
