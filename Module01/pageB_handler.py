@@ -7,11 +7,6 @@ import simplejson
 from io import StringIO
 from psycopg2 import sql
 from Utils.config import cfg
-from Utils.ordered_easydict import OrderedEasyDict as edict
-from Utils.data_loader_with_threads import get_cmadaas_yearly_data
-from Utils.data_loader_with_threads import get_cmadaas_monthly_data
-from Utils.data_loader_with_threads import get_cmadaas_daily_data
-from Utils.data_loader_with_threads import get_cmadaas_daily_period_data
 from Utils.data_processing import data_processing
 from Module01.wrapped.func10_other_table_stats import other_table_stats
 from Module01.wrapped.func11_pre_table_stats import pre_table_stats
@@ -415,14 +410,14 @@ def extreme_climate_features(data_json):
 
 if __name__ == '__main__':
     data_json = dict()
-    data_json['element'] ='TN10p'
+    data_json['element'] ='GaWIN'
     data_json['l_data'] =10
     data_json['refer_years'] = '1991,2020'
-    data_json['nearly_years'] = '2014,2021'
+    data_json['nearly_years'] = '1994,2023'
     data_json['time_freq'] = 'Y'
-    data_json['stats_times'] = '1981,2023'
+    data_json['stats_times'] = '2010,2019'
     data_json['sta_ids'] = '52754,56151,52855,52862,56065,52645,56046,52955,52968,52963,52825,56067,52713,52943,52877,52633,52866,52737,52745,52957,56018,56033,52657,52765,52972,52868,56016,52874,51886,56021,52876,56029,56125,52856,52836,52842,56004,52974,52863,56043,52908,56045,52818,56034,52853,52707,52602,52869,52833,52875,52859,52942,52851'
-    data_json['interp_method'] = 'ukri'
+    data_json['interp_method'] = 'idw'
     data_json['ci'] = 95
     data_json['shp_path'] =r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
     result = extreme_climate_features(data_json)
