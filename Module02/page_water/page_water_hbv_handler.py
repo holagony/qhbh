@@ -279,9 +279,16 @@ def hbv_single_calc(data_json):
                 pre_lst.append(pre_tmp)
             
             tmp_all = xr.concat(tmp_lst, dim='time')
-            tmp_all['time'] = tmp_all.indexes['time'].to_datetimeindex().normalize()
+            try:
+                tmp_all['time'] = tmp_all.indexes['time'].to_datetimeindex().normalize()
+            except:
+                tmp_all['time'] = tmp_all.indexes['time'].normalize()
             pre_all = xr.concat(pre_lst, dim='time')
-            pre_all['time'] = pre_all.indexes['time'].to_datetimeindex().normalize()
+            
+            try:
+                pre_all['time'] = pre_all.indexes['time'].to_datetimeindex().normalize()
+            except:
+                pre_all['time'] = pre_all.indexes['time'].normalize()
             vaild_cmip[exp][insti]['tmp'] = tmp_all
             vaild_cmip[exp][insti]['pre'] = pre_all
 
