@@ -14,7 +14,7 @@ from Module01.wrapped.func06_wavelet_analyse import wavelet_main
 from Module01.wrapped.func07_correlation_analysis import correlation_analysis
 from Module01.wrapped.func08_eof import eof, reof
 from Module01.wrapped.func09_eemd import eemd
-from Module01.wrapped.func15_grass_table_stat import grass_table_stats
+from Module01.wrapped.func15_grass_table_stats import grass_table_stats
 from Utils.data_loader_with_threads import get_database_data
 
 # 草地植被
@@ -109,12 +109,16 @@ def grass_features_stats(data_json):
            result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
            print('统计表完成')
            result_dict['日期表格'] = data_r_df.to_dict(orient='records')
+           data_df=station_df.copy()
+           data_df.columns=['Station_Id_C','Station_Name','lon','lat']
         else:
             stats_result, post_data_df, post_refer_df, reg_params,station_df=grass_table_stats(element,refer_years,nearly_years,time_freq,stats_times,sta_ids)
             
             result_dict['站号'] = station_df.to_dict(orient='records')
             result_dict['表格'] = stats_result.to_dict(orient='records')
             result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
+            data_df=station_df.copy()
+            data_df.columns=['Station_Id_C','Station_Name','lon','lat']
             print('统计表完成')
     else:
         # 确定表名
