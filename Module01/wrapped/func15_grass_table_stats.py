@@ -17,52 +17,54 @@ def grass_table_stats(element,refer_years,nearly_years,time_freq,stats_times,sta
     sta_ids = tuple(sta_ids.split(','))
 
     if element=='grassland_green_period':
-        station_df,data_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(11,),1,1)
-        refer_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(11,),0,1)
-        nearly_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(11,),0,1)
-        data_r_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(10,),0,0)
+        station_df,data_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, stats_times,(11,),1,1)
+        refer_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, refer_years,(11,),0,1)
+        nearly_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, nearly_years,(11,),0,1)
+        data_r_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, stats_times,(10,),0,0)
+        data_r_df.reset_index(inplace=True)
 
         station_df.reset_index(inplace=True,drop=True)
         last_df=nearly_df.iloc[-1:].copy()
         
     elif element=='grassland_yellow_period':
-        station_df,data_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(21,),1,1)
-        refer_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(21,),0,1)
-        nearly_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(21,),0,1)
-        data_r_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(20,),0,0)
+        station_df,data_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, stats_times,(21,),1,1)
+        refer_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, refer_years,(21,),0,1)
+        nearly_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, nearly_years,(21,),0,1)
+        data_r_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, stats_times,(20,),0,0)
+        data_r_df.reset_index(inplace=True)
 
         station_df.reset_index(inplace=True,drop=True)
         last_df=nearly_df.iloc[-1:].copy()
         
     elif element=='grassland_growth_period':
-        station_df,data_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(31,),1,1)
-        refer_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(31,),0,1)
-        nearly_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(31,),0,1)
+        station_df,data_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, stats_times,(31,),1,1)
+        refer_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, refer_years,(31,),0,1)
+        nearly_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, nearly_years,(31,),0,1)
 
         station_df.reset_index(inplace=True,drop=True)
         last_df=nearly_df.iloc[-1:].copy()
         
-    elif element=='grassland_yield':
-        station_df,data_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(40,),1,1)
-        refer_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(40,),0,1)
-        nearly_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(40,),0,1)
+    elif element=='dwei':
+        station_df,data_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, stats_times,(40,),1,1)
+        refer_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, refer_years,(40,),0,1)
+        nearly_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, nearly_years,(40,),0,1)
 
         station_df.reset_index(inplace=True,drop=True)
         last_df=nearly_df.iloc[-1:].copy()
     
     elif element=='grassland_coverage':
-        station_df,data_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(50,),1,1)
-        refer_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(50,),0,1)
-        nearly_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(50,),0,1)
+        station_df,data_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, stats_times,(50,),1,1)
+        refer_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, refer_years,(50,),0,1)
+        nearly_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, nearly_years,(50,),0,1)
 
         station_df.reset_index(inplace=True,drop=True)
         last_df=nearly_df.iloc[-1:].copy()
     
     elif element=='grass_height':
 
-        station_df,data_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(60,),1,1)
-        refer_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(60,),0,1)
-        nearly_df=get_database_result(sta_ids, elements, 'qh_climate_agro_customer', time_freq, stats_times,(60,),0,1)
+        station_df,data_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, stats_times,(60,),1,1)
+        refer_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, refer_years,(60,),0,1)
+        nearly_df=get_database_result(sta_ids, elements, 'qh_climate_grass_growth', time_freq, nearly_years,(60,),0,1)
 
         station_df.reset_index(inplace=True,drop=True)
         last_df=nearly_df.iloc[-1:].copy()

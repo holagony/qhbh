@@ -104,21 +104,22 @@ def grass_features_stats(data_json):
     if time_freq == 'Y':
         if element in ['grassland_green_period','grassland_yellow_period']:
            stats_result, post_data_df, post_refer_df, reg_params,station_df,data_r_df=grass_table_stats(element,refer_years,nearly_years,time_freq,stats_times,sta_ids)
+           station_df.columns=['站号','站名','经度','纬度']
            result_dict['站号'] = station_df.to_dict(orient='records')
            result_dict['表格'] = stats_result.to_dict(orient='records')
            result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
            print('统计表完成')
            result_dict['日期表格'] = data_r_df.to_dict(orient='records')
            data_df=station_df.copy()
-           data_df.columns=['Station_Id_C','Station_Name','lon','lat']
+           data_df.columns=['Station_Id_C','Station_Name','Lon','Lat']
         else:
             stats_result, post_data_df, post_refer_df, reg_params,station_df=grass_table_stats(element,refer_years,nearly_years,time_freq,stats_times,sta_ids)
-            
+            station_df.columns=['站号','站名','经度','纬度']
             result_dict['站号'] = station_df.to_dict(orient='records')
             result_dict['表格'] = stats_result.to_dict(orient='records')
             result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
             data_df=station_df.copy()
-            data_df.columns=['Station_Id_C','Station_Name','lon','lat']
+            data_df.columns=['Station_Id_C','Station_Name','Lon','Lat']
             print('统计表完成')
     else:
         # 确定表名
