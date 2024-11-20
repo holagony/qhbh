@@ -12,16 +12,7 @@ import uuid
 import numpy as np
 import pandas as pd
 import xarray as xr
-import psycopg2
-from io import StringIO
-from psycopg2 import sql
 from Utils.config import cfg
-from Utils.ordered_easydict import OrderedEasyDict as edict
-from Utils.data_loader_with_threads import get_cmadaas_yearly_data
-from Utils.data_loader_with_threads import get_cmadaas_monthly_data
-from Utils.data_loader_with_threads import get_cmadaas_daily_data
-from Utils.data_loader_with_threads import get_cmadaas_daily_period_data
-from Utils.data_processing import data_processing
 from Module01.wrapped.func02_interp_grid import contour_picture
 from Module01.wrapped.func03_mk_tests import time_analysis
 from Module01.wrapped.func04_cumsum_anomaly import calc_anomaly_cum
@@ -259,7 +250,7 @@ def freeze_features_stats(data_json):
 if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
-    data_json['element'] = 'FRS_START'
+    data_json['element'] = 'SNOW_DEPTH'
     data_json['refer_years'] = '2021,2022'
     data_json['nearly_years'] = '2021,2022'
     data_json['time_freq'] = 'Y'
