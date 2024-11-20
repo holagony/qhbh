@@ -11,7 +11,7 @@ import requests
 from flask import Blueprint, request, jsonify
 from Utils.config import cfg
 from Utils.ordered_easydict import OrderedEasyDict as edict
-from Module01.pageF_handler import agriculture_features_stats
+from Module01.pageF_handler import agriculture_features
 
 
 def callback(url, result_id, result):
@@ -28,7 +28,7 @@ class workerPageF:
         data_json = json.loads(json_str)
         result_id = data_json.get('id')
         callback_url = data_json.get('callback')
-        result_dict = agriculture_features_stats(data_json)
+        result_dict = agriculture_features(data_json)
         return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result_dict}, ensure_ascii=False, ignore_nan=True)
         callback(callback_url, result_id, return_data)
         return return_data

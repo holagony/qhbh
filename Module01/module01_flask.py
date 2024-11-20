@@ -7,7 +7,7 @@ from Module01.pageB_handler import extreme_climate_features
 from Module01.pageC_handler import grass_features_stats
 from Module01.pageD_handler import water_features_stats
 from Module01.pageE_handler import freeze_features_stats
-from Module01.pageF_handler import agriculture_features_stats
+from Module01.pageF_handler import agriculture_features
 from Module01.pageG_handler import other_features_stats
 
 
@@ -111,7 +111,7 @@ def page_f_stats():
         result = celery_submit.delay('workerPageF', json_str)
         return jsonify({'code': 202, 'msg': '任务提交成功，开始计算...', 'data': {'task_id': result.id}})
 
-    result_dict = agriculture_features_stats(data_json)
+    result_dict = agriculture_features(data_json)
     return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result_dict}, ensure_ascii=False, ignore_nan=True)
     return return_data
 
