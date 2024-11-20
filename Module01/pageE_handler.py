@@ -251,11 +251,11 @@ if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
     data_json['element'] = 'SNOW_DEPTH'
-    data_json['refer_years'] = '2021,2022'
-    data_json['nearly_years'] = '2021,2022'
+    data_json['refer_years'] = '1990,2020'
+    data_json['nearly_years'] = '2002,2022'
     data_json['time_freq'] = 'Y'
-    data_json['stats_times'] = '2021,2024'  # '198105,202009' # '1981,2023'
-    data_json['sta_ids'] = '51886,52737,52842,52886,52876'
+    data_json['stats_times'] = '2010,2019'  # '198105,202009' # '1981,2023'
+    data_json['sta_ids'] = '52908,52943,52955,52957,52968,56004,56016'
     data_json['interp_method'] = 'idw'
     data_json['ci'] = 95
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'

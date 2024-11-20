@@ -335,7 +335,7 @@ def get_database_data(sta_ids, element_str, table_name, time_freq, stats_times):
     df.columns = elements.split(',')
     try:
         element_str= elements.split(',')[-1]
-        df[element_str] = df[element_str].apply(lambda x: np.nan if x > 9999 else x)
+        df[element_str] = df[element_str].astype(float).apply(lambda x: np.nan if x > 9999 else x)
     except:
         pass
     # 关闭数据库

@@ -83,22 +83,22 @@ def snow_table_stats(data_df, refer_df, nearly_df, element,time_freq,last_year):
         
     # 创建临时下方统计的df
     tmp_df = pd.DataFrame(columns=data_df.columns)
-    tmp_df.loc['平均'] = data_df.iloc[:,:].mean(axis=0).round(1)
-    tmp_df.loc['变率'] = data_df.apply(trend_rate,axis=0).round(1)
+    tmp_df.loc['平均'] = data_df.iloc[:,:].mean(axis=0).astype(float).round(1)
+    tmp_df.loc['变率'] = data_df.apply(trend_rate,axis=0).astype(float).round(1)
     tmp_df.loc['最大值'] = data_df.iloc[:,:].max(axis=0)
     tmp_df.loc['最小值'] = data_df.iloc[:,:].min(axis=0)
-    tmp_df.loc['与上一年比较值'] = (data_df.iloc[:,:].mean(axis=0) - last_df.iloc[:,:].mean(axis=0)).round(1)
-    tmp_df.loc['近10年均值'] = nearly_df.iloc[:,:].mean(axis=0).round(1)
-    tmp_df.loc['与近10年比较值'] = (data_df.iloc[:,:].mean(axis=0) - nearly_df.iloc[:,:].mean(axis=0)).round(1)
-    tmp_df.loc['参考时段均值'] = refer_df.iloc[:,:].mean(axis=0).round(1)
-    tmp_df.loc['距平'] = (tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']).round(1)
-    tmp_df.loc['距平百分率'] = ((tmp_df.loc['距平']/tmp_df.loc['参考时段均值'])*100).round(2)
+    tmp_df.loc['与上一年比较值'] = (data_df.iloc[:,:].mean(axis=0) - last_df.iloc[:,:].mean(axis=0)).astype(float).round(1)
+    tmp_df.loc['近10年均值'] = nearly_df.iloc[:,:].mean(axis=0).astype(float).round(1)
+    tmp_df.loc['与近10年比较值'] = (data_df.iloc[:,:].mean(axis=0) - nearly_df.iloc[:,:].mean(axis=0)).astype(float).round(1)
+    tmp_df.loc['参考时段均值'] = refer_df.iloc[:,:].mean(axis=0).astype(float).round(1)
+    tmp_df.loc['距平'] = (tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']).astype(float).round(1)
+    tmp_df.loc['距平百分率'] = ((tmp_df.loc['距平']/tmp_df.loc['参考时段均值'])*100).astype(float).round(2)
 
     # 合并所有结果
     stats_result = data_df.copy()
-    stats_result['区域均值'] = stats_result.iloc[:,:].mean(axis=1).round(1)
-    stats_result['区域距平'] = (stats_result.iloc[:,:].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).round(1)
-    stats_result['区域距平百分率'] = (stats_result['区域距平']/refer_df.iloc[:, :].mean().mean()).round(1)
+    stats_result['区域均值'] = stats_result.iloc[:,:].mean(axis=1).astype(float).round(1)
+    stats_result['区域距平'] = (stats_result.iloc[:,:].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).astype(float).round(1)
+    stats_result['区域距平百分率'] = (stats_result['区域距平']/refer_df.iloc[:, :].mean().mean()).astype(float).round(1)
     stats_result['区域最大值'] = stats_result.iloc[:,:].max(axis=1)
     stats_result['区域最小值'] = stats_result.iloc[:,:].min(axis=1)
 
