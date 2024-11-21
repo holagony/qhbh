@@ -310,7 +310,7 @@ def climate_esti(data_json):
         for insti, sub_dict2 in sub_dict1.items():
             ds_daily = sub_dict2[var]
             ds_yearly = ds_daily.resample(time='YE').mean()
-            res_table = table_stats_simple_cmip(ds_yearly, var, sta_list)
+            res_table = table_stats_simple_cmip(ds_yearly, stats_result_his, var, sta_list)
             single_cmip_res[exp][insti] = res_table.to_dict(orient='records')
                 
     result_dict['表格']['预估单模式'] = single_cmip_res
@@ -386,30 +386,30 @@ def climate_esti(data_json):
                 all_png1[exp][year_name] = png_path
         
         # 历史-观测画图
-        all_png2 = dict()
-        stats_result_his = pd.DataFrame(stats_result_his)
-        for i in tqdm(range(len(stats_result_his))):
-            value_list = stats_result_his.iloc[i,1:-3].tolist()
-            year_name = stats_result_his.iloc[i,0]
-            exp_name = ''
-            insti_name = ''
-            # 插值/掩膜/画图/保存
-            mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-            png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
+        # all_png2 = dict()
+        # stats_result_his = pd.DataFrame(stats_result_his)
+        # for i in tqdm(range(len(stats_result_his))):
+        #     value_list = stats_result_his.iloc[i,1:-3].tolist()
+        #     year_name = stats_result_his.iloc[i,0]
+        #     exp_name = ''
+        #     insti_name = ''
+        #     # 插值/掩膜/画图/保存
+        #     mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+        #     png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
             
-            # 转url
-            png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-            png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-            all_png2[year_name] = png_path
+        #     # 转url
+        #     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+        #     png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+        #     all_png2[year_name] = png_path
 
     else: # 直接获取现成的，目前没做，所有图片路径都是None
         all_png = dict()
         all_png1 = dict()
-        all_png2 = dict()
+        # all_png2 = dict()
 
     result_dict['分布图']['预估单模式'] = all_png
     result_dict['分布图']['预估集合'] = all_png1
-    result_dict['分布图']['历史'] = all_png2
+    # result_dict['分布图']['历史'] = all_png2
         
     return result_dict
         
