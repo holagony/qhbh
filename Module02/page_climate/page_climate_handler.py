@@ -298,7 +298,7 @@ def climate_esti(data_json):
         ds_daily = xr.concat(ds_list, 'new_dim')
         ds_daily = ds_daily.mean(dim='new_dim')
         ds_yearly = ds_daily.resample(time='YE').mean()
-        res_table = table_stats_simple_cmip(ds_yearly, var, sta_list) # 调用生成表格
+        res_table = table_stats_simple_cmip(ds_yearly, stats_result_his,var, sta_list) # 调用生成表格
         evaluate_cmip_res[exp] = res_table.to_dict(orient='records')
     
     result_dict['表格']['预估集合'] = evaluate_cmip_res
