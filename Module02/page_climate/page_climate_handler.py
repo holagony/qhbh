@@ -123,7 +123,7 @@ def climate_esti(data_json):
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
         
     inpath = '/cmip_data'
-    # inpath = r'D:\Project\qh\Evaluate_Energy\data' # cmip6路径
+    # inpath = r'D:\Project\qh' # cmip6路径
 
     # 2.参数处理
     degree = None
@@ -323,15 +323,15 @@ def climate_esti(data_json):
         for insti, res_df in sub_dict.items():
             res_df = pd.DataFrame(res_df)
             res_df.set_index('时间',inplace=True)
-            array_list.append(res_df.iloc[:-4, :].values[None])
+            array_list.append(res_df.iloc[:-6, :].values[None])
             array = np.concatenate(array_list,axis=0)
         std = np.std(array, ddof=1, axis=0).round(2)
         per25 = np.percentile(array, 25, axis=0).round(2)
         per75 = np.percentile(array, 75, axis=0).round(2)
         
-        std = pd.DataFrame(std, index=res_df.index[:-4], columns=res_df.columns)
-        per25 = pd.DataFrame(per25, index=res_df.index[:-4], columns=res_df.columns)
-        per75 = pd.DataFrame(per75, index=res_df.index[:-4], columns=res_df.columns)
+        std = pd.DataFrame(std, index=res_df.index[:-6], columns=res_df.columns)
+        per25 = pd.DataFrame(per25, index=res_df.index[:-6], columns=res_df.columns)
+        per75 = pd.DataFrame(per75, index=res_df.index[:-6], columns=res_df.columns)
         
         std.reset_index(drop=False,inplace=True)
         per25.reset_index(drop=False,inplace=True)
@@ -353,7 +353,7 @@ def climate_esti(data_json):
                 all_png[exp][insti] = dict()
                 stats_table = pd.DataFrame(stats_table)
                 for i in tqdm(range(len(stats_table))):
-                    value_list = stats_table.iloc[i,1:-3].tolist()
+                    value_list = stats_table.iloc[i,1:-5].tolist()
                     year_name = stats_table.iloc[i,0]
                     exp_name = exp
                     insti_name = insti
@@ -372,7 +372,7 @@ def climate_esti(data_json):
             all_png1[exp] = dict()
             stats_table1 = pd.DataFrame(stats_table1)
             for i in tqdm(range(len(stats_table1))):
-                value_list = stats_table1.iloc[i,1:-3].tolist()
+                value_list = stats_table1.iloc[i,1:-5].tolist()
                 year_name = stats_table1.iloc[i,0]
                 exp_name = exp
                 insti_name = '集合'
@@ -426,7 +426,7 @@ if __name__ == '__main__':
     data_json['element'] = 'TEM_Avg'
     data_json['plot'] = 0
     data_json['method'] = 'idw'
-    data_json['shp_path'] = r'C:/Users/MJY/Desktop/青海省.json'
+    data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
     result_dict = climate_esti(data_json)
     
 
