@@ -35,6 +35,9 @@ def agriculture_features_stats(data_json):
         蚕豆：010907 Horsebean
         马铃薯：010906 potato
 
+        农作物：1 crop
+        粮食作物：2 food_crop
+        
     :param time_freq: 对应原型选择数据的时间尺度
         传参：
         年 - 'Y'
@@ -43,7 +46,7 @@ def agriculture_features_stats(data_json):
         (1)当time_freq选择年Y。下载连续的年数据，传参：'%Y,%Y'
 
     :param sta_ids: 传入的站点，多站，传：'52866,52713,52714'
-
+                    传入的区域，全省：63000；各区域id
     :param interp_method: 对应原型的插值方法
         传参：
         克里金 - 'kriging'
@@ -57,7 +60,7 @@ def agriculture_features_stats(data_json):
     '''
     # 1.参数读取
     element = data_json['element']
-    crop = data_json['crop']
+    crop = data_json.get('crop','spring_maizet')
     refer_years = data_json['refer_years']
     nearly_years = data_json['nearly_years']
     stats_times = data_json['stats_times']
@@ -67,13 +70,26 @@ def agriculture_features_stats(data_json):
     # 2.参数处理
     # 确定表名
     table_dict = dict()
-    table_dict['crop_acreage'] = '待定'
+    table_dict['crop_acreage'] = 'qh_climate_crop_sowing_area'
     table_dict['yield'] = '待定'
     table_dict['sowin_date'] = 'qh_climate_crop_growth'
     table_dict['maturity'] = 'qh_climate_crop_growth'
     table_dict['reproductive_period'] = 'qh_climate_crop_growth'
     table_dict['reproductive_day'] = 'qh_climate_crop_growth'
-    table_name = table_dict[element]
+    
+    if element=='crop_acreage':
+        if sta_ids=='63000':
+            table_name='qh_climate_crop_sowing_province'
+        else:
+            table_name='qh_climate_crop_sowing_area'
+
+    elif element=='yield':
+        if sta_ids=='63000':
+            table_name='qh_climate_crop_yield_province'
+        else:
+            table_name='qh_climate_crop_yield'    
+    else:
+        table_name = table_dict[element]
 
     # 确定作物· 
     crop_dict = dict()
@@ -85,12 +101,14 @@ def agriculture_features_stats(data_json):
     crop_dict['campestris'] = '010602'
     crop_dict['Horsebean'] = '010907'
     crop_dict['potato'] = '010906'
+    crop_dict['crop'] = 1
+    crop_dict['food_crop'] = 2
+
     crop_str = crop_dict[crop]
+    
     
     # 确定要素        
     element_dict = dict()
-    element_dict['crop_acreage'] = '待定'
-    element_dict['yield'] = '待定'
     element_dict['sowin_date'] = '11'
     element_dict['maturity'] = '91'
     if crop in ['spring_maizet']:
@@ -105,9 +123,22 @@ def agriculture_features_stats(data_json):
        element_dict['reproductive_period'] ='11,21,51,61,71,91'       
         
     element_dict['reproductive_day'] = '11,91'
-    element_str = element_dict[element]
-    elements='Station_Id_C,Station_Name,Datetime,Lon,Lat,Year,Mon,Day,crop_name,groper_name_ten'
-    
+
+    if element=='crop_acreage':
+        if sta_ids=='63000':
+            elements='datatime,total,grain,wheat,tubers,cashcrop'
+        else:
+            elements='datatime,zone,lon,lat,sowing_area,type,station_id_c'
+
+    elif element=='yield':
+        if sta_ids=='63000':
+            elements='datatime,grain,wheat,tubers,oilseeds'
+        else:
+            elements='datatime,zone,lon,lat,yield,type,station_id_c'    
+    else:
+        element_str = element_dict[element]
+        elements='Station_Id_C,Station_Name,Datetime,Lon,Lat,Year,Mon,Day,crop_name,groper_name_ten'
+        
     # 发育期名称
     crop_name_dict=dict()
     if crop in ['spring_maizet']:
@@ -168,19 +199,21 @@ def agriculture_features_stats(data_json):
         else:
             return df
         
-    data_df_1,station_df= get_database_data(elements,element_str,crop_str,sta_ids,table_name,stats_times,1)
-    refer_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,refer_years,0)
-    nearly_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,nearly_years,0)
-    last_df=nearly_df[nearly_df.index.year==last_year].copy()
-  
+    # 播种、成熟、发育读取数据库的方法
+    if element in ['sowin_date','maturity','reproductive_period','reproductive_day']:
+        data_df_1,station_df= get_database_data(elements,element_str,crop_str,sta_ids,table_name,stats_times,1)
+        refer_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,refer_years,0)
+        nearly_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,nearly_years,0)
+        last_df=nearly_df[nearly_df.index.year==last_year].copy()
+   
+    # 解决冬小麦 跨年问题
     if crop in ['winter_wheat']:
         data_df_1.index = data_df_1.index - MonthEnd(8)
         refer_df.index = refer_df.index - MonthEnd(8)
         nearly_df.index = nearly_df.index - MonthEnd(8)
         last_df.index = last_df.index - MonthEnd(8)
 
-  
-    
+     # 播种、成熟的表格
     if element in ['sowin_date','maturity']:
         data_date_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,stats_times,0)
         data_df=data_df_1.pivot_table(index=data_df_1.index, columns=['Station_Id_C'], values='date_num')
@@ -195,6 +228,7 @@ def agriculture_features_stats(data_json):
         last_df.index = last_df.index.strftime('%Y')
         data_date_df.index = data_date_df.index.strftime('%Y')
 
+    # 生育期表格
     elif element in ['reproductive_period']:
         
         result=pd.DataFrame()
@@ -217,7 +251,8 @@ def agriculture_features_stats(data_json):
             result=pd.concat([result,data_df_5])
         
         return result
-    
+   
+    # 生育期天数
     elif element in ['reproductive_day']:
         def reproductive_day_deal(crop,df):
             
@@ -242,7 +277,93 @@ def agriculture_features_stats(data_json):
         nearly_df=reproductive_day_deal(crop,nearly_df)
         last_df=reproductive_day_deal(crop,last_df)
 
-        
+    # 产量和面积
+    elif element in ['crop_acreage','yield']:
+        if sta_ids=='63000':
+            def acreage_yield_province_get(element,elements,table_name,stats_times):
+                conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
+                cur = conn.cursor()
+                    
+                query = sql.SQL(f"""
+                                SELECT {elements}
+                                FROM public.{table_name}
+                                WHERE
+                                    CAST(SUBSTRING(datatime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s                                
+                                """)
+                    
+                start_year = stats_times.split(',')[0]
+                end_year = stats_times.split(',')[1]
+                cur.execute(query, (start_year, end_year))
+                data = cur.fetchall()
+                
+                df = pd.DataFrame(data)
+                df.columns = elements.split(',')
+                df['datatime'] = pd.to_datetime(df['datatime'])
+                df.set_index('datatime', inplace=True, drop=True)
+                df.index = df.index.strftime('%Y')
+                
+                df=df.astype(float)
+                if element=='crop_acreage':
+                    df.columns=['总播种面积','粮食','小麦','薯类','经济作物']
+                elif element=='yield':
+                    df.columns=['粮食','小麦','薯类','油料']
+                
+                return df
+
+            data_df= acreage_yield_province_get(element,elements,table_name,stats_times)
+            refer_df = acreage_yield_province_get(element,elements,table_name,refer_years)
+            nearly_df = acreage_yield_province_get(element,elements,table_name,nearly_years)
+            last_df=nearly_df[nearly_df.index==nearly_df.index[-1]].copy()
+            station_df=pd.DataFrame(columns=['站点','站名','经度','纬度 '])
+        else:
+            def acreage_yield_get(elements,table_name,stats_times,sta_ids,types,station_flag):
+                conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
+                cur = conn.cursor()
+                    
+                query = sql.SQL(f"""
+                                SELECT {elements}
+                                FROM public.{table_name}
+                                WHERE
+                                    CAST(SUBSTRING(datatime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                    AND station_id_c IN %s
+                                    AND type = %s
+                                    
+                                """)
+                sta_ids = tuple(sta_ids.split(','))
+                start_year = stats_times.split(',')[0]
+                end_year = stats_times.split(',')[1]
+                cur.execute(query, (start_year, end_year, sta_ids,types))
+                data = cur.fetchall()
+                
+                df = pd.DataFrame(data)
+                df.columns = elements.split(',')
+                df['datatime'] = pd.to_datetime(df['datatime'])
+                df.set_index('datatime', inplace=True, drop=True)
+                df.index = df.index.strftime('%Y')
+                                
+                if station_flag==1:
+                    station_df=df[['station_id_c','zone','lon','lat']]
+                    station_df.drop_duplicates(inplace=True)
+                    if element=='crop_acreage':
+                        df=df.pivot_table(index=df.index, columns=['station_id_c'], values='sowing_area')
+                    else:
+                        df=df.pivot_table(index=df.index, columns=['station_id_c'], values='yield')
+
+
+                    return df,station_df
+                
+                else:
+                    if element=='crop_acreage':
+                        df=df.pivot_table(index=df.index, columns=['station_id_c'], values='sowing_area')
+                    else:
+                        df=df.pivot_table(index=df.index, columns=['station_id_c'], values='yield')
+                    return df
+
+            data_df,station_df= acreage_yield_get(elements,table_name,stats_times,sta_ids,crop_str,1)
+            refer_df = acreage_yield_get(elements,table_name,refer_years,sta_ids,crop_str,0)
+            nearly_df = acreage_yield_get(elements,table_name,nearly_years,sta_ids,crop_str,0)
+            last_df=nearly_df[nearly_df.index==nearly_df.index[-1]].copy()
+            
     def trend_rate(x):
         '''
         计算变率（气候倾向率）的pandas apply func
@@ -258,7 +379,7 @@ def agriculture_features_stats(data_json):
             return weight
         except:
             return np.nan
-
+    
     # 创建临时下方统计的df
     tmp_df = pd.DataFrame(columns=data_df.columns)
     tmp_df.loc['平均'] = data_df.iloc[:, :].mean(axis=0).round(1)
@@ -271,11 +392,11 @@ def agriculture_features_stats(data_json):
     tmp_df.loc['参考时段均值'] = refer_df.iloc[:, :].mean(axis=0).round(1)
     tmp_df.loc['距平'] = (tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']).round(1)
     tmp_df.loc['距平百分率'] = ((tmp_df.loc['距平'] / tmp_df.loc['参考时段均值']) * 100).round(2)
-
+    
     # 合并所有结果
     stats_result = data_df.copy()
     stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).round(1)
-    stats_result['区域距平'] = (stats_result.iloc[:, :].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).round(1)
+    stats_result['区域距平'] = (stats_result.iloc[:, :].astype(float).mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).round(1)
     stats_result['区域距平百分率'] = (stats_result['区域距平']/refer_df.iloc[:, :].mean().mean()).round(1)
     stats_result['区域最大值'] = stats_result.iloc[:, :-3].max(axis=1)
     stats_result['区域最小值'] = stats_result.iloc[:, :-4].min(axis=1)
@@ -295,7 +416,7 @@ def agriculture_features_stats(data_json):
             return weight, bias
         except:
             return np.nan, np.nan
-   
+       
     reg_params = pd.DataFrame()
     reg_params = stats_result.apply(lr, axis=0)
     reg_params = reg_params.T
@@ -304,11 +425,11 @@ def agriculture_features_stats(data_json):
     
     # concat
     stats_result = pd.concat((stats_result, tmp_df), axis=0)
-
+    
     # index处理
     stats_result.insert(loc=0, column='时间', value=stats_result.index)
     
-
+    
     stats_result.reset_index(drop=True, inplace=True)
     post_data_df = data_df.copy()
     post_refer_df = refer_df.copy()
@@ -322,14 +443,14 @@ def agriculture_features_stats(data_json):
 if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
-    data_json['element'] = 'reproductive_period' #sowin_date
-    data_json['crop'] = 'winter_wheat'
-    data_json['refer_years'] = '2012,2024'
-    data_json['nearly_years'] = '2014,2024'
+    data_json['element'] = 'crop_acreage' #sowin_date
+    data_json['crop'] = 'crop'
+    data_json['refer_years'] = '2002,2024'
+    data_json['nearly_years'] = '2004,2024'
     data_json['time_freq'] = 'Y'
-    data_json['stats_times'] = '2018,2024'
-    data_json['sta_ids'] = '52868,52876'
+    data_json['stats_times'] = '2008,2024'
+    data_json['sta_ids'] = '63000'
 
-    result = agriculture_features_stats(data_json)
+    station_df,stats_result,post_data_df,post_refer_df,reg_params = agriculture_features_stats(data_json)
     t2 = time.time()
     print(t2 - t1)

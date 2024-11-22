@@ -35,7 +35,8 @@ def agriculture_features(data_json):
         油菜白菜型：010602 campestris
         蚕豆：010907 Horsebean
         马铃薯：010906 potato
-
+        农作物：1 crop
+        粮食作物：2 food_crop
     :param time_freq: 对应原型选择数据的时间尺度
         传参：
         年 - 'Y'
@@ -60,6 +61,7 @@ def agriculture_features(data_json):
     element = data_json['element']
     interp_method = data_json['interp_method']
     shp_path = data_json.get('shp_path')
+    sta_ids = data_json['sta_ids']
 
     # 2.参数处理
     shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
@@ -84,83 +86,89 @@ def agriculture_features(data_json):
 
         result_dict['表格'] = stats_result.to_dict(orient='records')
         
-    elif element in ['reproductive_day']:
+    elif element in ['reproductive_day','crop_acreage','yield']:
         station_df,stats_result,post_data_df,post_refer_df,reg_params=agriculture_features_stats(data_json)
 
-    if element in ['sowin_date','maturity','reproductive_day']:
+    if element in ['sowin_date','maturity','reproductive_day','crop_acreage','yield']:
         
-        result_dict['uuid'] = uuid4
-        result_dict['表格'] = dict()
-        result_dict['分布图'] = dict()
-        result_dict['统计分析'] = dict()
-        
-        station_df.columns=['站号','站名','经度','纬度']
-        result_dict['站号'] = station_df.to_dict(orient='records')
-        result_dict['表格'] = stats_result.to_dict(orient='records')
-        result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
-        print('统计表完成')
-        if element in ['sowin_date','maturity']:
-            result_dict['日期表格'] = data_r_df.to_dict(orient='records')
-        data_df=station_df.copy()
-        data_df.columns=['Station_Id_C','Station_Name','Lon','Lat']
-    
+        if sta_ids!='63000':
+            result_dict['uuid'] = uuid4
+            result_dict['表格'] = dict()
+            result_dict['分布图'] = dict()
+            result_dict['统计分析'] = dict()
             
-        try:
-            # 分布图
-            nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
-            nc_path_trans = nc_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
-            nc_path_trans = nc_path_trans.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-            result_dict['分布图'] = nc_path_trans
-            print('分布图插值生成nc完成')
-    
-            # 6. 统计分析-EOF分析
-            ds = xr.open_dataset(nc_path)
-            eof_path = eof(ds, shp_path, data_dir)
-            result_dict['统计分析']['EOF分析'] = eof_path
-            print('eof完成')
-    
-            # 7. 统计分析-REOF分析
-            ds = xr.open_dataset(nc_path)
-            reof_path = reof(ds, shp_path, data_dir)
-            result_dict['统计分析']['REOF分析'] = reof_path
-            print('reof完成')
-        except:
-            result_dict['分布图'] = None
-            result_dict['统计分析']['EOF分析'] = None
-            result_dict['统计分析']['REOF分析'] = None
-    
-        # 1.统计分析-mk检验
-        mk_result = time_analysis(post_data_df, data_dir)
-        print('MK检验完成')
-    
-        # 2.统计分析-累积距平
-        anomaly_result = calc_anomaly_cum(post_data_df, post_refer_df, data_dir)
-        print('距平完成')
-    
-        # 3.统计分析-滑动平均
-        moving_result = calc_moving_avg(post_data_df, 5, data_dir)
-        print('滑动平均完成')
-    
-        # 4. 统计分析-小波分析
-        wave_result = wavelet_main(post_data_df, data_dir)
-        print('小波完成')
-    
-        # 5. 统计分析-相关分析
-        correlation_result = correlation_analysis(post_data_df, data_dir)
-        print('相关分析完成')
-    
-        # 8.EEMD分析
-        eemd_result = eemd(post_data_df, data_dir)
-        print('eemd完成')
-    
-        # 数据保存
-        result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
-        result_dict['统计分析']['MK检验'] = mk_result
-        result_dict['统计分析']['累积距平'] = anomaly_result
-        result_dict['统计分析']['滑动平均'] = moving_result
-        result_dict['统计分析']['小波分析'] = wave_result
-        result_dict['统计分析']['相关分析'] = correlation_result
-        result_dict['统计分析']['EEMD分析'] = eemd_result
+            station_df.columns=['站号','站名','经度','纬度']
+            result_dict['站号'] = station_df.to_dict(orient='records')
+            result_dict['表格'] = stats_result.to_dict(orient='records')
+            result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
+            print('统计表完成')
+            if element in ['sowin_date','maturity']:
+                result_dict['日期表格'] = data_r_df.to_dict(orient='records')
+            data_df=station_df.copy()
+            data_df.columns=['Station_Id_C','Station_Name','Lon','Lat']
+        
+                
+            try:
+                # 分布图
+                nc_path, _, _, _, _ = contour_picture(stats_result, data_df, shp_path, interp_method, data_dir)
+                nc_path_trans = nc_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
+                nc_path_trans = nc_path_trans.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+                result_dict['分布图'] = nc_path_trans
+                print('分布图插值生成nc完成')
+        
+                # 6. 统计分析-EOF分析
+                ds = xr.open_dataset(nc_path)
+                eof_path = eof(ds, shp_path, data_dir)
+                result_dict['统计分析']['EOF分析'] = eof_path
+                print('eof完成')
+        
+                # 7. 统计分析-REOF分析
+                ds = xr.open_dataset(nc_path)
+                reof_path = reof(ds, shp_path, data_dir)
+                result_dict['统计分析']['REOF分析'] = reof_path
+                print('reof完成')
+            except:
+                result_dict['分布图'] = None
+                result_dict['统计分析']['EOF分析'] = None
+                result_dict['统计分析']['REOF分析'] = None
+        
+            # 1.统计分析-mk检验
+            mk_result = time_analysis(post_data_df, data_dir)
+            print('MK检验完成')
+        
+            # 2.统计分析-累积距平
+            anomaly_result = calc_anomaly_cum(post_data_df, post_refer_df, data_dir)
+            print('距平完成')
+        
+            # 3.统计分析-滑动平均
+            moving_result = calc_moving_avg(post_data_df, 5, data_dir)
+            print('滑动平均完成')
+        
+            # 4. 统计分析-小波分析
+            wave_result = wavelet_main(post_data_df, data_dir)
+            print('小波完成')
+        
+            # 5. 统计分析-相关分析
+            correlation_result = correlation_analysis(post_data_df, data_dir)
+            print('相关分析完成')
+        
+            # 8.EEMD分析
+            eemd_result = eemd(post_data_df, data_dir)
+            print('eemd完成')
+        
+            # 数据保存
+            result_dict['统计分析']['线性回归'] = reg_params.to_dict(orient='records')
+            result_dict['统计分析']['MK检验'] = mk_result
+            result_dict['统计分析']['累积距平'] = anomaly_result
+            result_dict['统计分析']['滑动平均'] = moving_result
+            result_dict['统计分析']['小波分析'] = wave_result
+            result_dict['统计分析']['相关分析'] = correlation_result
+            result_dict['统计分析']['EEMD分析'] = eemd_result
+            
+        else:
+            result_dict['uuid'] = uuid4
+            result_dict['表格'] = dict()
+            result_dict['表格'] = stats_result.to_dict(orient='records')
 
     return result_dict
 
@@ -168,13 +176,13 @@ def agriculture_features(data_json):
 if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
-    data_json['element'] = 'reproductive_period' #sowin_date
-    data_json['crop'] = 'winter_wheat'
-    data_json['refer_years'] = '2012,2024'
-    data_json['nearly_years'] = '2014,2024'
+    data_json['element'] = 'yield' #sowin_date
+    data_json['crop'] = 'food_crop'
+    data_json['refer_years'] = '2002,2024'
+    data_json['nearly_years'] = '2004,2024'
     data_json['time_freq'] = 'Y'
-    data_json['stats_times'] = '2018,2024'
-    data_json['sta_ids'] = '52868,52876'
+    data_json['stats_times'] = '2008,2024'
+    data_json['sta_ids'] = '63000'
     data_json['interp_method'] = 'ukri'
     data_json['ci'] = 95
     data_json['shp_path'] =r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
