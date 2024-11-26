@@ -75,7 +75,7 @@ def pre_table_stats(data_df, time_freq, ele,GaWIN=None,GaWIN_flag=None,R=None,R_
         for i in np.arange(np.size(data_df,1)):
                   
             data_sta=data_df.iloc[:,i]
-            data_df.iloc[:,i] = ((data_df.iloc[:,i] >= D[ele])).astype(int)
+            data_df.iloc[:,i] = ((data_df.iloc[:,i] > D[ele])).astype(int)
             
     # 特强降水
     elif ele =='R50':
