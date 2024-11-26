@@ -39,18 +39,13 @@ import os
 import numpy as np
 import pandas as pd
 import uuid
-import psycopg2
-from psycopg2 import sql
 from Utils.config import cfg
 from Module02.page_energy.wrapped.func00_function import choose_mod_path
 from Module02.page_energy.wrapped.func00_function import time_choose
 from Module02.page_energy.wrapped.func00_function import data_deal
-from Module02.page_energy.wrapped.func00_function import data_deal_num
 from Module02.page_energy.wrapped.func00_function import data_deal_2
-from Module02.page_energy.wrapped.func00_function import data_deal_num_2
 from Module02.page_energy.wrapped.func00_function import calculate_average_hd
 from Module02.page_energy.wrapped.func00_function import percentile_std
-from Module02.page_energy.wrapped.func00_function import percentile_std_time
 
 from Module02.page_extreme.wrapped.func01_tem_table_stats import tem_table_stats
 from Module02.page_extreme.wrapped.func02_pre_table_stats import pre_table_stats
@@ -92,7 +87,7 @@ def extreme_climate_esti(data_json):
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
 
     if os.name == 'nt':
-        data_dir=r'D:\Project\qh\Evaluate_Energy\data'
+        data_dir=r'D:\Project\qh'
     elif os.name == 'posix':
         data_dir='/cmip_data'
     else:
@@ -105,7 +100,7 @@ def extreme_climate_esti(data_json):
     res_d['10']='0.10deg'
     res_d['25']='0.25deg'
     res_d['50']='0.50deg'
-    res_d['100']='1deg'
+    res_d['100']='1.00deg'
        
     # 情景选择
     # 'ssp126','ssp245','ssp585','1.5℃'，'2.0℃'
@@ -228,9 +223,12 @@ def extreme_climate_esti(data_json):
         pre_data[insti_a]=dict()
         for scene_a in scene:
             pre_data[insti_a][scene_a]=dict()
-            stats_path=[choose_mod_path(data_dir, data_cource,insti_a, nc_dict[ele_dict[element].split(',')[0]], time_scale, year_a, scene_a,res_d[res]) for year_a in np.arange(int(stats_start_year),int(stats_end_year)+2,1)]
             
+            # break
+            stats_path=[choose_mod_path(data_dir, data_cource,insti_a, nc_dict[ele_dict[element].split(',')[0]], time_scale, year_a, scene_a,res_d[res]) for year_a in np.arange(int(stats_start_year),int(stats_end_year)+2,1)]
             cmip_df= cmip_data_deal(stats_path,sta_ids2,time_freq,stats_times,station_name,lon_list,lat_list,ele_dict[element])
+            # Index(['Datetime', 'Station_Id_C', 'lon', 'lat', 'TEM_Min'], dtype='object')
+            
             cmip_df['Datetime'] = pd.to_datetime(cmip_df['Datetime'], format='%Y-%m-%d %H:%M:%S')
             cmip_df.set_index('Datetime', inplace=True)
             
@@ -254,12 +252,12 @@ def extreme_climate_esti(data_json):
         pre_data_result[i]=dict()
         for j in scene:
             pre_data_result[i][j]=dict()
-            pre_data_result[i][j][element]=data_deal_2(pre_data[i][j][element],refer_result,2)#.to_dict(orient='records')
+            pre_data_result[i][j][element]=data_deal_2(pre_data[i][j][element],refer_result,2).to_dict(orient='records')
 
     #%% 结果保存
    
     result_df_dict=dict()
-    result_df_dict['站点']=station_dict#.to_dict(orient='records')
+    result_df_dict['站点']=station_dict.to_dict(orient='records')
     result_df_dict['表格']=dict()
 
     result_df_dict['表格']['预估']=dict()
@@ -268,10 +266,10 @@ def extreme_climate_esti(data_json):
         result_df_dict['表格']['预估'][scene_a]=dict()
         for insti_a in insti:
             result_df_dict['表格']['预估'][scene_a][insti_a]=dict()
-            result_df_dict['表格']['预估'][scene_a][insti_a]=data_deal_2(pre_data[insti_a][scene_a][element],refer_result,1)#.to_dict(orient='records')
+            result_df_dict['表格']['预估'][scene_a][insti_a]=data_deal_2(pre_data[insti_a][scene_a][element],refer_result,1).to_dict(orient='records')
 
         result_df_dict['表格']['预估'][scene_a]['集合']=dict()
-        result_df_dict['表格']['预估'][scene_a]['集合']=data_deal_2(data_jh[scene_a],refer_result,1)#.to_dict(orient='records')
+        result_df_dict['表格']['预估'][scene_a]['集合']=data_deal_2(data_jh[scene_a],refer_result,1).to_dict(orient='records')
 
     result_df_dict['时序图']=dict()
     result_df_dict['时序图']['集合_多模式' ]=dict()
@@ -313,18 +311,21 @@ def extreme_climate_esti(data_json):
         all_png=None
     
     result_df_dict['分布图']=all_png
+    
+    return result_df_dict
+
 if __name__ == '__main__':
     
     data_json = dict()
     data_json['time_freq'] = 'Y'
-    data_json['evaluate_times'] = "2024,2025" # 预估时段时间条
+    data_json['evaluate_times'] = "2024,2030" # 预估时段时间条
     data_json['refer_times'] = '1995,2014'# 参考时段时间条
     data_json['sta_ids'] = '51886,52602,52633,52645,52657,52707,52713'
     data_json['cmip_type'] = 'original' # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None # 分辨率 1/5/10/25/50/100 km
-    data_json['cmip_model'] = ['BCC-CSM2-MR']# 模式，列表：['CanESM5','CESM2']等
-    data_json['element'] = 'GaWIN'
-    data_json['GaWIN'] = 8
+    data_json['cmip_model'] = ['BCC-CSM2-MR','CanESM5']# 模式，列表：['CanESM5','CESM2']等
+    data_json['element'] = 'TN10p'
+    data_json['l_data'] = 10
     data_json['GaWIN_flag'] = 3
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
     data_json['plot'] = 1
