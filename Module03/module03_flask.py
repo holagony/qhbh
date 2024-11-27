@@ -45,7 +45,7 @@ def boundary_png():
 
     ax.set_xlim(min_lon, max_lon)
     ax.set_ylim(min_lat, max_lat)
-    png_path = os.path.join(data_out, 'area_code.png')
+    png_path = os.path.join(data_out, f'{area_code}.png')
     plt.savefig(png_path, bbox_inches='tight', dpi=200)
     plt.close('all')
 
