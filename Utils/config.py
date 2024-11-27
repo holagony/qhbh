@@ -67,6 +67,11 @@ __C.FILES.FILE02 = os.path.join(data_file_dir, '行业数据/02_人口.xlsx')
 __C.FILES.FILE03 = os.path.join(data_file_dir, '行业数据/03_能源.xlsx')
 __C.FILES.FILE04 = os.path.join(data_file_dir, '行业数据/04_交通.xlsx')
 
+# 青海边界文件
+__C.FILES.BOUNDARY = os.path.join(data_file_dir, '青海边界')
+
+
+
 # shp文件路径
 __C.FILES.LAKE = os.path.join(data_file_dir, 'shp/lake.shp')
 __C.FILES.ICE = os.path.join(data_file_dir, 'shp/ice.shp')
