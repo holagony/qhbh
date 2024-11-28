@@ -7,7 +7,6 @@ Created on Wed Sep  4 17:01:50 2024
 """
 import pandas as pd
 from Module02.page_ice.wrapped.func00_data_read_sql import data_read_sql
-from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import re
 

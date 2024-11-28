@@ -28,8 +28,6 @@ Created on Wed Aug 28 09:06:27 2024
      :param insti: 模式选择，传：'BCC-CSM2-MR,CanESM5' 
      :param res 分辨率 ，数据源为original时可不传
         传参：
-        1 - '1'
-        5 - '5'
         10 - '10'
         25 - '25' 
         50 - '50'
@@ -40,8 +38,6 @@ import os
 import numpy as np
 import pandas as pd
 import uuid
-import psycopg2
-from psycopg2 import sql
 from Utils.config import cfg
 from Module02.page_energy.wrapped.func00_function import choose_mod_path
 from Module02.page_energy.wrapped.func00_function import time_choose
@@ -70,7 +66,7 @@ def energy_winter_heating(data_json):
     sta_ids = data_json['sta_ids']
     data_cource = data_json['data_cource']
     insti = data_json['insti']
-    res = data_json.get('res', '10')
+    res = data_json.get('res', '25')
     plot= data_json.get('plot')
     shp_path=data_json['shp_path']
     method='idw'
@@ -81,27 +77,28 @@ def energy_winter_heating(data_json):
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
 
     if os.name == 'nt':
-        data_dir=r'D:\Project\qh\Evaluate_Energy\data'
+        data_dir=r'D:\Project\qh'
     elif os.name == 'posix':
-        data_dir='/cmip_data'
+        data_dir='/model_data/station_data'
     else:
-        data_dir='/cmip_data'
+        data_dir='/model_data/station_data'
 
     if data_cource == 'original':
-        res='10'
+        res='25'
         
     res_d=dict()
-    res_d['10']='0.10deg'
     res_d['25']='0.25deg'
     res_d['50']='0.50deg'
     res_d['100']='1deg'
    
+    if data_cource != 'original':
+        data_dir=os.path.join(data_dir,res_d[res])
     # nc要素
     var='tas'
     
     # 情景选择
     # 'ssp126','ssp245','ssp585','1.5℃'，'2.0℃'
-    scene=['ssp126','ssp245']
+    scene=['ssp126','ssp245','ssp585']
     
     # 时间频率
     time_scale='daily'
@@ -123,27 +120,6 @@ def energy_winter_heating(data_json):
     elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,TEM_Avg'
     sta_ids1 = tuple(sta_ids.split(','))
     
-    # conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
-    # cur = conn.cursor()
-
-    # query = sql.SQL(f"""
-    #                 SELECT {elements}
-    #                 FROM public.qh_qhbh_cmadaas_day
-    #                 WHERE
-    #                     CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-    #                     AND station_id_c IN %s
-    #                 """)
-    
-    # start_year = refer_times.split(',')[0]
-    # end_year = str(int(refer_times.split(',')[1])+1)
-    
-    # cur.execute(query, (start_year, end_year,sta_ids1))
-    # data = cur.fetchall()
-    # refer_df = pd.DataFrame(data)
-    # refer_df.columns = elements.split(',')
-    
-    # cur.close()
-    # conn.close()
     
     refer_df = get_database_data(sta_ids1, elements, 'qh_qhbh_cmadaas_day', time_freq, refer_times)
 
@@ -178,27 +154,19 @@ def energy_winter_heating(data_json):
     # 预估数据
     insti = insti.split(',')
     sta_ids2=sta_ids.split(',')
-    stats_start_year,stats_end_year=time_choose(time_freq,stats_times)
     
     pre_data=dict()
     for insti_a in insti:
         pre_data[insti_a]=dict()
         for scene_a in scene:
             pre_data[insti_a][scene_a]=dict()
-            stats_path=[choose_mod_path(data_dir, data_cource,insti_a, var, time_scale, year_a, scene_a,res_d[res]) for year_a in np.arange(int(stats_start_year),int(stats_end_year)+2,1)]
-            result_days,result_hdd18,result_start_end,result_start_end_num= winter_heating_pre(stats_path,sta_ids2,time_freq,stats_times,station_name,lon_list,lat_list)
+            result_days,result_hdd18,result_start_end,result_start_end_num= winter_heating_pre(element,data_dir,time_scale,insti_a,scene_a,var,stats_times,time_freq,sta_ids2,station_dict)
     
             pre_data[insti_a][scene_a]['HDD18']=result_hdd18
             pre_data[insti_a][scene_a]['HD']=result_days
             pre_data[insti_a][scene_a]['HDTIME']=result_start_end
             pre_data[insti_a][scene_a]['HDTIME_NUM']=result_start_end_num
-    
-#%% 求集合
-    
-    HD=calculate_average_hd(pre_data,'HD')
-    HDD18=calculate_average_hd(pre_data,'HDD18')
-    HDTIME=calculate_average_hd(pre_data,'HDTIME_NUM')
-
+        
 #%% 基准期    
     base_p=pd.DataFrame(columns=refer_result_days_z.columns[1:-3:])
     base_p.loc[0,:]=refer_result_days_z[refer_result_days_z['时间'] == '平均'][1::-3].iloc[0, :]
@@ -210,14 +178,15 @@ def energy_winter_heating(data_json):
 
     pre_data_result=dict()
     for i in insti:
-        pre_data_result[i]=dict()
-        for j in scene:
-            pre_data_result[i][j]=dict()
-            for ele_a in elem_info:
-                if ele_a in ['采暖度日','采暖日']:
-                    pre_data_result[i][j][ele_a]=data_deal_2(pre_data[i][j][elem_dict[ele_a]],refer_result_days,2).to_dict(orient='records')
-                else:
-                    pre_data_result[i][j][ele_a]=data_deal_num_2(pre_data[i][j][elem_dict[ele_a]],refer_result_days,2).to_dict(orient='records')
+        if i != 'Set':
+            pre_data_result[i]=dict()
+            for j in scene:
+                pre_data_result[i][j]=dict()
+                for ele_a in elem_info:
+                    if ele_a in ['采暖度日','采暖日']:
+                        pre_data_result[i][j][ele_a]=data_deal_2(pre_data[i][j][elem_dict[ele_a]],refer_result_days,2).to_dict(orient='records')
+                    else:
+                        pre_data_result[i][j][ele_a]=data_deal_num_2(pre_data[i][j][elem_dict[ele_a]],refer_result_days,2).to_dict(orient='records')
 
 #%% 结果保存
    
@@ -242,11 +211,6 @@ def energy_winter_heating(data_json):
             result_df_dict['表格']['预估'][scene_a][insti_a]['采暖起始日_日期']=pre_data[insti_a][scene_a]['HDTIME'].to_dict(orient='records')
             result_df_dict['表格']['预估'][scene_a][insti_a]['采暖起始日_日序']=data_deal_num_2(pre_data[insti_a][scene_a]['HDTIME_NUM'],result_start_end_num,1).to_dict(orient='records')
 
-        result_df_dict['表格']['预估'][scene_a]['集合']=dict()
-        result_df_dict['表格']['预估'][scene_a]['集合']['采暖日']=data_deal_2(HD[scene_a],refer_result_days,1).to_dict(orient='records')
-        result_df_dict['表格']['预估'][scene_a]['集合']['采暖度日']=data_deal_2(HDD18[scene_a],refer_result_hdd18,1).to_dict(orient='records')
-        result_df_dict['表格']['预估'][scene_a]['集合']['采暖起始日_日序']=data_deal_num_2(HDTIME[scene_a],result_start_end_num,1).to_dict(orient='records')
-
     result_df_dict['时序图']=dict()
     result_df_dict['时序图']['集合_多模式' ]=dict()
     result_df_dict['时序图']['集合_多模式' ]['采暖日']=percentile_std(scene,insti,pre_data,'HD',refer_result_days)
@@ -264,15 +228,15 @@ def energy_winter_heating(data_json):
         # 观测绘图
         all_png = dict()
 
-        all_png['历史']=dict()
-        data_pic=pd.DataFrame(result_df_dict['表格']['历史'][find_keys_by_value(elem_dict, element)[0]]).iloc[:,:-3:]
-        for i in np.arange(len(data_pic)):
-            mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, data_pic.iloc[i,1::], method)
-            png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, '历史', '观测', str(data_pic.iloc[i,0]), data_out)
+        # all_png['历史']=dict()
+        # data_pic=pd.DataFrame(result_df_dict['表格']['历史'][find_keys_by_value(elem_dict, element)[0]]).iloc[:,:-3:]
+        # for i in np.arange(len(data_pic)):
+        #     mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, data_pic.iloc[i,1::], method)
+        #     png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, '历史', '观测', str(data_pic.iloc[i,0]), data_out)
                     
-            png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-            png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-            all_png['历史'][str(data_pic.iloc[i,0])] = png_path
+        #     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+        #     png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+        #     all_png['历史'][str(data_pic.iloc[i,0])] = png_path
             
         # 预估
         all_png['预估']=dict()
@@ -313,7 +277,7 @@ if __name__ == '__main__':
     data_json['stats_times'] = '2020,2040'
     data_json['sta_ids'] = '52754,56151,52855,52862,56065,52645,56046,52955,52968,52963,52825,56067,52713,52943,52877,52633,52866'
     data_json['data_cource'] = 'original'
-    data_json['insti'] = 'BCC-CSM2-MR,CanESM5'
+    data_json['insti'] = 'Set'
     # data_json['res'] ='1'
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
     data_json['plot'] = 1

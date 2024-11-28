@@ -39,7 +39,7 @@ Created on Tue Sep  3 09:16:27 2024
     100 - '100'
 
 """
-
+import os
 import numpy as np
 import pandas as pd
 import uuid
@@ -57,7 +57,8 @@ from Module02.page_energy.wrapped.func00_function import percentile_std
 from Module02.page_energy.wrapped.func00_function import percentile_std_time
 
 from Module02.page_energy.wrapped.func04_wind_power_his import energy_wind_power_his
-# from Module02.wrapped.func02_winter_heating_his import winter_heating_his
+from Module02.page_energy.wrapped.func07_wind_power_pre import wind_power_pre
+from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
 from Utils.data_loader_with_threads import get_database_data
 
 #%% main
@@ -72,37 +73,62 @@ def energy_wind_power(data_json):
     sta_ids = data_json['sta_ids']
     data_cource = data_json['data_cource']
     insti = data_json['insti']
-    res = data_json.get('res', '1')
-    
+    res = data_json.get('res', '25')
+    plot= data_json.get('plot')
+    shp_path=data_json['shp_path']
+    method='idw'
     #%% 固定信息
-    data_dir=r'D:\Project\qh\Evaluate_Energy\data'
     # data_dir='/zipdata'
+   # data_dir='/zipdata'
+    if shp_path is not None:
+        shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
 
+    if os.name == 'nt':
+        data_dir=r'D:\Project\qh'
+    elif os.name == 'posix':
+        data_dir='/model_data/station_data'
+    else:
+        data_dir='/model_data/station_data'
+
+    if data_cource == 'original':
+        res='25'
+        
     res_d=dict()
-    res_d['1']='0.01deg'
-    res_d['5']='0.06deg'
-    res_d['10']='0.10deg'
     res_d['25']='0.25deg'
     res_d['50']='0.50deg'
     res_d['100']='1deg'
    
+    if data_cource != 'original':
+        data_dir=os.path.join(data_dir,res_d[res])
     # nc要素
-    var='tas'
+    if element == 'WSF':
+        var='ws'
+
+    elif element == 'WDF':
+        var='wdir'
+        
+    else:
+        var='0'
     
     # 情景选择
     # 'ssp126','ssp245','ssp585','1.5℃'，'2.0℃'
-    scene=['ssp126','ssp245']
+    scene=['ssp126','ssp245','ssp585']
     
     # 时间频率
     time_scale='daily'
     
     
-    elem_info=['采暖度日','采暖日','采暖起始日_日序']
     elem_dict=dict()
     elem_dict['WPD']='有效风功率密度'
     elem_dict['WDF']=' 风向频率'
     elem_dict['WSF']='风速频率'
     elem_dict['AH']='有效小时数'
+    
+    uuid4 = uuid.uuid4().hex
+    data_out = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
+    if not os.path.exists(data_out):
+        os.makedirs(data_out)
+        os.chmod(data_out, 0o007 | 0o070 | 0o700)
 
     #%% 统计计算模块
     if element == 'WPD':
@@ -117,26 +143,6 @@ def energy_wind_power(data_json):
     # 评估数据
     sta_ids1 = tuple(sta_ids.split(','))
 
-    # conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
-    # cur = conn.cursor()
-    # query = sql.SQL(f"""
-    #                 SELECT {elements}
-    #                 FROM public.qh_climate_cmadaas_hour
-    #                 WHERE
-    #                     CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-    #                     AND station_id_c IN %s
-    #                 """)
-    
-    # start_year = refer_times.split(',')[0]
-    # end_year = refer_times.split(',')[1]
-    
-    # cur.execute(query, (start_year, end_year,sta_ids1))
-    # data = cur.fetchall()
-    # refer_df = pd.DataFrame(data)
-    # refer_df.columns = elements.split(',')
-    
-    # cur.close()
-    # conn.close()
     
     refer_df = get_database_data(sta_ids1, elements, 'qh_climate_cmadaas_hour', time_freq, refer_times)
 
@@ -148,23 +154,22 @@ def energy_wind_power(data_json):
         refer_result['年'] = refer_result['年'].astype(str)
         refer_result_z=data_deal(refer_result)
         
-        refer_result_z=refer_result_z.to_dict(orient='records')
-    # refer_result_hdd18_z=data_deal(refer_result_hdd18)
-    # refer_result_start_end_num_z=data_deal_num(refer_result_start_end_num)
-    
+
     # 加一个 站点站名字典
     station_id=refer_df['Station_Id_C'].unique()
     
-    matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name']],on='Station_Id_C')
-    matched_stations_unique = matched_stations.drop_duplicates()
+    matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name','Lon','Lat']],on='Station_Id_C')
+    matched_stations_unique = matched_stations.drop_duplicates(subset='Station_Id_C')
 
     station_name = matched_stations_unique['Station_Name'].values
     station_id=matched_stations_unique['Station_Id_C'].values
     station_dict=pd.DataFrame(columns=['站名','站号'])
     station_dict['站名']=station_name
     station_dict['站号']=station_id
+    lon_list=matched_stations_unique['Lon'].values
+    lat_list=matched_stations_unique['Lat'].values
     
-    '''
+    
     # 预估数据
     insti = insti.split(',')
     sta_ids2=sta_ids.split(',')
@@ -175,104 +180,111 @@ def energy_wind_power(data_json):
         pre_data[insti_a]=dict()
         for scene_a in scene:
             pre_data[insti_a][scene_a]=dict()
-            stats_path=[choose_mod_path(data_dir, data_cource,insti_a, var, time_scale, year_a, scene_a,res_d[res]) for year_a in np.arange(int(stats_start_year),int(stats_end_year)+1,1)]
-            result_days,result_hdd18,result_start_end,result_start_end_num= winter_heating_pre(stats_path,sta_ids2,time_freq,stats_times)
-    
-            pre_data[insti_a][scene_a]['HDD18']=result_hdd18
-            pre_data[insti_a][scene_a]['HD']=result_days
-            pre_data[insti_a][scene_a]['HDTIME']=result_start_end
-            pre_data[insti_a][scene_a]['HDTIME_NUM']=result_start_end_num
-    
-    #%% 求集合
-    
-    HD=calculate_average_hd(pre_data,'HD')
-    HDD18=calculate_average_hd(pre_data,'HDD18')
-    HDTIME=calculate_average_hd(pre_data,'HDTIME_NUM')
+            result= wind_power_pre(element,data_dir,time_scale,insti_a,scene_a,var,stats_times,time_freq,sta_ids2,station_dict)
+            pre_data[insti_a][scene_a]=result
+            
 
-#%% 基准期    
-    base_p=pd.DataFrame(columns=refer_result_days_z.columns[1:-3:])
-    base_p.loc[0,:]=refer_result_days_z[refer_result_days_z['时间'] == '平均'][1::-3].iloc[0, :]
-    base_p.loc[1,:]=refer_result_hdd18_z[refer_result_hdd18_z['时间'] == '平均'][1::-3].iloc[0, :]
-    base_p.loc[2,:]=refer_result_start_end_num_z[refer_result_start_end_num_z['时间'] == '平均'][1::-3].iloc[0, :]
-    base_p.insert(0, '要素', ['采暖日','采暖度日','采暖起始日_日序'])
-    
-#%% 单模式距平和距平百分率
+    if element in ['WDF','WSF']:
+        result_df=dict()
+        result_df['站点']=station_dict.to_dict(orient='records')
 
-    pre_data_result=dict()
-    for i in insti:
-        pre_data_result[i]=dict()
-        for j in scene:
-            pre_data_result[i][j]=dict()
-            for ele_a in elem_info:
-                if ele_a in ['采暖度日','采暖日']:
-                    pre_data_result[i][j][ele_a]=data_deal_2(pre_data[i][j][elem_dict[ele_a]],refer_result_days,2)
-                else:
-                    pre_data_result[i][j][ele_a]=data_deal_num_2(pre_data[i][j][elem_dict[ele_a]],refer_result_days,2)
-    '''    
-
-    result_df=dict()
-    result_df['站点']=station_dict.to_dict(orient='records')
-
-    result_df['表格']=dict()
-
-    result_df['表格']['历史']=dict()
-    result_df['表格']['历史']=refer_result_z
-    '''    
-
-#%% 结果保存   
-    result_df['表格']['预估']=dict()
-    for insti_a in insti:
-        result_df['表格']['预估'][insti_a]=dict()
-        for scene_a in scene:
-            result_df['表格']['预估'][insti_a][scene_a]=dict()
-            result_df['表格']['预估'][insti_a][scene_a]['采暖日']=data_deal_2(pre_data[insti_a][scene_a]['HD'],refer_result_days,1)
-            result_df['表格']['预估'][insti_a][scene_a]['采暖度日']=data_deal_2(pre_data[insti_a][scene_a]['HDD18'],refer_result_hdd18,1)
-            result_df['表格']['预估'][insti_a][scene_a]['采暖起始日_日期']=pre_data[insti_a][scene_a]['HDTIME']
-            result_df['表格']['预估'][insti_a][scene_a]['采暖起始日_日序']=data_deal_num_2(pre_data[insti_a][scene_a]['HDTIME_NUM'],result_start_end_num,1)
-    
-    result_df['表格']['预估']['集合']=dict()
-    for scens in scene:
-        result_df['表格']['预估']['集合'][scens]=dict()
-        result_df['表格']['预估']['集合'][scens]['采暖日']=data_deal_2(HD[scens],refer_result_days,1)
-        result_df['表格']['预估']['集合'][scens]['采暖度日'] =data_deal_2(HDD18[scens],refer_result_hdd18,1)
-        result_df['表格']['预估']['集合'][scens]['采暖起始日_日序']=data_deal_num_2(HDTIME[scens],result_start_end_num,1)
+        result_df['表格']=dict()
+        result_df['表格']=pre_data
         
-    result_df['时序图']=dict()
-    result_df['时序图']['集合_多模式' ]=dict()
-    result_df['时序图']['集合_多模式' ]['采暖日']=percentile_std(scene,insti,pre_data,'HD',refer_result_days)
-    result_df['时序图']['集合_多模式' ]['采暖度日']=percentile_std(scene,insti,pre_data,'HDD18',refer_result_hdd18)
-    result_df['时序图']['集合_多模式' ]['采暖起始日_日序']=percentile_std_time(scene,insti,pre_data,result_start_end_num)
+        return result_df
+    else:
+ 
+    #%% 基准期    
+        base_p=refer_result_z[refer_result_z['时间'] == '平均'].iloc[0,1:-5:].to_frame().T.reset_index()
+
+    #%% 单模式距平和距平百分率
+        pre_data_result=dict()
+        for i in insti:
+            pre_data_result[i]=dict()
+            for j in scene:
+                pre_data_result[i][j]=data_deal_2(pre_data[i][j],result,1)
     
-    result_df['时序图']['单模式' ]=pre_data_result.copy()
-    result_df['时序图']['单模式' ]['基准期']=base_p.copy()
+    #%% 结果保存   
+        result_df=dict()
+        result_df['表格']=dict()
+        result_df['表格']['预估']=dict()
+        for insti_a in insti:
+            result_df['表格']['预估'][insti_a]=dict()
+            for scene_a in scene:
+                result_df['表格']['预估'][insti_a][scene_a]=dict()
+                result_df['表格']['预估'][insti_a][scene_a]=data_deal_2(pre_data[insti_a][scene_a],result,1)
 
-    result_df_dict=dict()
-    result_df_dict['表格']=dict()
-
-    result_df_dict['表格']['历史']=dict()
-    result_df_dict['表格']['历史']['采暖日']=refer_result_days_z.to_dict(orient='records')
-    result_df_dict['表格']['历史']['采暖度日']=refer_result_hdd18_z.to_dict(orient='records')
-    result_df_dict['表格']['历史']['采暖起始日_日期']=refer_result_start_end.to_dict(orient='records')
-    result_df_dict['表格']['历史']['采暖起始日_日序']=refer_result_start_end_num_z.to_dict(orient='records')
+        result_df['时序图']=dict()
+        result_df['时序图']['集合_多模式' ]=dict()
+        result_df['时序图']['集合_多模式' ]=percentile_std(scene,insti,pre_data,'none',result)
+        
+        result_df['时序图']['单模式' ]=pre_data_result.copy()
+        result_df['时序图']['单模式' ]['基准期']=base_p.copy()
     
-    result_df_dict['表格']['预估']=dict()
-    for insti_a in insti:
-        result_df_dict['表格']['预估'][insti_a]=dict()
-        for scene_a in scene:
-            result_df_dict['表格']['预估'][insti_a][scene_a]=dict()
-            result_df_dict['表格']['预估'][insti_a][scene_a]['采暖日']=data_deal_2(pre_data[insti_a][scene_a]['HD'],refer_result_days,1).to_dict(orient='records')
-            result_df_dict['表格']['预估'][insti_a][scene_a]['采暖度日']=data_deal_2(pre_data[insti_a][scene_a]['HDD18'],refer_result_hdd18,1).to_dict(orient='records')
-            result_df_dict['表格']['预估'][insti_a][scene_a]['采暖起始日_日期']=pre_data[insti_a][scene_a]['HDTIME'].to_dict(orient='records')
-            result_df_dict['表格']['预估'][insti_a][scene_a]['采暖起始日_日序']=data_deal_num_2(pre_data[insti_a][scene_a]['HDTIME_NUM'],result_start_end_num,1).to_dict(orient='records')
+       
+        def convert_dataframes_to_dicts(multi_dict):
+            """
+            递归地将多重字典中的DataFrame转换为字典。
+            """
+            converted_dict = {}
+            for key, value in multi_dict.items():
+                if isinstance(value, pd.DataFrame):
+                    converted_dict[key] = value.to_dict(orient='records')
+                elif isinstance(value, dict):
+                    converted_dict[key] = convert_dataframes_to_dicts(value)
+                else:
+                    converted_dict[key] = value
+            return converted_dict
 
-    result_df_dict['表格']['预估']['集合']=dict()
-    for scens in scene:
-        result_df_dict['表格']['预估']['集合'][scens]=dict()
-        result_df_dict['表格']['预估']['集合'][scens]['采暖日']=data_deal_2(HD[scens],refer_result_days,1).to_dict(orient='records')
-        result_df_dict['表格']['预估']['集合'][scens]['采暖度日']=data_deal_2(HDD18[scens],refer_result_hdd18,1).to_dict(orient='records')
-        result_df_dict['表格']['预估']['集合'][scens]['采暖起始日_日序']=data_deal_num_2(HDTIME[scens],result_start_end_num,1).to_dict(orient='records')
-    '''    
-    return result_df
+        result_df=convert_dataframes_to_dicts(result_df)
+        
+        
+        def find_keys_by_value(d, value):
+           return [key for key, val in d.items() if val == value]
+    
+        if plot == 1:
+            # 观测绘图
+            all_png = dict()
+     
+            # all_png['历史']=dict()
+            # data_pic=pd.DataFrame(result_df_dict['表格']['历史'][find_keys_by_value(elem_dict, element)[0]]).iloc[:,:-3:]
+            # for i in np.arange(len(data_pic)):
+            #     mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, data_pic.iloc[i,1::], method)
+            #     png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, '历史', '观测', str(data_pic.iloc[i,0]), data_out)
+                        
+            #     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+            #     png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+            #     all_png['历史'][str(data_pic.iloc[i,0])] = png_path
+                
+            # 预估
+            all_png['预估']=dict()
+            cmip_res=result_df['表格']['预估']
+            
+            for exp, sub_dict1 in cmip_res.items():
+                all_png['预估'][exp] = dict()
+                for insti,stats_table in sub_dict1.items():
+                    all_png['预估'][exp][insti] = dict()
+                    stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
+                    for i in range(len(stats_table)):
+                        value_list = stats_table.iloc[i,1::]
+                        year_name = stats_table.iloc[i,0]
+                        exp_name = exp
+                        insti_name = insti
+                        # 插值/掩膜/画图/保存
+                        mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+                        png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
+                        
+                        # 转url
+                        png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+                        png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+     
+                        all_png['预估'][exp][insti][year_name] = png_path
+        else:
+            all_png=None
+   
+        result_df['分布图']=all_png
+        
+        return result_df
 
     
 if __name__ == '__main__':
@@ -280,14 +292,16 @@ if __name__ == '__main__':
     #  element: 有效风功率密度：WPD 风向频率： WDF;风速频率：WSF；有效小时数：AH
     
     data_json = dict()
-    data_json['element'] ='AH'
-    data_json['refer_times'] = '2021,2022'
+    data_json['element'] ='WPD'
+    data_json['refer_times'] = '2010,2024'
     data_json['time_freq'] = 'Y'
-    data_json['stats_times'] = '1990,2018'
-    data_json['sta_ids'] = '51886,52737,52842,52886,52876'
+    data_json['stats_times'] = '2020,2040'
+    data_json['sta_ids'] = '51886,52737,52842,52876'
     data_json['data_cource'] = 'original'
-    data_json['insti'] = 'BCC-CSM2-MR,CanESM5'
+    data_json['insti'] = 'Set'
     # data_json['res'] ='1'
+    data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
+    data_json['plot'] = 1
     
     result_df=energy_wind_power(data_json)
     

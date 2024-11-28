@@ -6,13 +6,8 @@ Created on Thu Sep 12 13:15:37 2024
 """
 
 
-import netCDF4 as nc
-from datetime import  date,datetime, timedelta
-import numpy as np
 import pandas as pd
-from Utils.config import cfg
-from scipy.interpolate import griddata
-from sklearn.linear_model import LinearRegression
+from Module02.page_energy.wrapped.func06_read_model_data import read_model_data
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -47,172 +42,30 @@ def data_proce(df,processing_methods, additional_method=None):
     
     return station_data
 
-def increment_date(start_date, days):
-    """
-    不考虑闰年的计算
-    """
-    # 月份的天数，不考虑闰年
-    days_per_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+def model_factor_data_deal(data_dir, time_scale,insti_a,scene_a,station_id,var,ele,time_freq,time_freq_data,time_freq_main,stats_times,processing_methods):
     
-    # 计算新的日期
-    current_month = start_date.month
-    current_year = start_date.year
-    current_day = start_date.day + days
-    
-    while current_day > days_per_month[current_month - 1]:
-        current_day -= days_per_month[current_month - 1]
-        current_month += 1
-        if current_month > 12:
-            current_month = 1
-            current_year += 1
-    
-    return date(current_year, current_month, current_day)
-
-
-def time_choose(time_freq,time_freq_data,stats_times,dates):        
-
-
     if time_freq== 'Y':
         # Y
-        start_year = stats_times.split(',')[0]
-        end_year = stats_times.split(',')[1]
-        date_indices = [i for i, date in enumerate(dates) if int(start_year) <= date.year <= int(end_year)]
-    
-    elif time_freq== 'Q':
-
-        start_year = stats_times.split(',')[0]
-        end_year = stats_times.split(',')[1]
-        month = time_freq_data
-        month = list(map(int,month.split(',')))
+        stats_times=stats_times
         
-        if 12 in  month:
-            date_indices = [
-                i for i, date in enumerate(dates) 
-                if ((start_year <= date.year <= end_year) & (date.month in month))
-                if (date.year == start_year - 1) & (date.month == 12)
-                if (date.year == end_year + 1) & (date.month in [1, 2])
-            ] 
-        else:
-            date_indices = [i for i, date in enumerate(dates) if ((int(start_year) <= date.year <= int(end_year)) & (date.month in month))]
-
-    elif time_freq== 'M1':
-   
-        # M1
-        start_time = stats_times.split(',')[0]+time_freq_data.split(',')[0]
-        end_time = stats_times.split(',')[1]+time_freq_data.split(',')[1]
+    elif time_freq in ['Q','M2']:
+        stats_times=[stats_times,time_freq_data]
         
-        date_indices = [i for i, date in enumerate(dates) if ((int(start_time[:4:]) <= date.year <= int(end_time[:4:])) 
-                                                              & (int(start_time[5::]) <= date.month <= int(end_time[5::])))]
-    elif time_freq== 'M2':
-    
-        # M2
-        start_year = stats_times.split(',')[0]
-        end_year = stats_times.split(',')[1]
-        month = time_freq_data
-        month = list(map(int,month.split(',')))
-        
-        date_indices = [i for i, date in enumerate(dates) if ((int(start_year) <= date.year <= int(end_year)) & (date.month in month))]
-    elif time_freq== 'D1':
-    
-        # D1
-        start_time = stats_times.split(',')[0]+'0101'
-        end_time = stats_times.split(',')[1]+'1231'
-        
-        start_date_nc_object = datetime.strptime(start_time, '%Y%m%d')
-        end_date_nc_object = datetime.strptime(end_time, '%Y%m%d')
-        date_indices = [i for i, date in enumerate(dates) if start_date_nc_object <= date <= end_date_nc_object]
-    
     elif time_freq== 'D2':
-    
-    # D2
-    
-        def is_date_within_range(date_month,date_day, start_month, start_day, end_month, end_day):
-            input_date = datetime(2000, date_month,date_day)
-            
-            start_date = datetime(2000, start_month, start_day)
-            end_date = datetime(2000, end_month, end_day)
-            
-            return start_date <= input_date <= end_date
-        
-        start_year = stats_times.split(',')[0]
-        end_year = stats_times.split(',')[1]
-        start_month=time_freq_data.split(',')[0]
-        end_month=time_freq_data.split(',')[0]
-        
-        date_indices = [i for i, date in enumerate(dates) if ((int(start_year) <= date.year <= int(end_year)) 
-                                                              & (is_date_within_range(date.month,date.day, 
-                        int(start_month[:2]), int(start_month[2:]), int(end_month[:2]), int(end_month[2:]))))]
-        
-        
-    return date_indices
+        stats_times=[stats_times,'0101,1231']
 
 
-def model_factor_data_deal(tas_paths,station_id,var,ele,time_freq,time_freq_data,time_freq_main,stats_times,processing_methods):
+    refer_df=read_model_data(data_dir,time_scale,insti_a,scene_a,var,stats_times,time_freq,station_id)
+
+    columns=refer_df.columns
+    refer_df.reset_index(inplace=True)
     
-    #%% 站点编号 和 站点名经纬度匹配
-    df_station=pd.read_csv(cfg.FILES.STATION,encoding='gbk')
-    df_station['区站号']=df_station['区站号'].astype(str)
-    matched_stations = pd.merge(pd.DataFrame({'区站号': station_id}),df_station[['区站号', '站点名']],on='区站号')
-    matched_stations = pd.merge(pd.DataFrame({'区站号': station_id}),df_station[['区站号', '经度']],on='区站号')
-    target_lons = matched_stations['经度'].values
-    matched_stations = pd.merge(pd.DataFrame({'区站号': station_id}),df_station[['区站号', '纬度']],on='区站号')
-    target_lats = matched_stations['纬度'].values
-    
-    # 初始化 DataFrame
-    df = pd.DataFrame(columns=['Datetime', 'Station_Id_C', 'lon', 'lat', ele])
-    
-    # 参考日期
-    
-    # 遍历所有文件
-    for tas_path in tas_paths:
-        # break
-        with nc.Dataset(tas_path) as tas_dataset:
-            lon = tas_dataset.variables['lon'][:]
-            lat = tas_dataset.variables['lat'][:]
-            tas = tas_dataset.variables[var][:]
-            time = tas_dataset.variables['time'][:]
-            time_var = tas_dataset.variables['time']
-            time_calendar=time_var.calendar
-            time_units = time_var.units
-            ref_time_str = time_units.split('since ')[1]
-    
-        ref_date = datetime(int(ref_time_str[:4:]), int(ref_time_str[5:7:]),int(ref_time_str[8:10:]))
-    
-        lons, lats = np.meshgrid(lon, lat)
-        
-        if time_calendar=='365_day':
-            dates = [increment_date(ref_date, int(t)) for t in time[:]]
-        else:
-            dates = [ref_date + timedelta(days=int(t)) for t in time[:]]
-        
-        
-        date_indices = time_choose(time_freq,time_freq_data,stats_times,dates)
-    
-        tas = tas[date_indices,:, :]
-        dates = [dates[i] for i in date_indices]
-        
-        points = np.vstack((lons.flatten(), lats.flatten())).T
-        
-        interpolated_data = np.zeros((len(dates) * len(target_lons),))
-        
-        for i in range(len(dates)):
-            values = tas[i, :, :].flatten()
-            interpolated_data[i * len(target_lons):(i + 1) * len(target_lons)] = griddata(points, values, (target_lons, target_lats), method='nearest')
-        
-        dates_repeated = np.repeat(dates, len(target_lons))
-        
-        station_id_repeated = np.tile(station_id, len(dates))
-        
-        # 创建一个新的DataFrame来存储当前循环的数据
-        new_df = pd.DataFrame({
-            'Datetime': dates_repeated,
-            'Station_Id_C': station_id_repeated,
-            'lon': np.tile(target_lons, len(dates)),
-            'lat': np.tile(target_lats, len(dates)),
-            ele: interpolated_data
-        })
-        
-        # 使用concat方法将新的数据与原有的DataFrame合并
+    df = pd.DataFrame(columns=['Datetime', ele, 'Station_Id_C'])
+    for i in columns:
+        new_df=refer_df[['Datetime',i]]
+        new_df.rename(columns={i:ele}, inplace=True)
+        new_df['Station_Id_C']=i
         df = pd.concat([df, new_df], ignore_index=True)
     
     # 针对不同的要素进行不同的要素处理
@@ -234,9 +87,9 @@ def model_factor_data_deal(tas_paths,station_id,var,ele,time_freq,time_freq_data
 if __name__ == '__main__':
     
     tas_paths = [
-        r'D:\Project\qh\Evaluate_Energy\data\original\daily\BCC-CSM2-MR\historical\tas\tas_day_BCC-CSM2-MR_historical_r3i1p1f1_gn_19500101-19501231.nc',
-        r'D:\Project\qh\Evaluate_Energy\data\original\daily\BCC-CSM2-MR\historical\tas\tas_day_BCC-CSM2-MR_historical_r3i1p1f1_gn_19510101-19511231.nc',
-        r'D:\Project\qh\Evaluate_Energy\data\original\daily\BCC-CSM2-MR\historical\tas\tas_day_BCC-CSM2-MR_historical_r3i1p1f1_gn_19520101-19521231.nc'
+        r'D:\Project\qh\original\daily\BCC-CSM2-MR\historical\tas\tas_day_BCC-CSM2-MR_historical_r3i1p1f1_gn_19500101-19501231.nc',
+        r'D:\Project\qh\original\daily\BCC-CSM2-MR\historical\tas\tas\tas_day_BCC-CSM2-MR_historical_r3i1p1f1_gn_19510101-19511231.nc',
+        r'D:\Project\qh\original\daily\BCC-CSM2-MR\historical\tas\tas_day_BCC-CSM2-MR_historical_r3i1p1f1_gn_19520101-19521231.nc'
     ]
     
     # 插值站点信息

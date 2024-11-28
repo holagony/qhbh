@@ -352,8 +352,10 @@ def calculate_average_hd(pre_data,ele):
 
 def percentile_std(scene,insti,df,ele,refer_data):
     
-    
-    df_example=df[insti[0]][scene[0]][ele].copy()
+    if ele =='none':
+        df_example=df[insti[0]][scene[0]].copy()
+    else:
+        df_example=df[insti[0]][scene[0]][ele].copy()
     df_example=data_deal_2(df_example,refer_data,2)
     
     if '时间' in df_example.columns:
@@ -363,15 +365,21 @@ def percentile_std(scene,insti,df,ele,refer_data):
     for i in np.arange(len(insti)):
         for j in np.arange(len(scene)):
             
-            df_data=df[insti[i]][scene[j]][ele].copy()            
+            if ele =='none':
+                df_data=df[insti[i]][scene[j]].copy()            
+            else:
+                df_data=df[insti[i]][scene[j]][ele].copy()            
             df_data=data_deal_2(df_data,refer_data,2)
 
             if '时间' in df_data.columns:
                 df_data.drop(['时间'], axis=1, inplace=True)
                 
             data[i,j,:,:]=df_data.to_numpy()
-            
-    df_example=df[insti[0]][scene[0]][ele].copy()
+           
+    if ele =='none':
+        df_example=df[insti[0]][scene[0]].copy()
+    else:
+        df_example=df[insti[0]][scene[0]][ele].copy()
     df_example=data_deal_2(df_example,refer_data,2)
 
     result=dict()

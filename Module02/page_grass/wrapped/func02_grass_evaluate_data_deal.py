@@ -8,6 +8,7 @@ Created on Fri Sep 20 16:07:49 2024
 import pandas as pd
 import numpy as np
 from Module02.page_ice.wrapped.func00_data_read_sql import data_read_sql
+from Module02.page_grass.wrapped.func03_grass_evaluate_result_deal import grass_table_stats
 from datetime import  date,datetime, timedelta
 
 
@@ -21,77 +22,109 @@ def custom_sum(x,method):
             return np.nanmean(x.values)
     
 def grass_evaluate_data_deal(element,train_time,sta_ids,time_freq,time_freq_data):
-
-
-    # 确定表名
-    table_dict = dict()
-    table_dict['grassland_green_period'] = 'qh_climate_crop_growth'
-    table_dict['grassland_yellow_period'] = 'qh_climate_crop_growth'
-    table_dict['grassland_growth_period'] = '待定'
-    table_dict['grassland_coverage'] = 'qh_climate_grass_cover'
-    table_dict['dwei'] = 'qh_climate_grass_yield'  # 草地产量干重
-    table_dict['fwei'] = 'qh_climate_grass_yield'  # 草地产量湿重
-    table_name = table_dict[element]
     
-    # 确定要素
-    element_dict = dict()
-    element_dict['grassland_green_period'] = 'Crop_Name,GroPer_Name_Ten'
-    element_dict['grassland_yellow_period'] = 'Crop_Name,GroPer_Name_Ten'
-    element_dict['grassland_growth_period'] = '待定'
-    element_dict['grassland_coverage'] = 'Cov'
-    element_dict['dwei'] = 'crop_listoc_name,dwei'
-    element_dict['fwei'] = 'crop_listoc_name,fwei'
-    element_str = element_dict[element]
-    elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,' + element_str
-
-    # 4. 读取数据
-    # 构建选择时间
     if time_freq == 'Y':
-        train_time_use=train_time
-    
-    elif time_freq == 'Q':# ['%Y,%Y','3,4,5']
-        train_time_use=[train_time,time_freq_data]
-
-    elif time_freq== 'M1': #'%Y%m,%Y%m' '%Y,%Y' '%m,%m'
-        train_time_use=train_time.split(',')[0]+time_freq_data.split(',')[0]+','+\
-                            train_time.split(',')[1]+time_freq_data.split(',')[1]
         
-    elif time_freq== 'M2':
-        train_time_use=[train_time,time_freq_data]
+        if element in ['grassland_green_period','grassland_yellow_period']:
+           station_df,data_r_df,data_df=grass_table_stats(element,time_freq,train_time,sta_ids)
+           
+        else:
+            station_df,data_df=grass_table_stats(element,time_freq,train_time,sta_ids)
+            
+        train_station_data=data_df.copy()
+        train_data_df=pd.DataFrame(data_df.mean(axis=1).round(2))
+        train_data_df.columns=[element]
         
-    elif time_freq == 'D1':
-        train_time_use= train_time.split(',')[0]+'0101,'+train_time.split(',')[1]+'1231'
-
-    elif time_freq== 'D2': 
-        train_time_use=[train_time,time_freq_data]
-
-    train_data=data_read_sql(sta_ids,elements,train_time_use,table_name,time_freq)
-
-    train_data.set_index('Datetime', inplace=True)
-    train_data.index = pd.DatetimeIndex(train_data.index)
-    train_data['Station_Id_C'] = train_data['Station_Id_C'].astype(str)
+    else:
+    # 确定表名
+        table_dict = dict()
+        table_dict['grassland_green_period'] = 'qh_climate_crop_growth'
+        table_dict['grassland_yellow_period'] = 'qh_climate_crop_growth'
+        table_dict['grassland_growth_period'] = '待定'
+        table_dict['grassland_coverage'] = 'qh_climate_grass_cover'
+        table_dict['dwei'] = 'qh_climate_grass_yield'  # 草地产量干重
+        table_dict['fwei'] = 'qh_climate_grass_yield'  # 草地产量湿重
+        table_name = table_dict[element]
+        
+        # 确定要素
+        element_dict = dict()
+        element_dict['grassland_green_period'] = 'Crop_Name,GroPer_Name_Ten'
+        element_dict['grassland_yellow_period'] = 'Crop_Name,GroPer_Name_Ten'
+        element_dict['grassland_growth_period'] = '待定'
+        element_dict['grassland_coverage'] = 'Cov'
+        element_dict['dwei'] = 'crop_listoc_name,dwei'
+        element_dict['fwei'] = 'crop_listoc_name,fwei'
+        element_str = element_dict[element]
+        elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,' + element_str
     
-    if 'Unnamed: 0' in train_data.columns:
-        train_data.drop(['Unnamed: 0'], axis=1, inplace=True)
+        # 4. 读取数据
+        # 构建选择时间
+        if time_freq == 'Y':
+            train_time_use=train_time
+        
+        elif time_freq == 'Q':# ['%Y,%Y','3,4,5']
+            train_time_use=[train_time,time_freq_data]
     
-    if element in ['dwei','fwei']:
-        train_data[element] = train_data[element].astype(float)
-        grouped_sum = train_data[['Station_Id_C',element]].groupby(['Station_Id_C', train_data.index]).sum().reset_index()
+        elif time_freq== 'M1': #'%Y%m,%Y%m' '%Y,%Y' '%m,%m'
+            train_time_use=train_time.split(',')[0]+time_freq_data.split(',')[0]+','+\
+                                train_time.split(',')[1]+time_freq_data.split(',')[1]
+            
+        elif time_freq== 'M2':
+            train_time_use=[train_time,time_freq_data]
+            
+        elif time_freq == 'D1':
+            train_time_use= train_time.split(',')[0]+'0101,'+train_time.split(',')[1]+'1231'
     
-        result_df = grouped_sum.pivot_table(index=['Datetime'], columns=['Station_Id_C'], values=element)  # 统计时段df
-        result_df = result_df.resample('Y').apply(custom_sum,'sum')
-        result_df.index = result_df.index.strftime('%Y')
-  
-    elif element in ['grassland_coverage']:
-        train_data[element_str] = train_data[element_str].astype(float)
-        result_df = train_data.pivot_table(index=train_data.index ,columns=['Station_Id_C'], values=element_str)  # 统计时段df
-        result_df = result_df.resample('Y').apply(custom_sum,'mean')
-
-
-    train_station_data=result_df.copy()
-
-    train_data_df=pd.DataFrame(result_df.mean(axis=1).round(2))
-    train_data_df.columns=[element]
+        elif time_freq== 'D2': 
+            train_time_use=[train_time,time_freq_data]
+    
+        train_data=data_read_sql(sta_ids,elements,train_time_use,table_name,time_freq)
+    
+        train_data.set_index('Datetime', inplace=True)
+        train_data.index = pd.DatetimeIndex(train_data.index)
+        train_data['Station_Id_C'] = train_data['Station_Id_C'].astype(str)
+        
+        if 'Unnamed: 0' in train_data.columns:
+            train_data.drop(['Unnamed: 0'], axis=1, inplace=True)
+        
+        if element in ['dwei','fwei']:
+            train_data[element] = train_data[element].astype(float)
+            grouped_sum = train_data[['Station_Id_C',element]].groupby(['Station_Id_C', train_data.index]).sum().reset_index()
+        
+            result_df = grouped_sum.pivot_table(index=['Datetime'], columns=['Station_Id_C'], values=element)  # 统计时段df
+            result_df = result_df.resample('Y').apply(custom_sum,'sum')
+            result_df.index = result_df.index.strftime('%Y')
+      
+        elif element in ['grassland_coverage']:
+            train_data[element_str] = train_data[element_str].astype(float)
+            result_df = train_data.pivot_table(index=train_data.index ,columns=['Station_Id_C'], values=element_str)  # 统计时段df
+            result_df = result_df.resample('Y').apply(custom_sum,'mean')
+    
+        if element == 'grassland_green_period':
+            # 一年一个记录，应该不用resample('1A')
+            result_df['Crop_Name'] = result_df['Crop_Name'].map(int)
+            result_df['Datetime'] = pd.to_datetime(result_df['Datetime'])
+            result_df.set_index('Datetime', inplace=True, drop=False)
+            result_df = result_df[result_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
+            result_df = result_df[result_df['GroPer_Name_Ten'].isin(['21'])]  # 21是返青
+            result_df = result_df[~result_df.index.duplicated()]
+            result_df['fanqing'] = result_df.index.dayofyear
+    
+        elif element == 'grassland_yellow_period':
+            # 一年一个记录，应该不用resample('1A')
+            result_df['Crop_Name'] = result_df['Crop_Name'].map(int)
+            result_df['Datetime'] = pd.to_datetime(result_df['Datetime'])
+            result_df.set_index('Datetime', inplace=True, drop=False)
+            result_df = result_df[result_df['Crop_Name'].isin([10101, 10201, 10202, 10203, 10301, 10401, 10501, 10601, 10701, 19999])]
+            result_df = result_df[result_df['GroPer_Name_Ten'].isin(['91'])]  # 21是返青
+            result_df = result_df[~result_df.index.duplicated()]
+            result_df['huangku'] = result_df.index.dayofyear
+            
+            
+        train_station_data=result_df.copy()
+    
+        train_data_df=pd.DataFrame(result_df.mean(axis=1).round(2))
+        train_data_df.columns=[element]
     
     # train_data_df.index = train_data_df.index.strftime('%Y')
     # train_station_data.index = train_station_data.index.strftime('%Y')

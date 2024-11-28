@@ -8,7 +8,7 @@ Created on Wed Sep 11 15:51:42 2024
 import pandas as pd
 from Module02.page_ice.wrapped.func00_data_read_sql import data_read_sql
 import numpy as np
-from datetime import  date,datetime, timedelta
+from datetime import datetime
 
 
 def frs_processing(element,df):
@@ -20,8 +20,8 @@ def frs_processing(element,df):
         df = df.pivot_table(index=df.index, columns=['Station_Id_C'], values=ele)  # 参考时段df
         df.replace(999999, np.nan, inplace=True)
     
-        df = df.resample('Y').max()
-
+        # df = df.resample('Y').max()
+        df = df.resample(rule='AS-SEP').max()
         df.index = df.index.strftime('%Y')
         result_df=df.copy()
 

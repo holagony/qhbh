@@ -63,22 +63,6 @@ def winter_heating_his(refer_df):
     
         data_year = data[(data.index >= start_date) & (data.index <= end_date)]
         
-        # if len(data_year) != 0:
-        #     data_year['flag']=(data_year['tas_rolling_mean']<=5).astype(int)
-        #     first_index = data_year[data_year['flag'] == 1].index.min()
-        #     last_index = data_year[data_year['flag'] == 1].index.max()
-            
-        #     result_start_end.at[n,station_name[idx]]=first_index-timedelta(days=4)
-        
-        #     if data_year.loc[last_index,'tas_rolling_mean']==0 & last_index.month==4:
-        #         result_start_end.at[n,name]=last_index
-        #     elif last_index.month !=4  & last_index.day !=30:
-        #         result_start_end.at[n,name]=last_index+timedelta(days=1)
-        #     result_start_end.at[n,'年']=year-1
-        #     n=n+1
-        
-        
-        # 剩余时间
         for year in time_year[:-1:]:
             # break
             data_year = data[((data.index.year == year) & (data.index.month >= 10)) |
@@ -118,7 +102,7 @@ def winter_heating_his(refer_df):
                 result_start_end.at[n,station_name[idx]]=first_index_z.strftime('%Y-%m-%d')
                 result_start_end.at[n,name]=last_index_z.strftime('%Y-%m-%d')
                 result_start_end.at[n,'年']=year
-    
+        
                 # 采暖起始日-日序
                 result_start_end_num.at[n,station_name[idx]]=(first_index_z-datetime(first_index_z.year, 1, 1)).days+1
                 result_start_end_num.at[n,name]=(last_index_z-datetime(last_index_z.year, 1, 1)).days+1
@@ -126,78 +110,7 @@ def winter_heating_his(refer_df):
                 
                 n=n+1
     
-    # #%% 计算信息加入
-    # def trend_rate(x):
-    #     '''
-    #     计算变率（气候倾向率）的pandas apply func
-    #     '''
-    #     try:
-    #         x = x.to_frame()
-    #         x['num'] = np.arange(len(x))
-    #         x.dropna(how='any', inplace=True)
-    #         train_x = x.iloc[:, -1].values.reshape(-1, 1)
-    #         train_y = x.iloc[:, 0].values.reshape(-1, 1)
-    #         model = LinearRegression(fit_intercept=True).fit(train_x, train_y)
-    #         weight = model.coef_[0][0].round(3) * 10
-    #         return weight
-    #     except:
-    #         return np.nan
-        
-    
-    # # 采暖日
-    # result_days.at[n,'年']='平均'
-    # result_days.loc[n, result_days.columns[1:]] =result_days.iloc[:-1:, 1:].mean(axis=0).round(1)
-    # result_days.loc[n+1, result_days.columns[1:]] =result_days.iloc[:-1:, 1:].apply(trend_rate, axis=0)
-    # result_days.at[n+1,'年']='变率'
-    # result_days.at[n+2,'年']='最大值'
-    # result_days.loc[n+2, result_days.columns[1:]] =result_days.iloc[:-3:, 1:].max(axis=0)
-    # result_days.at[n+3,'年']='最小值'
-    # result_days.loc[n+3, result_days.columns[1:]] =result_days.iloc[:-4:, 1:].min(axis=0)
-    
-    # result_days['区域均值']=np.round(result_days.iloc[:, 1::].mean(axis=1),1)
-    # result_days['区域最大值']=result_days.iloc[:, 1:-1:].max(axis=1)
-    # result_days['区域最小值']=result_days.iloc[:, 1:-2:].min(axis=1)    
-    
-    # # 采暖度日
-    # result_hdd18.at[n,'年']='平均'
-    # result_hdd18.loc[n, result_hdd18.columns[1:]] =result_hdd18.iloc[:, 1:].mean(axis=0).round(1)
-    # result_hdd18.loc[n+1, result_hdd18.columns[1:]] =result_hdd18.iloc[:-1:, 1:].apply(trend_rate, axis=0)
-    # result_hdd18.at[n+1,'年']='变率'
-    # result_hdd18.at[n+2,'年']='最大值'
-    # result_hdd18.loc[n+2, result_hdd18.columns[1:]] =result_hdd18.iloc[:-3:, 1:].max(axis=0)
-    # result_hdd18.at[n+3,'年']='最小值'
-    # result_hdd18.loc[n+3, result_hdd18.columns[1:]] =result_hdd18.iloc[:-4:, 1:].min(axis=0)
-    
-    # result_hdd18['区域均值']=np.round(result_hdd18.iloc[:, 1::].mean(axis=1),1)
-    # result_hdd18['区域最大值']=result_hdd18.iloc[:, 1:-1:].max(axis=1)
-    # result_hdd18['区域最小值']=result_hdd18.iloc[:, 1:-2:].min(axis=1) 
-    
-    # # 时序
-    # result_start_end_num.at[n,'年']='平均'
-    # result_start_end_num.loc[n, result_start_end_num.columns[1:]] =result_start_end_num.iloc[1:-1:, 1:].mean(axis=0).round(1)
-    # result_start_end_num.loc[n+1, result_start_end_num.columns[1:]] =result_start_end_num.iloc[1:-1:, 1:].apply(trend_rate, axis=0)
-    # result_start_end_num.at[n+1,'年']='变率'
-    # result_start_end_num.at[n+2,'年']='最大值'
-    # result_start_end_num.loc[n+2, result_start_end_num.columns[1:]] =result_start_end_num.iloc[1:-3:, 1:].max(axis=0)
-    # result_start_end_num.at[n+3,'年']='最小值'
-    # result_start_end_num.loc[n+3, result_start_end_num.columns[1:]] =result_start_end_num.iloc[1:-4:, 1:].min(axis=0)
-    
-    # result_start_end_num['区域均值1']=np.round(result_start_end_num.iloc[1:, 1::2].mean(axis=1),1)
-    # result_start_end_num['区域均值2']=np.round(result_start_end_num.iloc[1:, 2:-1:2].mean(axis=1),1)
-    # result_start_end_num.at[0,'区域均值1'] = '开始日期'
-    # result_start_end_num.at[0,'区域均值2'] = '结束日期'
 
-    # result_start_end_num['区域最大值1']=result_start_end_num.iloc[1:, 1:-2:2].max(axis=1)
-    # result_start_end_num['区域最大值2']=result_start_end_num.iloc[1:, 2:-3:2].max(axis=1)
-    # result_start_end_num.at[0,'区域最大值1'] = '开始日期'
-    # result_start_end_num.at[0,'区域最大值2'] = '结束日期'
-    
-    # result_start_end_num['区域最小值1']=result_start_end_num.iloc[1:, 1:-4:2].min(axis=1)     
-    # result_start_end_num['区域最小值2']=result_start_end_num.iloc[1:, 2:-5:2].min(axis=1)     
-    # result_start_end_num.at[0,'区域最小值1'] = '开始日期'
-    # result_start_end_num.at[0,'区域最小值2'] = '结束日期'
-    
-    
     return result_days,result_hdd18,result_start_end,result_start_end_num
 
 

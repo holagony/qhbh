@@ -162,12 +162,12 @@ def ice_model_def(data_json):
 if __name__=='__main__':
     
     data_json = dict()
-    data_json['main_element'] ='SNOW_DEPTH'
+    data_json['main_element'] ='SNOW_DAYS'
     data_json['sta_ids'] = '51886,52737,52876'
     data_json['time_freq_main'] = 'Y'
     data_json['time_freq_main_data'] = '0'
     data_json['factor_element'] ='TEM_Avg,PRE_Time_2020,TEM_Avg'
-    data_json['factor_time_freq'] = 'Y,Q,Q'
+    data_json['factor_time_freq'] = 'Y,Q,M2'
     data_json['factor_time_freq_data'] =['0','3,4,5','1']
     data_json['train_time'] = '2020,2021'
     data_json['verify_time'] = '2020,2023'

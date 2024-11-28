@@ -45,6 +45,7 @@ Created on Mon Sep  9 10:37:23 2024
 """
 
 import numpy as np
+import os
 import pandas as pd
 import uuid
 import psycopg2
@@ -76,29 +77,42 @@ def energy_solar_power(data_json):
     sta_ids = data_json['sta_ids']
     data_cource = data_json['data_cource']
     insti = data_json['insti']
-    res = data_json.get('res', '1')
+    res = data_json.get('res', '25')
+    plot= data_json.get('plot')
+    shp_path=data_json['shp_path']
+    method='idw'
     
     #%% 固定信息
-    data_dir=r'D:\Project\qh\Evaluate_Energy\data'
     # data_dir='/zipdata'
+    if shp_path is not None:
+        shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
 
+    if os.name == 'nt':
+        data_dir=r'D:\Project\qh'
+    elif os.name == 'posix':
+        data_dir='/model_data/station_data'
+    else:
+        data_dir='/model_data/station_data'
+
+    if data_cource == 'original':
+        res='25'
+        
     res_d=dict()
-    res_d['1']='0.01deg'
-    res_d['5']='0.06deg'
-    res_d['10']='0.10deg'
     res_d['25']='0.25deg'
     res_d['50']='0.50deg'
     res_d['100']='1deg'
    
-    # nc要素
-    var='tas'
-    
-    # 情景选择
-    # 'ssp126','ssp245','ssp585','1.5℃'，'2.0℃'
-    scene=['ssp126','ssp245']
+    if data_cource != 'original':
+        data_dir=os.path.join(data_dir,res_d[res])
     
     # 时间频率
     time_scale='daily'
+    
+    # 变量
+    var='sund'
+    
+    # 情景选择
+    scene=['ssp126','ssp245','ssp585']
     
     #elem_info=['采暖度日','采暖日','采暖起始日_日序']
     elem_dict=dict()
@@ -126,27 +140,6 @@ def energy_solar_power(data_json):
     
     sta_ids1 = tuple(sta_ids.split(','))
 
-    # conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
-    # cur = conn.cursor()
-    # query = sql.SQL(f"""
-    #                 SELECT {elements}
-    #                 FROM public.{table_name}
-    #                 WHERE
-    #                     CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-    #                     AND station_id_c IN %s
-    #                 """)
-    
-    # start_year = refer_times.split(',')[0]
-    # end_year = refer_times.split(',')[1]
-    
-    # cur.execute(query, (start_year, end_year,sta_ids1))
-    # data = cur.fetchall()
-    # refer_df = pd.DataFrame(data)
-    # refer_df.columns = elements.split(',')
-    
-    # cur.close()
-    # conn.close()
-    
     refer_df = get_database_data(sta_ids1, elements, table_name, time_freq, refer_times)
 
     refer_result= energy_solar_his(element,refer_df)
@@ -162,13 +155,18 @@ def energy_solar_power(data_json):
     matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name']],on='Station_Id_C')
     matched_stations_unique = matched_stations.drop_duplicates()
 
+    matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name','Lon','Lat']],on='Station_Id_C')
+    matched_stations_unique = matched_stations.drop_duplicates(subset='Station_Id_C')
+
     station_name = matched_stations_unique['Station_Name'].values
     station_id=matched_stations_unique['Station_Id_C'].values
     station_dict=pd.DataFrame(columns=['站名','站号'])
     station_dict['站名']=station_name
     station_dict['站号']=station_id
+    lon_list=matched_stations_unique['Lon'].values
+    lat_list=matched_stations_unique['Lat'].values
     
-    '''
+    
     # 预估数据
     insti = insti.split(',')
     sta_ids2=sta_ids.split(',')
@@ -179,13 +177,14 @@ def energy_solar_power(data_json):
         pre_data[insti_a]=dict()
         for scene_a in scene:
             pre_data[insti_a][scene_a]=dict()
+            break
+        
+        
+        
             stats_path=[choose_mod_path(data_dir, data_cource,insti_a, var, time_scale, year_a, scene_a,res_d[res]) for year_a in np.arange(int(stats_start_year),int(stats_end_year)+1,1)]
             result_days,result_hdd18,result_start_end,result_start_end_num= winter_heating_pre(stats_path,sta_ids2,time_freq,stats_times)
     
-            pre_data[insti_a][scene_a]['HDD18']=result_hdd18
             pre_data[insti_a][scene_a]['HD']=result_days
-            pre_data[insti_a][scene_a]['HDTIME']=result_start_end
-            pre_data[insti_a][scene_a]['HDTIME_NUM']=result_start_end_num
     
     #%% 求集合
     
@@ -274,7 +273,7 @@ def energy_solar_power(data_json):
         result_df_dict['表格']['预估']['集合'][scens]['采暖日']=data_deal_2(HD[scens],refer_result_days,1).to_dict(orient='records')
         result_df_dict['表格']['预估']['集合'][scens]['采暖度日']=data_deal_2(HDD18[scens],refer_result_hdd18,1).to_dict(orient='records')
         result_df_dict['表格']['预估']['集合'][scens]['采暖起始日_日序']=data_deal_num_2(HDTIME[scens],result_start_end_num,1).to_dict(orient='records')
-    '''    
+       
     return result_df
 
     
@@ -285,14 +284,16 @@ if __name__ == '__main__':
     # 日照时数：SH；
     # 有效日照天数：ASD    
     data_json = dict()
-    data_json['element'] ='TR'
+    data_json['element'] ='SH'
     data_json['refer_times'] = '2023,2024'
     data_json['time_freq'] = 'Y'
-    data_json['stats_times'] = '1990,2018'
+    data_json['stats_times'] = '2020,2040'
     data_json['sta_ids'] = '52863,52754,56029,52874'
     data_json['data_cource'] = 'original'
-    data_json['insti'] = 'BCC-CSM2-MR,CanESM5'
+    data_json['insti'] = 'RCM_BCC'
     # data_json['res'] ='1'
-    
+    data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
+    data_json['plot'] = 1
+
     result_df=energy_solar_power(data_json)
     result=pd.DataFrame(result_df['表格']['历史'])
