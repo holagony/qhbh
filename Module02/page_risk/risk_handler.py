@@ -113,7 +113,11 @@ def risk_esti(data_json):
 
     if shp_path is not None:
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
-
+    
+    if '集合' in cmip_model:
+        cmip_model.remove('集合')
+        cmip_model.append('Set')
+        
     ######################################################
     # 站点数据获取
     table_name = 'qh_qhbh_cmadaas_day'

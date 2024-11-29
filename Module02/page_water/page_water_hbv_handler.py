@@ -129,7 +129,11 @@ def hbv_single_calc(data_json):
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
         os.chmod(data_dir, 0o007 | 0o070 | 0o700)
-
+    
+    if '集合' in cmip_model:
+        cmip_model.remove('集合')
+        cmip_model.append('Set')
+        
     ######################################################
     # 数据下载
     ##### 下载验证期时段 & 参考时段的水文数据，展示 （对应表格-观测）
