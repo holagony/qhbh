@@ -28,7 +28,7 @@ class workerPageWaterHbv:
         data_json = json.loads(json_str)
         result_id = data_json.get('id')
         callback_url = data_json.get('callback')
-        result_dict = hbv_single_calc(data_json)
+        result_dict, _ = hbv_single_calc(data_json)
         return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result_dict}, ensure_ascii=False, ignore_nan=True)
         callback(callback_url, result_id, return_data)
         return return_data
