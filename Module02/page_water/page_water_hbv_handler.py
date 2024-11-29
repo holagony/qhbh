@@ -636,10 +636,10 @@ def hbv_single_calc(data_json):
     result_dict['表格历史'] = dict()
     result_dict['表格预估'] = dict()
     result_dict['表格历史']['观测'] = result_q
-    result_dict['表格历史']['模拟观测'] = q_sim_yearly1
-    result_dict['表格历史']['模拟模式'] = vaild_cmip_res
-    result_dict['表格预估']['集合'] = evaluate_cmip_res
-    result_dict['表格预估']['单模式'] = single_cmip_res
+    result_dict['表格历史']['模拟观测'] = q_sim_yearly1.to_dict(orient='records')
+    result_dict['表格历史']['模拟模式'] = vaild_cmip_res.to_dict(orient='records')
+    result_dict['表格预估']['集合'] = evaluate_cmip_res.to_dict(orient='records')
+    result_dict['表格预估']['单模式'] = single_cmip_res.to_dict(orient='records')
     
     # 4.时序图-各个情景的集合
     std_percent = dict()
