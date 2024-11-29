@@ -16,6 +16,8 @@ from Module02.page_water.wrapped.hbv import hbv_main
 from Module02.page_water.wrapped.func01_q_stats import stats_q
 from Module02.page_water.wrapped.func02_result_stats import stats_result_1, stats_result_2, stats_result_3
 import glob
+from Utils.read_model_data import read_model_data
+
 
 # hbv计算接口
 
@@ -33,51 +35,10 @@ def choose_mod_path(inpath, data_source, insti, var, time_scale, yr, expri_i, re
     :param res: 分辨率
     :return: 数据所在路径、文件名
     """
-    # if yr < 2015:
-    #     expri = 'historical'
-    # else:
-    #     expri = expri_i
-
-    # if insti == 'CNRM-CM6-1':
-    #     data_grid = '_r1i1p1f2_gr_'
-    # elif (insti == 'BCC-CSM2-MR') & (yr < 2015):
-    #     if var == 'tas':
-    #         data_grid = '_r3i1p1f1_gn_'
-    #     else:
-    #         data_grid = '_r1i1p1f1_gn_'
-    # else:
-    #     data_grid = '_r1i1p1f1_gn_'
-    
-    # if time_scale == 'daily':
-    #     path1 = 'daily'
-    #     filen = var + '_day_' + insti + '_' + expri + data_grid + str(yr) + '0101-' + str(yr) + '1231.nc'
-    # elif time_scale == 'monthly':
-    #     path1 = 'monthly'
-    #     filen = var + '_month_' + insti + '_' + expri + data_grid + str(yr) + '0101-' + str(yr) + '1231.nc'
-    # elif time_scale == 'yearly':
-    #     path1 = 'yearly'
-    #     filen = var + '_year_' + insti + '_' + expri + data_grid + str(yr) + '0101-' + str(yr) + '1231.nc'
-    # else:
-    #     path1 = time_scale
-    #     filen = var + '_' + time_scale + '_' + insti + '_' + expri + data_grid + str(yr) + '0101-' + str(yr) + '1231.nc'
-
-    # if data_source == 'original':
-    #     path = os.path.join(inpath, data_source, path1, insti, expri, var, filen)
-    # else:
-    #     path = os.path.join(inpath, data_source, res, path1, insti, expri, var, filen)
     if yr < 2015:
         expri = 'historical'
     else:
         expri = expri_i
-        
-    # if insti == 'CNRM-CM6-1':
-    #     data_grid = '_r1i1p1f2_gr_'
-        
-    # elif (insti == 'BCC-CSM2-MR') & (yr < 2015):
-    #     data_grid = '_r3i1p1f1_gn_'
-
-    # else:
-    #     data_grid = '_r1i1p1f1_gn_'
 
     if time_scale == 'daily':
         path1 = 'daily'
@@ -162,9 +123,6 @@ def hbv_single_calc(data_json):
     ca = data_json['ca']
     l = data_json['l']
     
-    inpath = '/cmip_data'
-    #inpath = r'D:\Project\qh\Evaluate_Energy\data' # cmip6路径
-
     # 2.参数处理
     uuid4 = uuid.uuid4().hex
     data_dir = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
@@ -241,57 +199,104 @@ def hbv_single_calc(data_json):
     # 关闭数据库
     cur.close()
     conn.close()
-
+    
+    # 读取数据
+    res_d = dict()
+    res_d['25'] = '0.25deg'
+    res_d['50'] = '0.52deg'
+    res_d['100'] = '1deg'
+    
+    if os.name == 'nt':
+        data_dir = r'C:\Users\MJY\Desktop\excel_data\csv' # 本地
+    else:
+        if cmip_type == 'original':
+            data_dir = '/model_data/station_data/csv' # 容器内
+        elif cmip_type == 'delta':
+            data_dir = '/model_data/station_data_delta/csv' # 容器内
+            data_dir = os.path.join(data_dir, res_d[cmip_res])
+                
     ##### 下载验证期时段的cmip6数据，并插值到站点，用于HBV计算，蒸发数据来自气象站（对应表格-模拟（模式）） 
     start_year = int(valid_times.split(',')[0][:4])
     end_year = int(valid_times.split(',')[1][:4])
     
     # 读取数据
+    # 原始的读取nc
+    # inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6'
+    # vaild_cmip = dict()
+    # for exp in ['ssp126','ssp245','ssp585']:
+    #     vaild_cmip[exp] = dict()
+    #     for insti in cmip_model:
+    #         vaild_cmip[exp][insti] = dict()
+    #         tmp_lst = []
+    #         pre_lst = []
+    #         for year in range(start_year,end_year+1):
+    #             tem_file_path = choose_mod_path(inpath=inpath, 
+    #                                             data_source=cmip_type, 
+    #                                             insti=insti, 
+    #                                             var='tas', 
+    #                                             time_scale='daily', 
+    #                                             yr=year, 
+    #                                             expri_i=exp, 
+    #                                             res=cmip_res)
+
+    #             pre_file_path = choose_mod_path(inpath=inpath, 
+    #                                             data_source=cmip_type, 
+    #                                             insti=insti, 
+    #                                             var='pr', 
+    #                                             time_scale='daily', 
+    #                                             yr=year, 
+    #                                             expri_i=exp, 
+    #                                             res=cmip_res)
+                
+    #             ds_tmp = xr.open_dataset(tem_file_path)
+    #             pre_tmp = xr.open_dataset(pre_file_path)
+    #             tmp_lst.append(ds_tmp)
+    #             pre_lst.append(pre_tmp)
+            
+    #         tmp_all = xr.concat(tmp_lst, dim='time')
+    #         try:
+    #             tmp_all['time'] = tmp_all.indexes['time'].to_datetimeindex().normalize()
+    #         except:
+    #             tmp_all['time'] = tmp_all.indexes['time'].normalize()
+    #         pre_all = xr.concat(pre_lst, dim='time')
+            
+    #         try:
+    #             pre_all['time'] = pre_all.indexes['time'].to_datetimeindex().normalize()
+    #         except:
+    #             pre_all['time'] = pre_all.indexes['time'].normalize()
+    #         vaild_cmip[exp][insti]['tmp'] = tmp_all
+    #         vaild_cmip[exp][insti]['pre'] = pre_all
+    
+    # 直接读取csv
     vaild_cmip = dict()
-    for exp in ['ssp126','ssp245']:
+    station_id = list(sta_ids)
+    time_scale= 'daily'
+    time_freq_tmp = 'M1' # 验证期格式固定对应M1
+    for exp in ['ssp126', 'ssp245', 'ssp585']:
         vaild_cmip[exp] = dict()
         for insti in cmip_model:
             vaild_cmip[exp][insti] = dict()
-            tmp_lst = []
-            pre_lst = []
-            for year in range(start_year,end_year+1):
-                tem_file_path = choose_mod_path(inpath=inpath, 
-                                                data_source=cmip_type, 
-                                                insti=insti, 
-                                                var='tas', 
-                                                time_scale='daily', 
-                                                yr=year, 
-                                                expri_i=exp, 
-                                                res=cmip_res)
-
-                pre_file_path = choose_mod_path(inpath=inpath, 
-                                                data_source=cmip_type, 
-                                                insti=insti, 
-                                                var='pr', 
-                                                time_scale='daily', 
-                                                yr=year, 
-                                                expri_i=exp, 
-                                                res=cmip_res)
-                
-                ds_tmp = xr.open_dataset(tem_file_path)
-                pre_tmp = xr.open_dataset(pre_file_path)
-                tmp_lst.append(ds_tmp)
-                pre_lst.append(pre_tmp)
             
-            tmp_all = xr.concat(tmp_lst, dim='time')
-            try:
-                tmp_all['time'] = tmp_all.indexes['time'].to_datetimeindex().normalize()
-            except:
-                tmp_all['time'] = tmp_all.indexes['time'].normalize()
-            pre_all = xr.concat(pre_lst, dim='time')
+            # 读取tem & 合成nc
+            excel_data_tas = read_model_data(data_dir,time_scale,insti,exp,'tas',valid_times,time_freq_tmp,station_id)
+            time_tmp = excel_data_tas.index
+            excel_data_tas = excel_data_tas.mean(axis=1) # 多站求平均，代表水文站
+            # location_tmp = excel_data_tas.columns.tolist()
+            # da = xr.DataArray(excel_data_tas.values, coords=[time_tmp, location_tmp], dims=['time', 'location'])
+            da = xr.DataArray(excel_data_tas.values, coords=[time_tmp], dims=['time'])
+            ds = xr.Dataset({'tas': da.astype('float32')})
+            vaild_cmip[exp][insti]['tmp'] = ds
             
-            try:
-                pre_all['time'] = pre_all.indexes['time'].to_datetimeindex().normalize()
-            except:
-                pre_all['time'] = pre_all.indexes['time'].normalize()
-            vaild_cmip[exp][insti]['tmp'] = tmp_all
-            vaild_cmip[exp][insti]['pre'] = pre_all
-
+            # 读取pre & 合成nc
+            excel_data_pr = read_model_data(data_dir,time_scale,insti,exp,'pr',valid_times,time_freq_tmp,station_id)
+            excel_data_pr = excel_data_pr.mean(axis=1) # 多站求平均，代表水文站
+            time_tmp = excel_data_pr.index
+            
+            # location_tmp = excel_data_pr.columns.tolist()
+            da = xr.DataArray(excel_data_pr.values, coords=[time_tmp], dims=['time'])
+            ds = xr.Dataset({'pr': da.astype('float32')})
+            vaild_cmip[exp][insti]['pre'] = ds
+            
     ##### 下载预估时段的cmip6数据，并插值到站点，用于HBV计算，使用预估时间（在这个里面生成预估气象数据，对应预估）
     if time_freq == 'Y':
         start_year = int(evaluate_times.split(',')[0])
@@ -303,51 +308,76 @@ def hbv_single_calc(data_json):
         start_year = int(evaluate_times.split(',')[0][:4])
         end_year = int(evaluate_times.split(',')[1][:4])
 
+    # evaluate_cmip = dict()
+    # for exp in ['ssp126','ssp245','ssp585']:
+    #     evaluate_cmip[exp] = dict()
+    #     for insti in cmip_model:
+    #         evaluate_cmip[exp][insti] = dict()
+    #         tmp_lst = []
+    #         pre_lst = []
+    #         for year in range(start_year,end_year+1):
+    #             tem_file_path = choose_mod_path(inpath=inpath, 
+    #                                             data_source=cmip_type, 
+    #                                             insti=insti, 
+    #                                             var='tas', 
+    #                                             time_scale='daily', 
+    #                                             yr=year, 
+    #                                             expri_i=exp, 
+    #                                             res=cmip_res)
+
+    #             pre_file_path = choose_mod_path(inpath=inpath, 
+    #                                             data_source=cmip_type, 
+    #                                             insti=insti, 
+    #                                             var='pr', 
+    #                                             time_scale='daily', 
+    #                                             yr=year, 
+    #                                             expri_i=exp, 
+    #                                             res=cmip_res)
+                
+    #             ds_tmp = xr.open_dataset(tem_file_path)
+    #             pre_tmp = xr.open_dataset(pre_file_path)
+    #             tmp_lst.append(ds_tmp)
+    #             pre_lst.append(pre_tmp)
+            
+    #         tmp_all = xr.concat(tmp_lst, dim='time')
+    #         try:
+    #             tmp_all['time'] = tmp_all.indexes['time'].to_datetimeindex().normalize()
+    #         except:
+    #             tmp_all['time'] = tmp_all.indexes['time'].normalize()
+
+    #         pre_all = xr.concat(pre_lst, dim='time')
+    #         try:
+    #             pre_all['time'] = pre_all.indexes['time'].to_datetimeindex().normalize()
+    #         except:
+    #             pre_all['time'] = pre_all.indexes['time'].normalize()
+                
+    #         evaluate_cmip[exp][insti]['tmp'] = tmp_all
+    #         evaluate_cmip[exp][insti]['pre'] = pre_all
+
+    # 直接读取csv
     evaluate_cmip = dict()
-    for exp in ['ssp126','ssp245']:
+    station_id = list(sta_ids)
+    time_scale= 'daily'
+    for exp in ['ssp126', 'ssp245', 'ssp585']:
         evaluate_cmip[exp] = dict()
         for insti in cmip_model:
             evaluate_cmip[exp][insti] = dict()
-            tmp_lst = []
-            pre_lst = []
-            for year in range(start_year,end_year+1):
-                tem_file_path = choose_mod_path(inpath=inpath, 
-                                                data_source=cmip_type, 
-                                                insti=insti, 
-                                                var='tas', 
-                                                time_scale='daily', 
-                                                yr=year, 
-                                                expri_i=exp, 
-                                                res=cmip_res)
-
-                pre_file_path = choose_mod_path(inpath=inpath, 
-                                                data_source=cmip_type, 
-                                                insti=insti, 
-                                                var='pr', 
-                                                time_scale='daily', 
-                                                yr=year, 
-                                                expri_i=exp, 
-                                                res=cmip_res)
-                
-                ds_tmp = xr.open_dataset(tem_file_path)
-                pre_tmp = xr.open_dataset(pre_file_path)
-                tmp_lst.append(ds_tmp)
-                pre_lst.append(pre_tmp)
             
-            tmp_all = xr.concat(tmp_lst, dim='time')
-            try:
-                tmp_all['time'] = tmp_all.indexes['time'].to_datetimeindex().normalize()
-            except:
-                tmp_all['time'] = tmp_all.indexes['time'].normalize()
-
-            pre_all = xr.concat(pre_lst, dim='time')
-            try:
-                pre_all['time'] = pre_all.indexes['time'].to_datetimeindex().normalize()
-            except:
-                pre_all['time'] = pre_all.indexes['time'].normalize()
-                
-            evaluate_cmip[exp][insti]['tmp'] = tmp_all
-            evaluate_cmip[exp][insti]['pre'] = pre_all
+            # 读取tem & 合成nc
+            excel_data_tas = read_model_data(data_dir,time_scale,insti,exp,'tas',evaluate_times,time_freq,station_id)
+            excel_data_tas = excel_data_tas.mean(axis=1) # 多个站点取平均，计算结果代表水文站
+            time_tmp = excel_data_tas.index
+            da = xr.DataArray(excel_data_tas.values, coords=[time_tmp], dims=['time'])
+            ds = xr.Dataset({'tas': da.astype('float32')})
+            evaluate_cmip[exp][insti]['tmp'] = ds
+            
+            # 读取pre & 合成nc
+            excel_data_pr = read_model_data(data_dir,time_scale,insti,exp,'pr',evaluate_times,time_freq,station_id)
+            excel_data_pr = excel_data_pr.mean(axis=1) # 多个站点取平均，计算结果代表水文站
+            time_tmp = excel_data_pr.index
+            da = xr.DataArray(excel_data_pr.values, coords=[time_tmp], dims=['time'])
+            ds = xr.Dataset({'pr': da.astype('float32')})
+            evaluate_cmip[exp][insti]['pre'] = ds
 
     ######################################################
     # 数据处理
@@ -379,7 +409,7 @@ def hbv_single_calc(data_json):
     # TODO 未来应该改成用月平均气温和降水计算
     data_df_meteo['EVP_Taka'] = 3100*data_df_meteo['TEM_Avg']/(3100+1.8*(data_df_meteo['PRE_Time_2020']**2)*np.exp((-34.4*data_df_meteo['TEM_Avg'])/(235+data_df_meteo['TEM_Avg'])))
 
-    ##### 验证期的cmip6插值到水文站
+    ##### 验证期的cmip6插值到气象站，然后平均，作为对应的水文站
     # 首先筛选时间
     # valid_times格式: "%Y%m,%Y%m" '200502,201505'
     s = valid_times.split(',')[0]
@@ -394,14 +424,14 @@ def hbv_single_calc(data_json):
     for _, sub_dict1 in vaild_cmip.items():  # vaild_cmip[exp][insti]['tmp']
         for _, sub_dict2 in sub_dict1.items():
             for key, ds_data in sub_dict2.items():
-                # try:
-                selected_data = ds_data.sel(time=time_index)
-                # except:
-                #     return time_index,ds_data
-                selected_data = selected_data.interp(lat=hydro_lat, lon=hydro_lon, method='nearest')
+                try:
+                    selected_data = ds_data.sel(time=time_index)
+                except:
+                    selected_data = ds_data
+                # selected_data = selected_data.interp(lat=hydro_lat, lon=hydro_lon, method='nearest')
                 sub_dict2[key] = selected_data
 
-    ##### 预估期的cmip6插值到水文站
+    ##### 预估期的cmip6插值到气象站，然后平均，作为对应的水文站
     # 首先筛选时间
     if time_freq == 'Y':
         s = evaluate_times.split(',')[0]
@@ -443,16 +473,19 @@ def hbv_single_calc(data_json):
     for _, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
         for _, sub_dict2 in sub_dict1.items():
             for key, ds_data in sub_dict2.items():
-                selected_data = ds_data.sel(time=time_index)
-                selected_data = selected_data.interp(lat=hydro_lat, lon=hydro_lon, method='nearest')
+                try:
+                    selected_data = ds_data.sel(time=time_index)
+                except:
+                    selected_data = ds_data
+                # selected_data = selected_data.interp(lat=hydro_lat, lon=hydro_lon, method='nearest')
                 sub_dict2[key] = selected_data
-    
+        
     # 结果计算
+    mon_dict = dict()
     # 1.水文站数据的原始统计结果
     result_q = stats_q(data_df, refer_df)
     result_q = result_q.to_dict(orient='records')
 
-    
     # 2.模拟(观测) 使用验证期的气象数据计算径流
     data_df_meteo['EVP_Taka'] = data_df_meteo['EVP_Taka'].apply(lambda x: 0 if x<0 else x)
     data_df_meteo['PRE_Time_2020'] = data_df_meteo['PRE_Time_2020'].fillna(0)
@@ -469,23 +502,29 @@ def hbv_single_calc(data_json):
     evp_daily = data_df_meteo.pivot_table(index=data_df_meteo.index, columns=['Station_Id_C'], values='EVP_Taka')  # 统计时段df
     evp_daily = evp_daily.mean(axis=1)
     evp_monthly = evp_daily.resample('1M').mean()
-
+    
     # hbv-input
     date_time = tem_daily.index
     month = tem_daily.index.month.values
     temp = tem_daily.values  # 气温 单位：度
     precip = pre_daily.values  # 单位：mm
+    
     q_sim = hbv_main(len(temp), date_time, month, temp, precip, evp_monthly, tem_monthly, d, fc, beta, c, k0, k1, k2, kp, l, pwp, Tsnow_thresh, ca)
     q_sim = pd.DataFrame(q_sim, index=tem_daily.index, columns=['Q'])
     q_sim_yearly = q_sim.resample('1A').mean().round(2) # m^3/s
     q_sim_yearly1 = stats_result_1(q_sim_yearly, refer_df)
-        
+    
+    mon_dict['验证期气象数据径流'] = q_sim.resample('1M').mean().round(1)
+
     # 3.模拟（模式） 使用验证期的cmip6数据计算径流 
     # 同一情境 不同模式集合平均
     vaild_cmip_res = dict()
     for exp, sub_dict1 in vaild_cmip.items():  # vaild_cmip[exp][insti]['tmp']
         tmp_list = []
         pre_list = []
+        
+        mon_dict[exp] = dict()
+        
         for insti, sub_dict2 in sub_dict1.items():
             tmp = sub_dict2['tmp']
             pre = sub_dict2['pre']
@@ -510,13 +549,16 @@ def hbv_single_calc(data_json):
         month = np.array(pd.to_datetime(tem_daily.time).month)
         temp = tem_daily.tas.data  # 气温 单位：度
         precip = pre_daily.pr.data  # 单位：mm
+        
         q_sim = hbv_main(len(temp), date_time, month, temp, precip, evp_monthly, tem_monthly, d, fc, beta, c, k0, k1, k2, kp, l, pwp, Tsnow_thresh, ca)
-        q_sim = pd.DataFrame(q_sim, index=pd.to_datetime(tem_daily.time), columns=['Q'])
-        q_sim_yearly = q_sim.resample('1A').mean().round(2)
+        q_sim_1 = pd.DataFrame(q_sim, index=pd.to_datetime(tem_daily.time), columns=['Q'])
+        q_sim_yearly = q_sim_1.resample('1A').mean().round(2)
         vaild_cmip_res[exp] = q_sim_yearly
-    
+        
+        mon_dict[exp]['验证期模式数据径流'] = q_sim_1.resample('1M').mean().round(1)
+        
     vaild_cmip_res = stats_result_2(vaild_cmip_res, refer_df)
-            
+    
     # 4.预估-集合模式
     evaluate_cmip_res = dict()
     for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
@@ -547,9 +589,11 @@ def hbv_single_calc(data_json):
         temp = tem_daily.tas.data  # 气温 单位：度
         precip = pre_daily.pr.data  # 单位：mm
         q_sim = hbv_main(len(temp), date_time, month, temp, precip, evp_monthly, tem_monthly, d, fc, beta, c, k0, k1, k2, kp, l, pwp, Tsnow_thresh, ca)
-        q_sim = pd.DataFrame(q_sim, index=pd.to_datetime(tem_daily.time), columns=['Q'])
-        q_sim_yearly = q_sim.resample('1A').mean().round(2)
+        q_sim_2 = pd.DataFrame(q_sim, index=pd.to_datetime(tem_daily.time), columns=['Q'])
+        q_sim_yearly = q_sim_2.resample('1A').mean().round(2)
         evaluate_cmip_res[exp] = q_sim_yearly
+
+        mon_dict[exp]['预估集合径流'] = q_sim_2.resample('1M').mean().round(1)
 
     evaluate_cmip_res = stats_result_2(evaluate_cmip_res, refer_df)
 
@@ -575,10 +619,12 @@ def hbv_single_calc(data_json):
             temp = tem_daily.tas.data  # 气温 单位：度
             precip = pre_daily.pr.data  # 单位：mm
             q_sim = hbv_main(len(temp), date_time, month, temp, precip, evp_monthly, tem_monthly, d, fc, beta, c, k0, k1, k2, kp, l, pwp, Tsnow_thresh, ca)
-            q_sim = pd.DataFrame(q_sim, index=pd.to_datetime(tem_daily.time), columns=['Q'])
-            q_sim_yearly = q_sim.resample('1A').mean().round(2)
+            q_sim_3 = pd.DataFrame(q_sim, index=pd.to_datetime(tem_daily.time), columns=['Q'])
+            q_sim_yearly = q_sim_3.resample('1A').mean().round(2)
             single_cmip_res[exp][insti] = q_sim_yearly
-    
+            
+            mon_dict[exp][insti] = q_sim_3.resample('1M').mean().round(1)
+            
     single_cmip_res = stats_result_3(single_cmip_res, refer_df)
     
     result_dict = dict()
@@ -621,7 +667,7 @@ def hbv_single_calc(data_json):
     
     result_dict['时序图'] = std_percent
 
-    return result_dict
+    return result_dict, mon_dict
 
     
     # data_df 验证期水文数据
@@ -639,15 +685,15 @@ def hbv_single_calc(data_json):
 
 if __name__ == '__main__':
     data_json = dict()
-    data_json['time_freq'] = '"M2'
-    data_json['evaluate_times'] = ["2023,2026","3"] # 预估时段时间条
+    data_json['time_freq'] = 'Y'
+    data_json['evaluate_times'] = "2023,2050" # 预估时段时间条
     data_json['refer_years'] = '2023,2024'# 参考时段时间条
     data_json['valid_times'] = '202303,202403' # 验证期 '%Y%m,%Y%m'
     data_json['hydro_ids'] = '40100350' # 唐乃亥
     data_json['sta_ids'] = "52943,52957,52955,56033,56067,56045,56046,56043,56065,52968,56074,56079,56173"
     data_json['cmip_type'] = 'original' # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None # 分辨率 1/5/10/25/50/100 km
-    data_json['cmip_model'] = ['BCC-CSM2-MR', 'CanESM5']# 模式，列表：['CanESM5','CESM2']等
+    data_json['cmip_model'] = ['Set']# 模式，列表：['CanESM5','CESM2']等
     data_json['d'] = 6.1
     data_json['fc'] = 195
     data_json['beta'] = 2.6143
@@ -659,6 +705,6 @@ if __name__ == '__main__':
     data_json['kp'] = 0.05
     data_json['pwp'] = 106
     data_json['Tsnow_thresh'] = 0
-    data_json['ca'] = 150000
+    data_json['ca'] = 50000
     # ddata_df, refer_df, data_df_meteo, vaild_cmip, evaluate_cmip, result_q, q_sim_yearly, vaild_cmip_res, evaluate_cmip_res, single_cmip_res = hbv_single_calc(data_json)
-    result_dict = hbv_single_calc(data_json)
+    result_dict, mon_dict = hbv_single_calc(data_json)

@@ -111,7 +111,7 @@ def pageb_water_hbv():
         result = celery_submit.delay('workerPageWaterHbv', json_str)
         return jsonify({'code': 202, 'msg': '任务提交成功，开始计算...', 'data': {'task_id': result.id}})
 
-    result_dict = hbv_single_calc(data_json)
+    result_dict, _ = hbv_single_calc(data_json)
     return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result_dict}, ensure_ascii=False, ignore_nan=True)
     return return_data
 

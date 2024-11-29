@@ -16,10 +16,9 @@ from Utils.data_loader_with_threads import get_database_data
 from Module02.page_traffic.wrapped.traffic_processing import station_traffic_processing
 from Module02.page_traffic.wrapped.func01_traffic_multi import traffic_cmip_multi
 from Module02.page_traffic.wrapped.func02_traffic_single import traffic_cmip_single
-
 from Module02.page_climate.wrapped.func01_table_stats import table_stats_simple
-# from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
 from Module02.page_traffic.wrapped.func03_plot import interp_and_mask, plot_and_save
+from Utils.read_model_data import read_model_data
 
 # 交通影响预估
 
@@ -115,6 +114,7 @@ def traffic_esti(data_json):
     # inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata' # cmip6路径
     if shp_path is not None:
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+    
     # 2.参数处理
     uuid4 = uuid.uuid4().hex
     data_dir = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
@@ -148,33 +148,64 @@ def traffic_esti(data_json):
         end_year = int(evaluate_times.split(',')[1][:4])
 
     # 读取数据 并且concat
+    # evaluate_cmip = dict()
+    # for exp in ['ssp126','ssp245']:
+    #     evaluate_cmip[exp] = dict()
+    #     for insti in cmip_model:
+    #         evaluate_cmip[exp][insti] = dict()
+    #         for var in ['tas', 'pr', 'uas', 'vas']:
+    #             tmp_lst = []
+    #             for year in range(start_year,end_year+1):
+    #                 tem_file_path = choose_mod_path(inpath=inpath, 
+    #                                                 data_source=cmip_type,
+    #                                                 insti=insti, 
+    #                                                 var=var, 
+    #                                                 time_scale='daily', 
+    #                                                 yr=year, 
+    #                                                 expri_i=exp, 
+    #                                                 res=cmip_res)
+    
+    #                 ds_tmp = xr.open_dataset(tem_file_path)
+    #                 tmp_lst.append(ds_tmp)
+                
+    #             tmp_all = xr.concat(tmp_lst, dim='time')
+    #             try:
+    #                 tmp_all['time'] = tmp_all.indexes['time'].to_datetimeindex().normalize()
+    #             except:
+    #                 tmp_all['time'] = tmp_all.indexes['time'].normalize()
+    #             evaluate_cmip[exp][insti][var] = tmp_all
+    
+    # 直接读取excel
+    res_d = dict()
+    res_d['25'] = '0.25deg'
+    res_d['50'] = '0.52deg'
+    res_d['100'] = '1deg'
+    
+    if os.name == 'nt':
+        data_dir = r'C:\Users\MJY\Desktop\excel_data\csv' # 本地
+    else:
+        if cmip_type == 'original':
+            data_dir = '/model_data/station_data/csv' # 容器内
+        elif cmip_type == 'delta':
+            data_dir = '/model_data/station_data_delta/csv' # 容器内
+            data_dir = os.path.join(data_dir, res_d[cmip_res])
+    
+    time_scale= 'daily'
     evaluate_cmip = dict()
-    for exp in ['ssp126','ssp245']:
+    station_id = list(sta_ids)
+    for exp in ['ssp126', 'ssp245', 'ssp585']:
         evaluate_cmip[exp] = dict()
         for insti in cmip_model:
             evaluate_cmip[exp][insti] = dict()
             for var in ['tas', 'pr', 'uas', 'vas']:
-                tmp_lst = []
-                for year in range(start_year,end_year+1):
-                    tem_file_path = choose_mod_path(inpath=inpath, 
-                                                    data_source=cmip_type,
-                                                    insti=insti, 
-                                                    var=var, 
-                                                    time_scale='daily', 
-                                                    yr=year, 
-                                                    expri_i=exp, 
-                                                    res=cmip_res)
-    
-                    ds_tmp = xr.open_dataset(tem_file_path)
-                    tmp_lst.append(ds_tmp)
-                
-                tmp_all = xr.concat(tmp_lst, dim='time')
-                try:
-                    tmp_all['time'] = tmp_all.indexes['time'].to_datetimeindex().normalize()
-                except:
-                    tmp_all['time'] = tmp_all.indexes['time'].normalize()
-                evaluate_cmip[exp][insti][var] = tmp_all
-    
+                excel_data = read_model_data(data_dir,time_scale,insti,exp,var,evaluate_times,time_freq,station_id)
+                # 转nc
+                time_tmp = excel_data.index
+                location_tmp = excel_data.columns.tolist()
+                da = xr.DataArray(excel_data.values, coords=[time_tmp, location_tmp], dims=['time', 'location'])
+                ds_excel = xr.Dataset({var: da.astype('float32')})
+                evaluate_cmip[exp][insti][var] = ds_excel
+
     ######################################################
     # 数据处理
     ##### 站点数据处理为交通不利日数
@@ -222,7 +253,7 @@ def traffic_esti(data_json):
         e_day = evaluate_times[1].split(',')[1][2:]
         dates = pd.date_range(start=s, end=e, freq='D')
         time_index = dates[((dates.month==s_mon) & (dates.day>=s_day)) | ((dates.month>s_mon) & (dates.month<e_mon)) | ((dates.month==e_mon) & (dates.day<=e_day))]
-
+        
     time_index = time_index[~((time_index.month==2) & (time_index.day==29))] # 由于数据原因，删除2月29号
     
     # 插值到多个站点
@@ -232,8 +263,11 @@ def traffic_esti(data_json):
     for _, sub_dict1 in evaluate_cmip.items(): # evaluate_cmip[exp][insti]['tmp']
         for _, sub_dict2 in sub_dict1.items():
             for key, ds_data in sub_dict2.items():
-                selected_data = ds_data.sel(time=time_index)
-                selected_data = selected_data.interp(lat=interp_lat, lon=interp_lon, method='nearest')
+                try:
+                    selected_data = ds_data.sel(time=time_index)
+                except:
+                    selected_data = ds_data
+                # selected_data = selected_data.interp(lat=interp_lat, lon=interp_lon, method='nearest')
                 sub_dict2[key] = selected_data
     
     ######################################################
@@ -295,7 +329,8 @@ def traffic_esti(data_json):
             res_df.set_index('时间',inplace=True)
             array_list.append(res_df.iloc[:-4, :].values[None])
             array = np.concatenate(array_list,axis=0)
-            std = np.std(array, ddof=1, axis=0).round(2)
+            
+            std = np.std(array, ddof=1, axis=0).round(2) # 只有一个模式的时候，std是nan
             per25 = np.percentile(array, 25, axis=0).round(2)
             per75 = np.percentile(array, 75, axis=0).round(2)
             
@@ -393,12 +428,8 @@ if __name__ == '__main__':
     data_json['sta_ids'] = '52943,52955,52957,52968,56033,56043,56045,56046,56065,56067'
     data_json['cmip_type'] = 'original' # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None # 分辨率 1/5/10/25/50/100 km
-    data_json['cmip_model'] = ['BCC-CSM2-MR', 'CanESM5']# 模式，列表：['CanESM5','CESM2']等
-    data_json['plot'] = 1
-    data_json['method'] = 'kri'
+    data_json['cmip_model'] = ['Set']# 模式，列表：['CanESM5','CESM2']等
+    data_json['plot'] = 0
     data_json['shp_path'] = r'C:/Users/MJY/Desktop/qhbh/zipdata/shp/qh/qh.shp'
     result = traffic_esti(data_json)
-    
-
-    
     
