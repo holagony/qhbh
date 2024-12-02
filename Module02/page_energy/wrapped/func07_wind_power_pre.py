@@ -120,19 +120,6 @@ def wind_power_pre(element,data_dir,time_scale,insti,scene,var,stats_times,time_
     
     return result
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return result_days,result_hdd18,result_start_end,result_start_end_num
 
 
     
