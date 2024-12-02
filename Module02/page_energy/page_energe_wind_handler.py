@@ -86,9 +86,9 @@ def energy_wind_power(data_json):
     if os.name == 'nt':
         data_dir=r'D:\Project\qh'
     elif os.name == 'posix':
-        data_dir='/model_data/station_data'
+        data_dir='/model_data/station_data/csv'
     else:
-        data_dir='/model_data/station_data'
+        data_dir='/model_data/station_data/csv'
 
     if data_cource == 'original':
         res='25'
@@ -96,10 +96,10 @@ def energy_wind_power(data_json):
     res_d=dict()
     res_d['25']='0.25deg'
     res_d['50']='0.50deg'
-    res_d['100']='1deg'
+    res_d['100']='1.00deg'
    
     if data_cource != 'original':
-        data_dir=os.path.join(data_dir,res_d[res])
+        data_dir=os.path.join('/model_data/station_data_delta/csv',res_d[res])
     # nc要素
     if element == 'WSF':
         var='ws'

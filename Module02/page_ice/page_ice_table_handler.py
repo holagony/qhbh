@@ -122,13 +122,6 @@ def ice_table_def(data_json):
     if shp_path is not None:
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
         
-    if os.name == 'nt':
-        data_dir=r'D:\Project\qh'
-    elif os.name == 'posix':
-        data_dir='/cmip_data'
-    else:
-        data_dir='/cmip_data'    
-    
     scene=['ssp126','ssp245','ssp585']
     independent_columns=factor_element.split(',')
     
@@ -142,18 +135,23 @@ def ice_table_def(data_json):
         factor_name.append(cleaned_name)
         
     #%% 固定字典表
-    # 分辨率
+    if os.name == 'nt':
+        data_dir=r'D:\Project\qh'
+    elif os.name == 'posix':
+        data_dir='/model_data/station_data/csv'
+    else:
+        data_dir='/model_data/station_data/csv'
+
     if data_cource == 'original':
-        res='10'
-    
+        res='25'
+        
     res_d=dict()
-    res_d['10']='0.10deg'
     res_d['25']='0.25deg'
     res_d['50']='0.50deg'
     res_d['100']='1.00deg'
-
+   
     if data_cource != 'original':
-        data_dir=os.path.join(data_dir,res_d[res])
+        data_dir=os.path.join('/model_data/station_data_delta/csv',res_d[res])
         
     # 模型站点要素名对照表
     model_ele_dict=dict()
