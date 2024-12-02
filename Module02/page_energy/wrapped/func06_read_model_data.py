@@ -13,13 +13,14 @@ import pandas as pd
 
 
 def read_xlsx_data(file,station_id):
-    data_1=pd.read_excel(file)
+    data_1=pd.read_csv(file)
     if 'Unnamed: 0' in data_1.columns:
         data_1.drop(['Unnamed: 0'], axis=1, inplace=True)
     
     data_1.iloc[0,1::]=data_1.iloc[0,1::].astype(int).astype(str)
     ori_columns =data_1.columns
     data_1.columns=data_1.loc[0]
+    data_1=data_1.copy()
     data_1.loc[0] =ori_columns
     data_11=data_1[['station id']+station_id]    
     data_11.rename(columns={data_11.columns[0]: 'Datetime'}, inplace=True)
@@ -40,11 +41,11 @@ def read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
         
         if int(start_year)<2015:
             
-            file_1=os.path.join(data_dir,time_scale,insti,'historical',var+'.xlsx')
+            file_1=os.path.join(data_dir,time_scale,insti,'historical',var+'.csv')
             data_1= read_xlsx_data(file_1,station_id)
             data_m1= data_1.loc[start_year:'2014']
             
-            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.xlsx')
+            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.csv')
             data_2= read_xlsx_data(file_2,station_id)
             data_m2= data_2.loc['2015':end_year]
 
@@ -52,7 +53,7 @@ def read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
             
         else:
             
-            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.xlsx')
+            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.csv')
             data_2= read_xlsx_data(file_2,station_id)
             data_m3 =data_2.loc[start_year:end_year]
             
@@ -70,9 +71,9 @@ def read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
             
             if int(start_year)<2016:
                 
-                file_1=os.path.join(data_dir,time_scale,insti,'historical',var+'.xlsx')
+                file_1=os.path.join(data_dir,time_scale,insti,'historical',var+'.csv')
                 data_1= read_xlsx_data(file_1,station_id)            
-                file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.xlsx')
+                file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.csv')
                 data_2= read_xlsx_data(file_2,station_id)
                 
                 data_m1 = data_1[str(int(start_year)-1)+'-12':'2014-12']
@@ -84,7 +85,7 @@ def read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
                 data_m3=pd.concat([data_m1,data_m2],axis=0)
                 
             else:
-                file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.xlsx')
+                file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.csv')
                 data_2= read_xlsx_data(file_2,station_id)
                 
                 data_m2 = data_2[str(int(start_year)-1)+'-12':str(int(end_year)-1)+'-02']
@@ -96,9 +97,9 @@ def read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
             
             if int(start_year)<2015:
 
-                 file_1=os.path.join(data_dir,time_scale,insti,'historical',var+'.xlsx')
+                 file_1=os.path.join(data_dir,time_scale,insti,'historical',var+'.csv')
                  data_1= read_xlsx_data(file_1,station_id)            
-                 file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.xlsx')
+                 file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.csv')
                  data_2= read_xlsx_data(file_2,station_id)
         
                  data_m1 = data_1[data_1.index.month.isin(month)]
@@ -111,7 +112,7 @@ def read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
              
             else:
             
-                file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.xlsx')
+                file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.csv')
                 data_2= read_xlsx_data(file_2,station_id)
                 data_m2 = data_2[data_2.index.month.isin(month)]
                 data_m3 = data_m2.loc[start_year:end_year]
@@ -127,9 +128,9 @@ def read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
         
         if int(start_year)<2015:
 
-             file_1=os.path.join(data_dir,time_scale,insti,'historical',var+'.xlsx')
+             file_1=os.path.join(data_dir,time_scale,insti,'historical',var+'.csv')
              data_1= read_xlsx_data(file_1,station_id)            
-             file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.xlsx')
+             file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.csv')
              data_2= read_xlsx_data(file_2,station_id)
     
              data_m1 = data_1[data_1.index.month.isin(month)]
@@ -142,7 +143,7 @@ def read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
          
         else:
         
-            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.xlsx')
+            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.csv')
             data_2= read_xlsx_data(file_2,station_id)
             data_m2 = data_2[data_2.index.month.isin(month)]
             data_m3 = data_m2.loc[start_year:end_year]
@@ -156,11 +157,11 @@ def read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
         
         if int(start_year)<2015:
             
-            file_1=os.path.join(data_dir,time_scale,insti,'historical',var+'.xlsx')
+            file_1=os.path.join(data_dir,time_scale,insti,'historical',var+'.csv')
             data_1= read_xlsx_data(file_1,station_id)
             data_m1= data_1.loc[start_time[:4:]+'-'+start_time[4::]:'2014']
             
-            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.xlsx')
+            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.csv')
             data_2= read_xlsx_data(file_2,station_id)
             data_m2= data_2.loc['2015':end_time[:4:]+'-'+end_time[4::]]
    
@@ -168,7 +169,7 @@ def read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
             
         else:
             
-            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.xlsx')
+            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.csv')
             data_2= read_xlsx_data(file_2,station_id)
             data_m3 =data_2.loc[start_time[:4:]+'-'+start_time[4::]:end_time[:4:]+'-'+end_time[4::]]
         
@@ -180,11 +181,11 @@ def read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
         
         if int(start_year)<2015:
             
-            file_1=os.path.join(data_dir,time_scale,insti,'historical',var+'.xlsx')
+            file_1=os.path.join(data_dir,time_scale,insti,'historical',var+'.csv')
             data_1= read_xlsx_data(file_1,station_id)
             data_m1= data_1.loc[start_time[:4:]+'-'+start_time[4:6:]+'-'+start_time[6::]:'2014']
             
-            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.xlsx')
+            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.csv')
             data_2= read_xlsx_data(file_2,station_id)
             data_m2= data_2.loc['2015':end_time[:4:]+'-'+end_time[4:6:]+'-'+end_time[6::]]
    
@@ -192,7 +193,7 @@ def read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
             
         else:
             
-            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.xlsx')
+            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.csv')
             data_2= read_xlsx_data(file_2,station_id)
             data_m3 =data_2.loc[start_time[:4:]+'-'+start_time[4:6:]+'-'+start_time[6::]:end_time[:4:]+'-'+end_time[4::]+'-'+end_time[6::]]
     
@@ -215,14 +216,14 @@ def read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
         end_time = date_time.split(',')[1]
 
         if int(start_year)<2015:
-            file_1=os.path.join(data_dir,time_scale,insti,'historical',var+'.xlsx')
+            file_1=os.path.join(data_dir,time_scale,insti,'historical',var+'.csv')
             data_1= read_xlsx_data(file_1,station_id)            
-            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.xlsx')
+            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.csv')
             data_2= read_xlsx_data(file_2,station_id)
                
         else:
             
-            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.xlsx')
+            file_2=os.path.join(data_dir,time_scale,insti,scene,var+'.csv')
             data_2= read_xlsx_data(file_2,station_id)
             data_1=[]
             
