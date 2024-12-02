@@ -52,7 +52,7 @@ def boundary_png():
     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
     png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
     
-    info = dict
+    info = dict()
     info['area_code'] = area_code
     info['min_lon'] = min_lon
     info['min_lat'] = min_lat

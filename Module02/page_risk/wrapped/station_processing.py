@@ -3,6 +3,7 @@ import glob
 import json
 import numpy as np
 import pandas as pd
+from Module02.page_risk.wrapped.mci import calc_mci
 from Utils.config import cfg
 
 
@@ -52,5 +53,54 @@ def rain_change_processing(data_in):
     df_out.reset_index(level=0,inplace=True,drop=True)
     df_out.columns = ['Station_Id_C', 'Station_Name', 'Lat', 'Lon', 'Alti', 'rx5day', 'r20']
     df_out['Alti'] = 100/(df_out['Alti']+145)
+
+    return df_out
+
+
+def drought_change_processing(data_in):
+    '''
+    气候变化影响预估-干旱-站点数据处理，计算MCI
+    日数据转换成月结果，计算完之后转换到年尺度，计算风险性
+    '''
+    if data_in is None or data_in.empty:
+        return data_in
+    df_data = data_in.copy()
+    
+    try:
+        df_data['Datetime'] = pd.to_datetime(df_data['Datetime'])
+    except:
+        df_data['Datetime'] = pd.to_datetime(df_data['Datetime'], format='%Y%m%d%H')
+
+    df_data.set_index('Datetime', inplace=True)
+    df_data['Station_Id_C'] = df_data['Station_Id_C'].astype(str)
+
+    df_data['Lon'] = df_data['Lon'].astype(float)
+    df_data['Lat'] = df_data['Lat'].astype(float)
+
+    # 要素处理
+    if 'PRE_Time_2020' in df_data.columns:
+        df_data['PRE_Time_2020'] = df_data['PRE_Time_2020'].map(str)
+        df_data.loc[df_data['PRE_Time_2020'].str.contains('9999'), 'PRE_Time_2020'] = np.nan
+        df_data['PRE_Time_2020'] = df_data['PRE_Time_2020'].map(float)
+
+    def resample_and_calc_mci(x):
+        # 第一步 转成月数据
+        x_info = x[['Station_Id_C', 'Station_Name', 'Lat', 'Lon']].resample('1M').first()
+        pre = x['PRE_Time_2020'].resample('MS').sum()
+        tem = x['TEM_Avg'].resample('MS').mean()
+        concat = pd.concat([x_info, tem, pre], axis=1)
+        
+        # 第二步 计算MCI
+        concat = calc_mci(concat, 0.3, 0.5, 0.3, 0.2)
+        
+
+        # 第三步 转换为年
+        return concat
+
+    # 各个站点的历年rx5day
+    df_out = df_data.groupby('Station_Id_C').apply(resample_and_calc_mci)
+    df_out.reset_index(level=0,inplace=True,drop=True)
+    # df_out.columns = ['Station_Id_C', 'Station_Name', 'Lat', 'Lon', 'Alti', 'rx5day', 'r20']
+    # df_out['Alti'] = 100/(df_out['Alti']+145)
 
     return df_out

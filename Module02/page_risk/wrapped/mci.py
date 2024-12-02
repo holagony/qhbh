@@ -105,20 +105,11 @@ def calc_mci(df, a, b, c, d):
     
 
 
-path = r'C:/Users/mjynj/Desktop/qhkxxlz/app/Files/test_data/qh_mon.csv'
-df = pd.read_csv(path, low_memory=False)
-df = df[df['Station_Id_C']==52866]
-df = df[['Datetime', 'Station_Id_C', 'Lon', 'Lat', 'TEM_Avg', 'PRE_Time_2020']]
-df['Datetime'] = pd.to_datetime(df['Datetime'])
-df.set_index('Datetime', inplace=True)
+# path = r'C:/Users/mjynj/Desktop/qhkxxlz/app/Files/test_data/qh_mon.csv'
+# df = pd.read_csv(path, low_memory=False)
+# df = df[df['Station_Id_C']==52866]
+# df = df[['Datetime', 'Station_Id_C', 'Lon', 'Lat', 'TEM_Avg', 'PRE_Time_2020']]
+# df['Datetime'] = pd.to_datetime(df['Datetime'])
+# df.set_index('Datetime', inplace=True)
 
-df_out = calc_mci(df, 0.3, 0.5, 0.3, 0.2)
-
-    
-
-
-
-    
-    
-
-    
+# df_out = calc_mci(df, 0.3, 0.5, 0.3, 0.2)
