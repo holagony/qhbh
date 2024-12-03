@@ -175,7 +175,7 @@ def agriculture_features_stats(data_json):
         if ',' in element_str:
             element_tuple = tuple(element_str.split(','))
         else:
-            element_tuple = (element_str)
+            element_tuple = (element_str,)
 
         start_year = stats_times.split(',')[0]
         end_year = stats_times.split(',')[1]
@@ -449,7 +449,7 @@ if __name__ == '__main__':
     data_json['nearly_years'] = '2004,2024'
     data_json['time_freq'] = 'Y'
     data_json['stats_times'] = '2008,2024'
-    data_json['sta_ids'] = '63000'
+    data_json['sta_ids'] = '52868,52876'
 
     station_df,stats_result,post_data_df,post_refer_df,reg_params = agriculture_features_stats(data_json)
     t2 = time.time()

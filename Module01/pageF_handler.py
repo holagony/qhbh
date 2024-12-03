@@ -176,13 +176,13 @@ def agriculture_features(data_json):
 if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
-    data_json['element'] = 'yield' #sowin_date
-    data_json['crop'] = 'food_crop'
+    data_json['element'] = 'sowin_date' #sowin_date
+    data_json['crop'] = 'spring_maizet'
     data_json['refer_years'] = '2002,2024'
     data_json['nearly_years'] = '2004,2024'
     data_json['time_freq'] = 'Y'
     data_json['stats_times'] = '2008,2024'
-    data_json['sta_ids'] = '63000'
+    data_json['sta_ids'] = "52868,52876"
     data_json['interp_method'] = 'ukri'
     data_json['ci'] = 95
     data_json['shp_path'] =r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\省界.shp'
