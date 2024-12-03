@@ -65,7 +65,22 @@ def frs_processing(element,df):
                         result_df.iloc[i,j]=(result_end.iloc[i,j]-datetime(result_end.iloc[i,j].year, 1, 1)).days+1
                     else:
                         result_df.iloc[i,j]=999999
-            result_df[result_df==999999]=np.nan            
+            result_df[result_df==999999]=np.nan   
+            
+            return result_df
+
+            
+        if element in ['FRS_TIME']:
+            data_len_df=end_df.copy()
+            for i in np.arange(np.size(start_df,0)):
+                for j in np.arange(np.size(start_df,1)):
+                    if pd.notna(start_df.iloc[i,j]) & pd.notna(end_df.iloc[i,j]):
+                        data_len_df.iloc[i,j]=(end_df.iloc[i,j]-start_df.iloc[i,j]).days
+                    else:
+                        data_len_df.iloc[i,j]=999999
+            data_len_df[data_len_df==999999]=np.nan    
+            result_df=data_len_df.copy()
+            
             return result_df
 
 def ice_evaluate_data_deal(element,train_time,sta_ids,time_freq,time_freq_data):

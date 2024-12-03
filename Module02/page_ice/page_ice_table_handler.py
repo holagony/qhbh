@@ -220,8 +220,8 @@ def ice_table_def(data_json):
     refer_evaluate,refer_evaluate_station=ice_evaluate_data_deal(main_element,refer_times,sta_ids,time_freq_main,time_freq_main_data)
     refer_start_time = pd.to_datetime(refer_times.split(',')[0])
     refer_end_time = pd.to_datetime(refer_times.split(',')[1])
-    refer_evaluate_station = verify_evaluate_station[(pd.to_datetime(verify_evaluate_station.index) >= refer_start_time) 
-                                                      & (pd.to_datetime(verify_evaluate_station.index) <= refer_end_time)]    
+    refer_evaluate_station = refer_evaluate_station[(pd.to_datetime(refer_evaluate_station.index, format='%Y') >= refer_start_time) 
+                                                      & (pd.to_datetime(refer_evaluate_station.index, format='%Y') <= refer_end_time)]    
     refer_evaluate_station.reset_index(inplace=True,drop=True)
     # refer_mean=pd.DataFrame(refer_evaluate_station.mean().round(2)).T
     
@@ -502,7 +502,7 @@ if __name__ == '__main__':
     
     
     data_json = dict()
-    data_json['main_element']='SNOW_DAYS'  # 评估要素
+    data_json['main_element']='FRS_START'  # 评估要素
     data_json['sta_ids']='51886,52737,52876' # 站点信息
     data_json['time_freq_main']='Y' # 评估要素时间尺度
     data_json['time_freq_main_data']='0'
