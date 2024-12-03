@@ -104,7 +104,7 @@ def drought_esti(data_json):
     time_scale = 'daily'
     evaluate_cmip = dict()
     station_id = list(sta_ids)
-    for exp in ['ssp126','ssp245']:
+    for exp in ['ssp126','ssp245','ssp585']:
         evaluate_cmip[exp] = dict()
         for insti in cmip_model:
             evaluate_cmip[exp][insti] = dict()

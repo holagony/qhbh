@@ -85,4 +85,4 @@ if __name__ == '__main__':
     refer_df = df[(df.index.year >= 1991) & (df.index.year <= 2020)]
     nearly_df = df[(df.index.year >= 2014) & (df.index.year <= 2023)]
     last_year = 2023
-    stats_result, post_data_df, post_refer_df, regression = table_stats_simple(data_df, element_str)
+    stats_result, post_data_df, regression = table_stats_simple(data_df, element_str)
