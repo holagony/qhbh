@@ -4,7 +4,7 @@ from sklearn.linear_model import LinearRegression
 from Utils.data_processing import data_processing
 
 
-def traffic_cmip_multi(cmip_data_dict):
+def traffic_cmip_multi(cmip_data_dict, stats_result_his):
     '''
     计算集合的交通不利日数
     '''
@@ -57,12 +57,17 @@ def traffic_cmip_multi(cmip_data_dict):
         tmp_df.loc['变率'] = traffic_cmip.apply(trend_rate, axis=0).round(5)
         tmp_df.loc['最大值'] = traffic_cmip.iloc[:, :].max(axis=0).round(1)
         tmp_df.loc['最小值'] = traffic_cmip.iloc[:, :].min(axis=0).round(1)
+        tmp_df.loc['参考时段均值'] = stats_result_his.iloc[-4, 1:-3]
+        tmp_df.loc['距平'] = (tmp_df.loc['平均'].astype('float') - stats_result_his.iloc[-4,1:-3].astype('float')).round(1)
+        tmp_df.loc['距平百分率'] = ((tmp_df.loc['距平'].astype('float') / stats_result_his.iloc[-4,1:-3].astype('float')) * 100).round(2)
         
         # 合并所有结果
         stats_result = traffic_cmip.copy()
-        stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).round(1)
-        stats_result['区域最大值'] = stats_result.iloc[:, :-3].max(axis=1).round(1)
-        stats_result['区域最小值'] = stats_result.iloc[:, :-4].min(axis=1).round(1)
+        stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).astype(float).round(1)
+        stats_result['区域最大值'] = stats_result.iloc[:, :-1].max(axis=1).astype(float).round(1)
+        stats_result['区域最小值'] = stats_result.iloc[:, :-2].min(axis=1).astype(float).round(1)
+        stats_result['区域距平'] = (stats_result['区域均值'] - stats_result_his.iloc[:-4,1:-3].mean().mean()).round(1)
+        stats_result['区域距平百分率'] = ((stats_result['区域距平'] / stats_result_his.iloc[:-4,1:-3].mean().mean()) * 100).round(1)
         stats_result = stats_result.round(1)
 
         # concat
