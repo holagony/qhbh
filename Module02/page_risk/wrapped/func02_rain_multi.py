@@ -48,21 +48,21 @@ def rain_cmip_multi(cmip_data_dict, disaster, alti_list):
         risk.index = risk.index.strftime('%Y')
         
         result_risk = risk*disaster_val # 最后计算的风险值 0~1之间
-        result_risk = result_risk.round(5)
+        result_risk = result_risk.round(3)
         
         # 创建临时下方统计的df
         tmp_df = pd.DataFrame(columns=result_risk.columns)
-        tmp_df.loc['平均'] = result_risk.iloc[:, :].mean(axis=0).round(1)
-        tmp_df.loc['变率'] = result_risk.apply(trend_rate, axis=0).round(5)
-        tmp_df.loc['最大值'] = result_risk.iloc[:, :].max(axis=0).round(1)
-        tmp_df.loc['最小值'] = result_risk.iloc[:, :].min(axis=0).round(1)
+        tmp_df.loc['平均'] = result_risk.iloc[:, :].mean(axis=0).round(3)
+        tmp_df.loc['变率'] = result_risk.apply(trend_rate, axis=0).round(3)
+        tmp_df.loc['最大值'] = result_risk.iloc[:, :].max(axis=0).round(3)
+        tmp_df.loc['最小值'] = result_risk.iloc[:, :].min(axis=0).round(3)
         
         # 合并所有结果
         stats_result = result_risk.copy()
-        stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).round(1)
-        stats_result['区域最大值'] = stats_result.iloc[:, :-3].max(axis=1).round(1)
-        stats_result['区域最小值'] = stats_result.iloc[:, :-4].min(axis=1).round(1)
-        stats_result = stats_result.round(5)
+        stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).round(3)
+        stats_result['区域最大值'] = stats_result.iloc[:, :-3].max(axis=1).round(3)
+        stats_result['区域最小值'] = stats_result.iloc[:, :-4].min(axis=1).round(3)
+        stats_result = stats_result.round(3)
 
         # concat
         stats_result = pd.concat((stats_result, tmp_df), axis=0)

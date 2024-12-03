@@ -80,10 +80,7 @@ __C.FILES.ICE = os.path.join(data_file_dir, 'shp/ice.shp')
 __C.FILES.DISASTER = os.path.join(data_file_dir, 'disaster.nc') # 承灾体数据
 __C.FILES.DROUGHT_CZT = os.path.join(data_file_dir, 'drought_czt.nc') # 承灾体数据
 __C.FILES.DROUGHT_YZ = os.path.join(data_file_dir, 'drought_yz.nc') # 承灾体数据
-
-
-
-
+__C.FILES.DROUGHT_GDP = os.path.join(data_file_dir, 'drought_gdp.nc') # 承灾体数据
 
 
 

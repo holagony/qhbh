@@ -93,7 +93,7 @@ def drought_esti(data_json):
     res_d['100'] = '1deg'
 
     if os.name == 'nt':
-        data_dir = r'C:\Users\mjynj\Desktop\station_data\csv'  # 本地
+        data_dir = r'C:\Users\MJY\Desktop\station_data\csv'  # 本地
     else:
         if cmip_type == 'original':
             data_dir = '/model_data/station_data/csv'  # 容器内
@@ -104,7 +104,7 @@ def drought_esti(data_json):
     time_scale = 'daily'
     evaluate_cmip = dict()
     station_id = list(sta_ids)
-    for exp in ['ssp126']:
+    for exp in ['ssp126','ssp245']:
         evaluate_cmip[exp] = dict()
         for insti in cmip_model:
             evaluate_cmip[exp][insti] = dict()
@@ -123,7 +123,6 @@ def drought_esti(data_json):
     lon_list = df_unique['Lon'].tolist()
     lat_list = df_unique['Lat'].tolist()
     sta_list = df_unique['Station_Id_C'].tolist()
-    alti_list = df_unique['Alti'].tolist()
 
     ######################################################
     # 承灾体静态数据插值到站点
@@ -203,7 +202,7 @@ def drought_esti(data_json):
                     selected_data = ds_data
                 # selected_data = selected_data.interp(lat=interp_lat, lon=interp_lon, method='nearest')
                 sub_dict2[key] = selected_data
-
+    
     ######################################################
     # 开始计算
     result_dict = dict()
@@ -246,15 +245,13 @@ def drought_esti(data_json):
             ds_daily = ds_daily.mean(dim='new_dim')
             evaluate_cmip_res[exp][var] = ds_daily  # 先平均情景下相同要素的xr
     
-    return evaluate_cmip_res, czt_data, yz_data
-
     # 调用生成表格
-    res_table_multi = drought_cmip_multi(evaluate_cmip_res, czt_data, yz_data)
+    res_table_multi = drought_cmip_multi(evaluate_cmip_res, czt_data, yz_data, gdp_data)
     result_dict['表格']['预估集合'] = res_table_multi
 
     # 3.表格-预估-各个情景的单模式
     # evaluate_cmip 原始插值后数据
-    single_cmip_res = rain_cmip_single(evaluate_cmip, disaster, alti_list)
+    single_cmip_res = drought_cmip_single(evaluate_cmip, czt_data, yz_data, gdp_data)
     result_dict['表格']['预估单模式'] = single_cmip_res
 
     # 4.时序图-各个情景的集合
@@ -328,30 +325,30 @@ def drought_esti(data_json):
                 all_png1[exp][year_name] = png_path
 
         # 历史-观测画图
-        all_png2 = dict()
-        stats_result_his = pd.DataFrame(stats_result_his)
-        for i in tqdm(range(len(stats_result_his))):
-            value_list = stats_result_his.iloc[i, 1:-3].tolist()
-            year_name = stats_result_his.iloc[i, 0]
-            exp_name = ''
-            insti_name = ''
-            # 插值/掩膜/画图/保存
-            mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-            png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
+        # all_png2 = dict()
+        # stats_result_his = pd.DataFrame(stats_result_his)
+        # for i in tqdm(range(len(stats_result_his))):
+        #     value_list = stats_result_his.iloc[i, 1:-3].tolist()
+        #     year_name = stats_result_his.iloc[i, 0]
+        #     exp_name = ''
+        #     insti_name = ''
+        #     # 插值/掩膜/画图/保存
+        #     mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+        #     png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
 
-            # 转url
-            png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-            png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-            all_png2[year_name] = png_path
+        #     # 转url
+        #     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+        #     png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+        #     all_png2[year_name] = png_path
 
     else:  # 直接获取现成的，目前没做，所有图片路径都是None
         all_png = dict()
         all_png1 = dict()
-        all_png2 = dict()
+        # all_png2 = dict()
 
     result_dict['分布图']['预估单模式'] = all_png
     result_dict['分布图']['预估集合'] = all_png1
-    result_dict['分布图']['历史'] = all_png2
+    # result_dict['分布图']['历史'] = all_png2
 
     return result_dict
 
@@ -368,110 +365,8 @@ if __name__ == '__main__':
     data_json['plot'] = 0
     data_json['shp_path'] = r'C:/Users/MJY/Desktop/qhbh/zipdata/shp/qh/qh.shp'
     data_json['element'] = 'rain'
-    cmip_data_dict, czt_data, yz_data = drought_esti(data_json)
-    
-    # In[]
-    from sklearn.linear_model import LinearRegression
+    result_dict = drought_esti(data_json)
 
-    
-    def trend_rate(x):
-        '''
-        计算变率（气候倾向率）的pandas apply func
-        '''
-        try:
-            x = x.to_frame()
-            x['num'] = np.arange(len(x))
-            x.dropna(how='any', inplace=True)
-            train_x = x.iloc[:, -1].values.reshape(-1, 1)
-            train_y = x.iloc[:, 0].values.reshape(-1, 1)
-            model = LinearRegression(fit_intercept=True).fit(train_x, train_y)
-            weight = model.coef_[0][0].round(3) * 10
-            return weight
-        except:
-            return np.nan
-        
-    risk_dict = dict()
-    czt_val = czt_data.value.data  # 承灾体插值到站点后的静态值
-    yz_val = yz_data.value.data  # 承灾体插值到站点后的静态值
-    # gdp_val = gdp_data.value.data
-    gdp_val = np.random.rand(10)
-    
-    for exp, sub_dict in cmip_data_dict.items():
-        tem = sub_dict['tas']
-        tem_array = tem.tas.data
-        tem_df = pd.DataFrame(tem_array, columns=tem.location, index=tem.time)
-        tem_df = tem_df.resample('1M').mean()
-
-        pre = sub_dict['pr']
-        pre_array = pre.pr.data
-        pre_df = pd.DataFrame(pre_array, columns=pre.location, index=pre.time)
-        pre_df = pre_df.resample('1M').sum()
-        
-        result_risk = []
-        for i in range(len(czt_val)):
-            col = tem_df.columns[i]
-                    
-            # 站点的危险性
-            tmp_df = pd.concat([tem_df[col],pre_df[col]],axis=1)
-            tmp_df.columns = ['TEM_Avg','PRE_Time_2020']
-            mci = calc_mci(tmp_df, 0.3, 0.5, 0.3, 0.2)
-            mci = mci[['轻度干旱', '中度干旱', '重度干旱', '特度干旱']]
-            mci_year = mci.resample('1A').sum()
-            mci_risk = 0.12*mci_year['轻度干旱'] + 0.23*mci_year['中度干旱'] + 0.37*mci_year['重度干旱'] + 0.28*mci_year['特度干旱']
-            
-            # 站点的承灾体和孕灾
-            czt_risk = czt_val[i]
-            yz_risk = yz_val[i]
-            gdp_risk = gdp_val[i]
-            
-            # 最终风险
-            total_risk = (0.42*mci_risk + 0.21*yz_risk + 0.25*czt_risk + 0.12*gdp_risk).round(3)
-            result_risk.append(total_risk)
-        
-        result_risk = pd.concat(result_risk,axis=1)
-        result_risk.columns = tem_df.columns
-        result_risk.index = result_risk.index.strftime('%Y')
-        
-        # 创建临时下方统计的df
-        tmp_df = pd.DataFrame(columns=result_risk.columns)
-        tmp_df.loc['平均'] = result_risk.iloc[:, :].mean(axis=0).round(1)
-        tmp_df.loc['变率'] = result_risk.apply(trend_rate, axis=0).round(5)
-        tmp_df.loc['最大值'] = result_risk.iloc[:, :].max(axis=0).round(1)
-        tmp_df.loc['最小值'] = result_risk.iloc[:, :].min(axis=0).round(1)
-
-        # 合并所有结果
-        stats_result = result_risk.copy()
-        stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).round(1)
-        stats_result['区域最大值'] = stats_result.iloc[:, :-3].max(axis=1).round(1)
-        stats_result['区域最小值'] = stats_result.iloc[:, :-4].min(axis=1).round(1)
-        stats_result = stats_result.round(5)
-
-        # concat
-        stats_result = pd.concat((stats_result, tmp_df), axis=0)
-
-        # index处理
-        stats_result.insert(loc=0, column='时间', value=stats_result.index)
-        stats_result.reset_index(drop=True, inplace=True)
-        
-        
-        risk_dict[exp] = stats_result
-    
-            
-            
-            
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     

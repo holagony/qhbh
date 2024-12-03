@@ -93,25 +93,27 @@ def calc_mci(df, a, b, c, d):
     c北方西北0.3 南方0.2
     d北方西北0.2 南方0.1
     '''
+    df_cp = df.copy()
+    
     Ka = [0, 0, 0, 0.6, 1.0, 1.2, 1.2, 1.0, 0.9, 0.4, 0, 0]  # 附录H
-    df['Ka'] = np.nan
+    df_cp['Ka'] = np.nan
     for mon in range(1, 13):
-        df.loc[df.index.month == mon, 'Ka'] = Ka[mon - 1]
+        df_cp.loc[df_cp.index.month == mon, 'Ka'] = Ka[mon - 1]
 
-    df = calc_mi(df)
-    spiw60 = calc_spi(df, 2, weigth_flag=1)
-    spi90 = calc_spi(df, 3)
-    spi150 = calc_spi(df, 5)
+    df_cp = calc_mi(df_cp)
+    spiw60 = calc_spi(df_cp, 2, weigth_flag=1)
+    spi90 = calc_spi(df_cp, 3)
+    spi150 = calc_spi(df_cp, 5)
 
-    df['spiw60'] = spiw60
-    df['spi90'] = spi90
-    df['spi150'] = spi150
-    df['干旱指数'] = df['Ka'] * (a * df['spiw60'] + b * df['mi'] + c * df['spi90'] + d * df['spi150'])
-    df['干旱指数'] = df['干旱指数'].fillna(0).round(2)
-    df['干旱指数'] = df['干旱指数'].replace(-0.0, 0.0)
-    df.dropna(subset=['TEM_Avg'], inplace=True)
+    df_cp['spiw60'] = spiw60
+    df_cp['spi90'] = spi90
+    df_cp['spi150'] = spi150
+    df_cp['干旱指数'] = df_cp['Ka'] * (a * df_cp['spiw60'] + b * df_cp['mi'] + c * df_cp['spi90'] + d * df_cp['spi150'])
+    df_cp['干旱指数'] = df_cp['干旱指数'].fillna(0).round(2)
+    df_cp['干旱指数'] = df_cp['干旱指数'].replace(-0.0, 0.0)
+    df_cp.dropna(subset=['TEM_Avg'], inplace=True)
 
-    mci = df['干旱指数'].to_frame()
+    mci = df_cp['干旱指数'].to_frame()
     mci['轻度干旱'] = np.where((mci['干旱指数'] > -1) & (mci['干旱指数'] <= -0.5), 1, 0)
     mci['中度干旱'] = np.where((mci['干旱指数'] > -1.5) & (mci['干旱指数'] <= -1), 1, 0)
     mci['重度干旱'] = np.where((mci['干旱指数'] > -2) & (mci['干旱指数'] <= -1.5), 1, 0)
