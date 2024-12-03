@@ -260,7 +260,7 @@ def extreme_climate_esti(data_json):
 
     result_df_dict['时序图']=dict()
     result_df_dict['时序图']['集合_多模式' ]=dict()
-    result_df_dict['时序图']['集合_多模式' ]=percentile_std(scene,insti,pre_data,element,refer_result)
+    result_df_dict['时序图']['集合_多模式' ]=percentile_std(scene,insti,pre_data,'none',refer_result)
     
     result_df_dict['时序图']['单模式' ]=pre_data_result
     result_df_dict['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()
