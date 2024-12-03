@@ -29,7 +29,7 @@ def stats_result_1(df_in, refer_df):
     
     # 横向的距平和距平百分率
     df = pd.DataFrame(index=df_in.index)
-    df['距平'] = df_in['Q'] - refer_df['Q'].mean(axis=0)
+    df['距平'] = (df_in['Q'] - refer_df['Q'].mean(axis=0)).round(1)
     df['距平百分率'] = ((df['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
 
     # 创建临时下方统计的df
@@ -68,7 +68,7 @@ def stats_result_2(dict_in, refer_df):
         # 横向的距平和距平百分率
         df = pd.DataFrame(index=df_in.index)
         df['距平'] = df_in['Q'] - refer_df['Q'].mean(axis=0).round(1)
-        df['距平百分率'] = ((df['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
+        df['距平百分率'] = ((df['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(1)
     
         # 创建临时下方统计的df
         tmp_df = pd.DataFrame(columns=df_in.columns)
@@ -77,7 +77,7 @@ def stats_result_2(dict_in, refer_df):
         tmp_df.loc['最大值'] = df_in.iloc[:, :].max(axis=0)
         tmp_df.loc['最小值'] = df_in.iloc[:, :].min(axis=0)
         tmp_df.loc['距平'] = (tmp_df.loc['平均'] - refer_df['Q'].mean(axis=0)).round(1)
-        tmp_df.loc['距平百分率'] = ((tmp_df.loc['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
+        tmp_df.loc['距平百分率'] = ((tmp_df.loc['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(1)
         tmp_df.loc['参考时段'] = refer_df['Q'].mean(axis=0).round(1)
 
         result = pd.concat([df_in,tmp_df],axis=0)
@@ -107,7 +107,7 @@ def stats_result_3(dict_in, refer_df):
             # 横向的距平和距平百分率
             df = pd.DataFrame(index=df_in.index)
             df['距平'] = df_in['Q'] - refer_df['Q'].mean(axis=0)
-            df['距平百分率'] = ((df['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
+            df['距平百分率'] = ((df['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(1)
         
             # 创建临时下方统计的df
             tmp_df = pd.DataFrame(columns=df_in.columns)
@@ -116,7 +116,7 @@ def stats_result_3(dict_in, refer_df):
             tmp_df.loc['最大值'] = df_in.iloc[:, :].max(axis=0)
             tmp_df.loc['最小值'] = df_in.iloc[:, :].min(axis=0)
             tmp_df.loc['距平'] = (tmp_df.loc['平均'] - refer_df['Q'].mean(axis=0)).round(1)
-            tmp_df.loc['距平百分率'] = ((tmp_df.loc['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(2)
+            tmp_df.loc['距平百分率'] = ((tmp_df.loc['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(1)
             tmp_df.loc['参考时段'] = refer_df['Q'].mean(axis=0).round(1)
     
             result = pd.concat([df_in,tmp_df],axis=0)
