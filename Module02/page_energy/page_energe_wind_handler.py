@@ -173,7 +173,6 @@ def energy_wind_power(data_json):
     # 预估数据
     insti = insti.split(',')
     sta_ids2=sta_ids.split(',')
-    stats_start_year,stats_end_year=time_choose(time_freq,stats_times)
     
     pre_data=dict()
     for insti_a in insti:
