@@ -211,7 +211,7 @@ def hbv_single_calc(data_json):
     res_d['100'] = '1deg'
     
     if os.name == 'nt':
-        data_dir = r'C:\Users\MJY\Desktop\excel_data\csv' # 本地
+        data_dir = r'C:\Users\MJY\Desktop\station_data\csv' # 本地
     else:
         if cmip_type == 'original':
             data_dir = '/model_data/station_data/csv' # 容器内
