@@ -82,8 +82,8 @@ def drought_cmip_single(cmip_data_dict, czt_data, yz_data, gdp_data):
             # 合并所有结果
             stats_result = result_risk.copy()
             stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).round(3)
-            stats_result['区域最大值'] = stats_result.iloc[:, :-3].max(axis=1).round(3)
-            stats_result['区域最小值'] = stats_result.iloc[:, :-4].min(axis=1).round(3)
+            stats_result['区域最大值'] = stats_result.iloc[:, :].max(axis=1).round(3)
+            stats_result['区域最小值'] = stats_result.iloc[:, :].min(axis=1).round(3)
             stats_result = stats_result.round(3)
 
             # concat

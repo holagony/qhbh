@@ -178,7 +178,7 @@ def risk_esti(data_json):
     res_d['100'] = '1deg'
     
     if os.name == 'nt':
-        data_dir = r'C:\Users\MJY\Desktop\excel_data\csv' # 本地
+        data_dir = r'C:\Users\MJY\Desktop\station_data\csv' # 本地
     else:
         if cmip_type == 'original':
             data_dir = '/model_data/station_data/csv' # 容器内
@@ -317,12 +317,12 @@ def risk_esti(data_json):
             evaluate_cmip_res[exp][var] = ds_daily # 先平均情景下相同要素的xr
               
     # 调用生成表格
-    res_table_multi = rain_cmip_multi(evaluate_cmip_res, disaster, alti_list)
+    res_table_multi = rain_cmip_multi(evaluate_cmip_res, stats_result_his, disaster, alti_list)
     result_dict['表格']['预估集合'] = res_table_multi
     
     # 3.表格-预估-各个情景的单模式
     # evaluate_cmip 原始插值后数据
-    single_cmip_res = rain_cmip_single(evaluate_cmip, disaster, alti_list)                
+    single_cmip_res = rain_cmip_single(evaluate_cmip, stats_result_his, disaster, alti_list)                
     result_dict['表格']['预估单模式'] = single_cmip_res
     
     # 4.时序图-各个情景的集合
@@ -436,7 +436,7 @@ if __name__ == '__main__':
     data_json['plot'] = 0
     data_json['shp_path'] = r'C:/Users/MJY/Desktop/qhbh/zipdata/shp/qh/qh.shp'
     data_json['element'] = 'rain'
-    evaluate_cmip = risk_esti(data_json)
+    result = risk_esti(data_json)
 
 
 

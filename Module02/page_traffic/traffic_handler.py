@@ -108,9 +108,9 @@ def traffic_esti(data_json):
     plot = data_json['plot']
     # method = data_json['method']
     shp_path = data_json['shp_path']
-
     method = 'idw'
-    inpath = '/cmip_data'
+
+    # inpath = '/cmip_data'
     # inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata' # cmip6路径
     if shp_path is not None:
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
@@ -186,7 +186,7 @@ def traffic_esti(data_json):
     res_d['100'] = '1deg'
     
     if os.name == 'nt':
-        data_dir = r'C:\Users\MJY\Desktop\excel_data\csv' # 本地
+        data_dir = r'C:\Users\MJY\Desktop\station_data\csv' # 本地
     else:
         if cmip_type == 'original':
             data_dir = '/model_data/station_data/csv' # 容器内
@@ -214,7 +214,7 @@ def traffic_esti(data_json):
     # 数据处理
     ##### 站点数据处理为交通不利日数
     refer_df = station_traffic_processing(refer_df, element_str)
-
+    
     # 重要!!!
     df_unique = refer_df.drop_duplicates(subset='Station_Id_C') # 删除重复行
     lon_list = df_unique['Lon'].tolist()
@@ -299,7 +299,7 @@ def traffic_esti(data_json):
     # 1.表格-历史
     stats_result_his, _, _ = table_stats_simple(refer_df, 'traffic')
     result_dict['表格']['历史'] = stats_result_his.to_dict(orient='records')
-        
+    
     # 2.表格-预估-各个情景的集合
     evaluate_cmip_res = dict()
     for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tas']
@@ -315,12 +315,12 @@ def traffic_esti(data_json):
             evaluate_cmip_res[exp][var] = ds_daily # 先平均情景下相同要素的xr
             
     # 调用生成表格
-    res_table_multi = traffic_cmip_multi(evaluate_cmip_res)
+    res_table_multi = traffic_cmip_multi(evaluate_cmip_res, stats_result_his)
     result_dict['表格']['预估集合'] = res_table_multi
-    
+        
     # 3.表格-预估-各个情景的单模式
     # evaluate_cmip 原始插值后数据
-    single_cmip_res = traffic_cmip_single(evaluate_cmip)                
+    single_cmip_res = traffic_cmip_single(evaluate_cmip, stats_result_his)                
     result_dict['表格']['预估单模式'] = single_cmip_res
                 
     # 4.时序图-各个情景的集合
@@ -331,16 +331,17 @@ def traffic_esti(data_json):
         for insti, res_df in sub_dict.items():
             res_df = pd.DataFrame(res_df)
             res_df.set_index('时间',inplace=True)
-            array_list.append(res_df.iloc[:-4, :].values[None])
+            
+            array_list.append(res_df.iloc[:-7,:].values[None])
             array = np.concatenate(array_list,axis=0)
             
             std = np.std(array, ddof=1, axis=0).round(2) # 只有一个模式的时候，std是nan
             per25 = np.percentile(array, 25, axis=0).round(2)
             per75 = np.percentile(array, 75, axis=0).round(2)
             
-            std = pd.DataFrame(std, index=res_df.index[:-4], columns=res_df.columns)
-            per25 = pd.DataFrame(per25, index=res_df.index[:-4], columns=res_df.columns)
-            per75 = pd.DataFrame(per75, index=res_df.index[:-4], columns=res_df.columns)
+            std = pd.DataFrame(std, index=res_df.index[:-7], columns=res_df.columns)
+            per25 = pd.DataFrame(per25, index=res_df.index[:-7], columns=res_df.columns)
+            per75 = pd.DataFrame(per75, index=res_df.index[:-7], columns=res_df.columns)
             
             std.reset_index(drop=False,inplace=True)
             per25.reset_index(drop=False,inplace=True)
