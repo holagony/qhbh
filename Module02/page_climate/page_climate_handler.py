@@ -210,7 +210,7 @@ def climate_esti(data_json):
     res_d['100'] = '1deg'
     
     if os.name == 'nt':
-        data_dir = r'C:\Users\MJY\Desktop\excel_data\csv' # 本地
+        data_dir = r'C:\Users\MJY\Desktop\station_data\csv' # 本地
     else:
         if cmip_type == 'original':
             data_dir = '/model_data/station_data/csv' # 容器内
@@ -328,7 +328,7 @@ def climate_esti(data_json):
     # 1.表格-历史
     stats_result_his, _, _ = table_stats_simple(refer_df, element_str)
     result_dict['表格']['历史'] = stats_result_his.to_dict(orient='records')
-
+    
     # 2.表格-预估-各个情景的集合
     evaluate_cmip_res = dict()
     for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tas']
@@ -349,7 +349,7 @@ def climate_esti(data_json):
         evaluate_cmip_res[exp] = res_table.to_dict(orient='records')
 
     result_dict['表格']['预估集合'] = evaluate_cmip_res
-
+    
     # 3.表格-预估-各个情景的单模式
     single_cmip_res = dict()
     for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
@@ -479,5 +479,5 @@ if __name__ == '__main__':
     data_json['plot'] = 0
     data_json['method'] = 'idw'
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
-    result_dict = climate_esti(data_json)
-    # old = result_dict['ssp126']['BCC-CSM2-MR']['tas']
+    res_table = climate_esti(data_json)
+    
