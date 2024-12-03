@@ -46,7 +46,7 @@ def boundary_png():
     ax.set_xlim(min_lon, max_lon)
     ax.set_ylim(min_lat, max_lat)
     png_path = os.path.join(data_out, f'{area_code}.png')
-    plt.savefig(png_path, bbox_inches='tight', dpi=200)
+    plt.savefig(png_path, bbox_inches='tight', pad_inches=0, dpi=200)
     plt.close('all')
 
     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
