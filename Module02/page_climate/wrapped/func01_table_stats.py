@@ -35,8 +35,8 @@ def table_stats_simple(data_df, ele):
     # 合并所有结果
     stats_result = data_df.copy()
     stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).astype(float).round(1)
-    stats_result['区域最大值'] = stats_result.iloc[:, :-3].max(axis=1)
-    stats_result['区域最小值'] = stats_result.iloc[:, :-4].min(axis=1)
+    stats_result['区域最大值'] = stats_result.iloc[:, :].max(axis=1)
+    stats_result['区域最小值'] = stats_result.iloc[:, :].min(axis=1)
     
     # 在concat前增加回归方程
     def lr(x):

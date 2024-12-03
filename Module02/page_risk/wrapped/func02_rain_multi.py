@@ -5,7 +5,7 @@ from Utils.data_processing import data_processing
 
 
 
-def rain_cmip_multi(cmip_data_dict, disaster, alti_list):
+def rain_cmip_multi(cmip_data_dict, stats_result_his, disaster, alti_list):
     
     def trend_rate(x):
         '''
@@ -56,14 +56,19 @@ def rain_cmip_multi(cmip_data_dict, disaster, alti_list):
         tmp_df.loc['变率'] = result_risk.apply(trend_rate, axis=0).round(3)
         tmp_df.loc['最大值'] = result_risk.iloc[:, :].max(axis=0).round(3)
         tmp_df.loc['最小值'] = result_risk.iloc[:, :].min(axis=0).round(3)
+        tmp_df.loc['参考时段均值'] = stats_result_his.iloc[-4, 1:-3]
+        tmp_df.loc['距平'] = (tmp_df.loc['平均'].astype('float') - stats_result_his.iloc[-4,1:-3].astype('float')).round(3)
+        tmp_df.loc['距平百分率'] = ((tmp_df.loc['距平'].astype('float') / stats_result_his.iloc[-4,1:-3].astype('float')) * 100).round(2)
         
         # 合并所有结果
         stats_result = result_risk.copy()
         stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).round(3)
-        stats_result['区域最大值'] = stats_result.iloc[:, :-3].max(axis=1).round(3)
-        stats_result['区域最小值'] = stats_result.iloc[:, :-4].min(axis=1).round(3)
+        stats_result['区域最大值'] = stats_result.iloc[:, :-1].max(axis=1).round(3)
+        stats_result['区域最小值'] = stats_result.iloc[:, :-2].min(axis=1).round(3)
+        stats_result['区域距平'] = (stats_result['区域均值'] - stats_result_his.iloc[:-4,1:-3].mean().mean()).round(3)
+        stats_result['区域距平百分率'] = ((stats_result['区域距平'] / stats_result_his.iloc[:-4,1:-3].mean().mean()) * 100).round(3)
         stats_result = stats_result.round(3)
-
+        
         # concat
         stats_result = pd.concat((stats_result, tmp_df), axis=0)
 

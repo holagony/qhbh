@@ -36,16 +36,16 @@ def table_stats_rain(data_df, disaster):
 
     # 创建临时下方统计的df
     tmp_df = pd.DataFrame(columns=data_df.columns)
-    tmp_df.loc['平均'] = data_df.iloc[:, :].mean(axis=0).round(1)
-    tmp_df.loc['变率'] = data_df.apply(trend_rate, axis=0).round(5)
+    tmp_df.loc['平均'] = data_df.iloc[:, :].mean(axis=0).round(3)
+    tmp_df.loc['变率'] = data_df.apply(trend_rate, axis=0).round(3)
     tmp_df.loc['最大值'] = data_df.iloc[:, :].max(axis=0)
     tmp_df.loc['最小值'] = data_df.iloc[:, :].min(axis=0)
 
     # 合并所有结果
     stats_result = data_df.copy()
-    stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).round(1)
-    stats_result['区域最大值'] = stats_result.iloc[:, :-3].max(axis=1)
-    stats_result['区域最小值'] = stats_result.iloc[:, :-4].min(axis=1)
+    stats_result['区域均值'] = stats_result.iloc[:, :].mean(axis=1).round(3)
+    stats_result['区域最大值'] = stats_result.iloc[:, :].max(axis=1)
+    stats_result['区域最小值'] = stats_result.iloc[:, :].min(axis=1)
     
     # 在concat前增加回归方程
     def lr(x):
@@ -71,7 +71,7 @@ def table_stats_rain(data_df, disaster):
     
     # concat
     stats_result = pd.concat((stats_result, tmp_df), axis=0)
-    stats_result = stats_result.round(5)
+    stats_result = stats_result.round(3)
 
     # index处理
     stats_result.insert(loc=0, column='时间', value=stats_result.index)
