@@ -87,7 +87,7 @@ def stats_result_2(dict_in, refer_df):
         result['站号'] = sta_id
         result = result[['站名','站号','Q','距平','距平百分率']]
         result.reset_index(drop=False,inplace=True)
-        dict_in[exp] = result#.to_dict(orient='records')
+        dict_in[exp] = result.to_dict(orient='records')
 
     return dict_in
 
@@ -126,7 +126,7 @@ def stats_result_3(dict_in, refer_df):
             result['站号'] = sta_id
             result = result[['站名','站号','Q','距平','距平百分率']]
             result.reset_index(drop=False,inplace=True)
-            sub_dict[insti] = result#.to_dict(orient='records')
+            sub_dict[insti] = result.to_dict(orient='records')
     
     return dict_in
 
