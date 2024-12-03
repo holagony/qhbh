@@ -444,8 +444,8 @@ def grass_table_def(data_json):
     
 
     result_df_dict['时序图']=dict()
-    # result_df_dict['时序图']['集合_多模式' ]=dict()
-    # result_df_dict['时序图']['集合_多模式' ]=percentile_std(scene,instis,pre_data_5,main_element,refer_evaluate_station)
+    result_df_dict['时序图']['集合_多模式' ]=dict()
+    result_df_dict['时序图']['集合_多模式' ]=percentile_std(scene,instis,pre_data_5,main_element,refer_evaluate_station)
     
     result_df_dict['时序图']['单模式' ]=pre_data_6
     result_df_dict['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()
