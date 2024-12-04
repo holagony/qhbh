@@ -231,9 +231,7 @@ def extreme_climate_esti(data_json):
     # data_jh=calculate_average_hd(pre_data,element)
 
     #%% 基准期    
-    base_p=pd.DataFrame(columns=refer_result_z.columns[1:-3:])
-    base_p.loc[0,:]=refer_result_z[refer_result_z['时间'] == '平均'][1::-3].iloc[0, :]
-    base_p.insert(0, '要素', [element])
+    base_p=refer_result_z.iloc[0:-4,1::].mean().to_frame().T.reset_index(drop=True)
     
     #%% 单模式距平和距平百分率
     pre_data_result=dict()

@@ -244,7 +244,7 @@ def grass_table_def(data_json):
     result_df_dict['表格']['历史']['模拟观测']=result_1_1.to_dict(orient='records')
  
     #%% 基准期    
-    base_p=result_1_1[result_1_1['时间'] == '平均'].iloc[0,1:-5:].to_frame().T.reset_index()
+    base_p=result_1_1.iloc[0:-7,1::].mean().to_frame().T.reset_index(drop=True)
     
     #%% 分布图
     all_png=dict()

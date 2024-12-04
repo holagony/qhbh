@@ -194,7 +194,7 @@ def energy_wind_power(data_json):
     else:
  
     #%% 基准期    
-        base_p=refer_result_z[refer_result_z['时间'] == '平均'].iloc[0,1:-5:].to_frame().T.reset_index()
+        base_p=refer_result_z.iloc[0:-4,1::].mean().to_frame().T.reset_index(drop=True)
 
     #%% 单模式距平和距平百分率
         pre_data_result=dict()

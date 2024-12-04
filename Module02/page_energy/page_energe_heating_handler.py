@@ -168,10 +168,10 @@ def energy_winter_heating(data_json):
             pre_data[insti_a][scene_a]['HDTIME_NUM']=result_start_end_num
         
 #%% 基准期    
-    base_p=pd.DataFrame(columns=refer_result_days_z.columns[1:-3:])
-    base_p.loc[0,:]=refer_result_days_z[refer_result_days_z['时间'] == '平均'][1::-3].iloc[0, :]
-    base_p.loc[1,:]=refer_result_hdd18_z[refer_result_hdd18_z['时间'] == '平均'][1::-3].iloc[0, :]
-    base_p.loc[2,:]=refer_result_start_end_num_z[refer_result_start_end_num_z['时间'] == '平均'][1::-3].iloc[0, :]
+    base_p=pd.DataFrame(columns=refer_result_days_z.columns[1::])
+    base_p.loc[0,:]=refer_result_days_z.iloc[0:-4,1::].mean().T
+    base_p.loc[1,:]=refer_result_hdd18_z.iloc[0:-4,1::].mean().T
+    base_p.loc[2,:]=refer_result_start_end_num_z.iloc[0:-4,1::].mean().T
     base_p.insert(0, '要素', ['采暖日','采暖度日','采暖起始日_日序'])
     
 #%% 单模式距平和距平百分率
