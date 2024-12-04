@@ -502,8 +502,8 @@ if __name__ == '__main__':
     
     
     data_json = dict()
-    data_json['main_element']='FRS_START'  # 评估要素
-    data_json['sta_ids']='51886,52737,52876' # 站点信息
+    data_json['main_element']='ICE_AREA'  # 评估要素
+    data_json['sta_ids']='56043' # 站点信息
     data_json['time_freq_main']='Y' # 评估要素时间尺度
     data_json['time_freq_main_data']='0'
     data_json['refer_times'] = '2020,2022' # 参考时段

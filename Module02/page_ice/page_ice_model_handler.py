@@ -15,6 +15,10 @@ Created on Sat Sep 14 13:46:49 2024
        最大积雪深度：SNOW_DEPTH
        积雪日数： SNOW_DAYS
     
+       查询统计 - 冰冻圈 - 冰川
+       冰川面积：ICE_AREA
+       冰储量： ICE_RESERVES
+       
 :param sta_ids: 传入的站点，多站，传：'52866,52713,52714'
 
     
@@ -162,8 +166,8 @@ def ice_model_def(data_json):
 if __name__=='__main__':
     
     data_json = dict()
-    data_json['main_element'] ='SNOW_DAYS'
-    data_json['sta_ids'] = '51886,52737,52876'
+    data_json['main_element'] ='ICE_AREA'
+    data_json['sta_ids'] = '56043'
     data_json['time_freq_main'] = 'Y'
     data_json['time_freq_main_data'] = '0'
     data_json['factor_element'] ='TEM_Avg,PRE_Time_2020,TEM_Avg'
