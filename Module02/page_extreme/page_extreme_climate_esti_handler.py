@@ -119,7 +119,7 @@ def extreme_climate_esti(data_json):
         
     #%% 要素字典
     tem_table=['TN10p','TX10p','TN90p','TX90p','ID','FD','TNx','TXx','TNn','TXn',
-               'DTR','WSDI','CSDI','SU','TR','GSL']
+               'DTR','WSDI','CSDI','SU','TR','GSL','high_tem']
     
     pre_table=['CDD','CWD','RZ','RZD','SDII','R95%','R95%D','R50','R50D','R10D',
                'R25D','Rx1day','Rx5day','R','RD','Rxxday','GaWIN']
@@ -146,7 +146,8 @@ def extreme_climate_esti(data_json):
     ele_dict['SU']='TEM_Max'
     ele_dict['TR']='TEM_Min'
     ele_dict['GSL']='TEM_Avg'
-    
+    ele_dict['high_tem']='TEM_Avg'
+
     # 极端降水指数
     ele_dict['CDD']='PRE_Time_2020'
     ele_dict['CWD']='PRE_Time_2020'

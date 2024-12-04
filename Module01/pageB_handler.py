@@ -157,14 +157,14 @@ def extreme_climate_features(data_json):
 
     # 3. 要素字典
     tem_table=['TN10p','TX10p','TN90p','TX90p','ID','FD','TNx','TXx','TNn','TXn',
-               'DTR','WSDI','CSDI','SU','TR','GSL']
+               'DTR','WSDI','CSDI','SU','TR','high_tem','GSL']
     
     pre_table=['CDD','CWD','RZ','RZD','SDII','R95%','R95%D','R50','R50D','R10D',
                'R25D','Rx1day','Rx5day','R','RD','Rxxday']
     
     other_table=['Hail','GaWIN','Thund','SaSt','FlSa','FlDu','sa','rainstorm',
                  'light_snow','snow','medium_snow','heavy_snow','severe_snow',
-                  'high_tem','drought','light_drought','medium_drought','heavy_drought',
+                  'drought','light_drought','medium_drought','heavy_drought',
                   'severe_drought']
     
     ele_dict=dict()

@@ -37,7 +37,8 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
     ele_ment['SU']='TEM_Max'
     ele_ment['TR']='TEM_Min'
     ele_ment['GSL']='TEM_Avg'
-    
+    ele_ment['high_tem']='TEM_Avg'
+
     
     last_df = nearly_df[nearly_df.index.year==last_year]
     last_df = last_df.pivot_table(index=last_df.index, columns=['Station_Id_C'], values=ele_ment[ele]) # 近1年df
@@ -183,6 +184,23 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
             nearly_sta=nearly_df.iloc[:,i]
             nearly_df.iloc[:,i] = ((nearly_df.iloc[:,i] > 25)).astype(int)
     
+    # 高温日数       
+    elif ele == 'high_tem':
+    
+        for i in np.arange(np.size(data_df,1)):
+            
+            last_sta=last_df.iloc[:,i]
+            last_df.iloc[:,i] = ((last_df.iloc[:,i] > n_data)).astype(int)
+        
+            data_sta=data_df.iloc[:,i]
+            data_df.iloc[:,i] = ((data_df.iloc[:,i] > n_data)).astype(int)
+            
+            refer_sta=refer_df.iloc[:,i]
+            refer_df.iloc[:,i] = ((refer_df.iloc[:,i] > n_data)).astype(int)
+            
+            nearly_sta=nearly_df.iloc[:,i]
+            nearly_df.iloc[:,i] = ((nearly_df.iloc[:,i] > n_data)).astype(int)
+            
     # 热夜日数 TR
     elif ele == 'TR':
     
@@ -226,7 +244,7 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
              nearly_df.iloc[:,i] = ((nearly_rolling_min > 5)).astype(int)        
     #%% 数据转换
       
-    if ele in ['TN10p', 'TX10p', 'TN90p', 'TX90p', 'ID', 'FD', 'SU','TR','GSL']:
+    if ele in ['TN10p', 'TX10p', 'TN90p', 'TX90p', 'ID', 'FD', 'SU','TR','GSL','high_tem']:
        
         # if time_freq in ['Y','Q']:
             

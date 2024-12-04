@@ -34,7 +34,8 @@ def tem_table_stats(data_df, time_freq, ele,l_data=None,n_data=None):
     ele_ment['SU']='TEM_Max'
     ele_ment['TR']='TEM_Min'
     ele_ment['GSL']='TEM_Avg'
-    
+    ele_ment['high_tem']='TEM_Avg'
+
     
     data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Id_C'], values=ele_ment[ele]) # 统计时段df
     
@@ -96,6 +97,14 @@ def tem_table_stats(data_df, time_freq, ele,l_data=None,n_data=None):
             
             data_sta=data_df.iloc[:,i]
             data_df.iloc[:,i] = ((data_df.iloc[:,i] > 25)).astype(int)
+    
+    # 高温日数       
+    elif ele == 'high_tem':
+    
+        for i in np.arange(np.size(data_df,1)):
+            
+            data_sta=data_df.iloc[:,i]
+            data_df.iloc[:,i] = ((data_df.iloc[:,i] > n_data)).astype(int)
             
     # 热夜日数 TR
     elif ele == 'TR':
@@ -117,7 +126,7 @@ def tem_table_stats(data_df, time_freq, ele,l_data=None,n_data=None):
                     
     #%% 数据转换
       
-    if ele in ['TN10p', 'TX10p', 'TN90p', 'TX90p', 'ID', 'FD', 'SU','TR','GSL']:
+    if ele in ['TN10p', 'TX10p', 'TN90p', 'TX90p', 'ID', 'FD', 'SU','TR','GSL','high_tem']:
        
         # if time_freq in ['Y','Q']:
             
