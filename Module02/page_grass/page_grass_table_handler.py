@@ -86,7 +86,14 @@ def data_deal_2(data_df,refer_df,flag):
     
     return stats_days_result    
 
+def extract_before_country(text):
 
+    index = text.find('国')
+    if index != -1:
+        return text[:index]
+    else:
+        return text
+    
 def grass_table_def(data_json):
 
     main_element=data_json['main_element']
@@ -201,7 +208,7 @@ def grass_table_def(data_json):
     station_name = matched_stations_unique['站点名'].values
     station_id=matched_stations_unique['区站号'].values
     station_dict=pd.DataFrame(columns=['站名','站号'])
-    station_dict['站名']=station_name
+    station_dict['站名']=extract_before_country(station_name)
     station_dict['站号']=station_id
     
     #%% 表格数据

@@ -54,6 +54,15 @@ from Module02.page_energy.wrapped.func02_winter_heating_his import winter_heatin
 from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
 from Utils.data_loader_with_threads import get_database_data
 
+def extract_before_country(text):
+
+    index = text.find('国')
+    if index != -1:
+        return text[:index]
+    else:
+        return text
+    
+    
 #%% main
 def energy_winter_heating(data_json):
 
@@ -145,7 +154,7 @@ def energy_winter_heating(data_json):
     station_name = matched_stations_unique['Station_Name'].values
     station_id=matched_stations_unique['Station_Id_C'].values
     station_dict=pd.DataFrame(columns=['站名','站号'])
-    station_dict['站名']=station_name
+    station_dict['站名']=extract_before_country(station_name)
     station_dict['站号']=station_id
     lon_list=matched_stations_unique['Lon'].values
     lat_list=matched_stations_unique['Lat'].values

@@ -58,6 +58,14 @@ from Module02.page_energy.wrapped.func05_solar_power_his import energy_solar_his
 from Module02.page_energy.wrapped.func08_solar_power_pre import solar_power_pre
 from Utils.data_loader_with_threads import get_database_data
 
+
+def extract_before_country(text):
+
+    index = text.find('国')
+    if index != -1:
+        return text[:index]
+    else:
+        return text
 #%% main
 def energy_solar_power(data_json):
 
@@ -159,7 +167,7 @@ def energy_solar_power(data_json):
     station_name = matched_stations_unique['Station_Name'].values
     station_id=matched_stations_unique['Station_Id_C'].values
     station_dict=pd.DataFrame(columns=['站名','站号'])
-    station_dict['站名']=station_name
+    station_dict['站名']=extract_before_country(station_name)
     station_dict['站号']=station_id
     lon_list=matched_stations_unique['Lon'].values
     lat_list=matched_stations_unique['Lat'].values
