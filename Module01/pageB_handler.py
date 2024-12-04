@@ -186,7 +186,8 @@ def extreme_climate_features(data_json):
     ele_dict['SU']='TEM_Max'
     ele_dict['TR']='TEM_Min'
     ele_dict['GSL']='TEM_Avg'
-    
+    ele_dict['high_tem']='TEM_Avg'
+
     # 极端降水指数
     ele_dict['CDD']='PRE_Time_2020'
     ele_dict['CWD']='PRE_Time_2020'
@@ -218,7 +219,6 @@ def extreme_climate_features(data_json):
     ele_dict['medium_snow']='medium_snow'
     ele_dict['heavy_snow']='heavy_snow'
     ele_dict['severe_snow']='severe_snow'
-    ele_dict['high_tem']='high_tem'
     ele_dict['Thund']='Thund_Days'
     ele_dict['drought']='drought'
     ele_dict['light_drought']='light_drought'
