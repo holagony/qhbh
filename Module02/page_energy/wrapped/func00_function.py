@@ -303,21 +303,22 @@ def data_deal_num_2(data_df,refer_df,flag):
         stats_result['区域距平百分率2'] = np.round(((stats_result['区域距平2']/tmp_df.loc['参考时段均值'].iloc[1::2].mean())*100).astype(float),2)
     
     
-        stats_result = pd.concat((stats_result, tmp_df), axis=0)
+        # stats_result = pd.concat((stats_result, tmp_df), axis=0)
         stats_result.insert(loc=0, column='时间', value=stats_result.index)
         stats_result.reset_index(drop=True, inplace=True)
         
-        stats_result.at[0,'区域均值1'] = '开始日期'
-        stats_result.at[0,'区域均值2'] = '结束日期'
-        stats_result.at[0,'区域最大值1'] = '开始日期'
-        stats_result.at[0,'区域最大值2'] = '结束日期'
-        stats_result.at[0,'区域最小值1'] = '开始日期'
-        stats_result.at[0,'区域最小值2'] = '结束日期'
-        stats_result.at[0,'区域距平1'] = '开始日期'
-        stats_result.at[0,'区域距平2'] = '结束日期'
-        stats_result.at[0,'区域距平百分率1'] = '开始日期'
-        stats_result.at[0,'区域距平百分率2'] = '结束日期'
-    
+        # stats_result.at[0,'区域均值1'] = '开始日期'
+        # stats_result.at[0,'区域均值2'] = '结束日期'
+        # stats_result.at[0,'区域最大值1'] = '开始日期'
+        # stats_result.at[0,'区域最大值2'] = '结束日期'
+        # stats_result.at[0,'区域最小值1'] = '开始日期'
+        # stats_result.at[0,'区域最小值2'] = '结束日期'
+        # stats_result.at[0,'区域距平1'] = '开始日期'
+        # stats_result.at[0,'区域距平2'] = '结束日期'
+        # stats_result.at[0,'区域距平百分率1'] = '开始日期'
+        # stats_result.at[0,'区域距平百分率2'] = '结束日期'
+        stats_result = stats_result.drop(0)
+
     return stats_result
 
 def calculate_average_hd(pre_data,ele):

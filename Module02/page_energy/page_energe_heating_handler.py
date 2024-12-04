@@ -178,15 +178,14 @@ def energy_winter_heating(data_json):
 
     pre_data_result=dict()
     for i in insti:
-        if i != 'Set':
-            pre_data_result[i]=dict()
-            for j in scene:
-                pre_data_result[i][j]=dict()
-                for ele_a in elem_info:
-                    if ele_a in ['采暖度日','采暖日']:
-                        pre_data_result[i][j][ele_a]=data_deal_2(pre_data[i][j][elem_dict[ele_a]],refer_result_days,2).to_dict(orient='records')
-                    else:
-                        pre_data_result[i][j][ele_a]=data_deal_num_2(pre_data[i][j][elem_dict[ele_a]],refer_result_days,2).to_dict(orient='records')
+        pre_data_result[i]=dict()
+        for j in scene:
+            pre_data_result[i][j]=dict()
+            for ele_a in elem_info:
+                if ele_a in ['采暖度日','采暖日']:
+                    pre_data_result[i][j][ele_a]=data_deal_2(pre_data[i][j][elem_dict[ele_a]],refer_result_days,2).to_dict(orient='records')
+                else:
+                    pre_data_result[i][j][ele_a]=data_deal_num_2(pre_data[i][j][elem_dict[ele_a]],refer_result_start_end_num,2).to_dict(orient='records')
 
 #%% 结果保存
    

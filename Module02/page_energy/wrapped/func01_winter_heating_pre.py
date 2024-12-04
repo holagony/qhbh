@@ -96,12 +96,12 @@ def winter_heating_pre(element,data_dir,time_scale,insti,scene,var,stats_times,t
                 # 采暖起始日
                 result_start_end.at[n,station_name[idx]]=first_index_z.strftime('%Y-%m-%d')
                 result_start_end.at[n,name]=last_index_z.strftime('%Y-%m-%d')
-                result_start_end.at[n,'年']=year
+                result_start_end.at[n,'年']=int(year)
         
                     # 采暖起始日-日序
                 result_start_end_num.at[n,station_name[idx]]=(first_index_z-datetime(first_index_z.year, 1, 1)).days+1
                 result_start_end_num.at[n,name]=(last_index_z-datetime(last_index_z.year, 1, 1)).days+1
-                result_start_end_num.at[n,'年']=year
+                result_start_end_num.at[n,'年']=int(year)
                 
                 n=n+1
     
