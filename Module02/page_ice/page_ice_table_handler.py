@@ -432,7 +432,7 @@ def ice_table_def(data_json):
     ##%% 增加一下 1.5℃和2.0℃
     if int(stats_end_year) >= 2020:
         for insti_b,insti_b_table in pre_data_5.items():
-            break
+            
             pre_data_5[insti_b]['1.5℃']=dict()
             pre_data_5[insti_b]['1.5℃'][main_element]=dict()
             pre_data_5[insti_b]['1.5℃'][main_element]=insti_b_table['ssp126'][main_element][(insti_b_table['ssp126'][main_element]['年']>=2020) & (insti_b_table['ssp126'][main_element]['年']<=2039)]
