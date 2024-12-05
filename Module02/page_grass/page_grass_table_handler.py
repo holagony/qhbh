@@ -429,7 +429,7 @@ def grass_table_def(data_json):
             pre_data_5[insti_b]['1.5℃'][main_element]=dict()
             pre_data_5[insti_b]['1.5℃'][main_element]=insti_b_table['ssp126'][main_element][(insti_b_table['ssp126'][main_element]['年']>=2020) & (insti_b_table['ssp126'][main_element]['年']<=2039)]
             result_4_1=data_deal_2(pre_data_5[insti_b]['1.5℃'][main_element].copy(),refer_evaluate_station,2)
-            pre_data_4[insti_a]['1.5℃']=result_4_1.to_dict(orient='records')
+            pre_data_4[insti_b]['1.5℃']=result_4_1.to_dict(orient='records')
         scene=['ssp126','ssp245','ssp585','1.5℃']
 
     if int(stats_end_year) >= 2040:
@@ -438,7 +438,7 @@ def grass_table_def(data_json):
             pre_data_5[insti_b]['2.0℃'][main_element]=dict()
             pre_data_5[insti_b]['2.0℃'][main_element]=insti_b_table['ssp245'][main_element][(insti_b_table['ssp245'][main_element]['年']>=2040) & (insti_b_table['ssp245'][main_element]['年']<=2059)]
             result_4_1=data_deal_2(pre_data_5[insti_b]['2.0℃'][main_element].copy(),refer_evaluate_station,2)
-            pre_data_4[insti_a]['2.0℃']=result_4_1.to_dict(orient='records')
+            pre_data_4[insti_b]['2.0℃']=result_4_1.to_dict(orient='records')
         scene=['ssp126','ssp245','ssp585','1.5℃','2.0℃']    
         
     #%% 时序图
