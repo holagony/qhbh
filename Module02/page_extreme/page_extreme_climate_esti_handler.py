@@ -230,9 +230,18 @@ def extreme_climate_esti(data_json):
             
             cmip_result=extreme_pre(element,data_dir,time_scale,insti_a,scene_a,nc_dict[ele_dict[element]],stats_times,time_freq,sta_ids2,station_dict,l_data=l_data,n_data=n_data,GaWIN=GaWIN,GaWIN_flag=GaWIN_flag,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
             pre_data[insti_a][scene_a]=cmip_result
-    # #%% 模式集合
-    # data_jh=calculate_average_hd(pre_data,element)
+   
+    ##%% 增加一下 1.5℃和2.0℃
+    if int(stats_end_year) >= 2020:
+        for insti_b,insti_b_table in pre_data.items():
+            pre_data[insti_b]['1.5℃']=pre_data[insti_b]['ssp126'][(pre_data[insti_b]['ssp126']['年']>=2020) & (pre_data[insti_b]['ssp126']['年']<=2039)]
+        scene=['ssp126','ssp245','ssp585','1.5℃']
 
+    if int(stats_end_year) >= 2040:
+        for insti_b,insti_b_table in pre_data.items():
+            pre_data[insti_b]['2.0℃']=pre_data[insti_b]['ssp245'][(pre_data[insti_b]['ssp245']['年']>=2040) & (pre_data[insti_b]['ssp245']['年']<=2059)]
+        scene=['ssp126','ssp245','ssp585','1.5℃','2.0℃']
+     
     #%% 基准期    
     base_p=refer_result_z.iloc[0:-4,1::].mean().to_frame().T.reset_index(drop=True)
     
@@ -261,7 +270,7 @@ def extreme_climate_esti(data_json):
 
     result_df_dict['时序图']=dict()
     result_df_dict['时序图']['集合_多模式' ]=dict()
-    result_df_dict['时序图']['集合_多模式' ]=percentile_std(scene,insti,pre_data,'none',refer_result)
+    result_df_dict['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'none',refer_result)
     
     result_df_dict['时序图']['单模式' ]=pre_data_result
     result_df_dict['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()
@@ -277,24 +286,25 @@ def extreme_climate_esti(data_json):
         cmip_res=result_df_dict['表格']['预估']
         
         for exp, sub_dict1 in cmip_res.items():
-            all_png['预估'][exp] = dict()
-            for insti,stats_table in sub_dict1.items():
-                all_png['预估'][exp][insti] = dict()
-                stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
-                for i in range(len(stats_table)):
-                    value_list = stats_table.iloc[i,1::]
-                    year_name = stats_table.iloc[i,0]
-                    exp_name = exp
-                    insti_name = insti
-                    # 插值/掩膜/画图/保存
-                    mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
-                    
-                    # 转url
-                    png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-                    png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-
-                    all_png['预估'][exp][insti][year_name] = png_path
+            if exp in ['ssp126','ssp245','ssp585']:
+                all_png['预估'][exp] = dict()
+                for insti,stats_table in sub_dict1.items():
+                    all_png['预估'][exp][insti] = dict()
+                    stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
+                    for i in range(len(stats_table)):
+                        value_list = stats_table.iloc[i,1::]
+                        year_name = stats_table.iloc[i,0]
+                        exp_name = exp
+                        insti_name = insti
+                        # 插值/掩膜/画图/保存
+                        mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+                        png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
+                        
+                        # 转url
+                        png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+                        png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+    
+                        all_png['预估'][exp][insti][year_name] = png_path
     else:
         all_png=None
     
@@ -306,7 +316,7 @@ if __name__ == '__main__':
     
     data_json = dict()
     data_json['time_freq'] = 'Y'
-    data_json['evaluate_times'] = "2024,2030" # 预估时段时间条
+    data_json['evaluate_times'] = "2018,2050" # 预估时段时间条
     data_json['refer_times'] = '1995,2014'# 参考时段时间条
     data_json['sta_ids'] = '51886,52602,52633,52645,52657,52707,52713'
     data_json['cmip_type'] = 'original' # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度

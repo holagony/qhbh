@@ -168,6 +168,28 @@ def energy_winter_heating(data_json):
             pre_data[insti_a][scene_a]['HD']=result_days
             pre_data[insti_a][scene_a]['HDTIME']=result_start_end
             pre_data[insti_a][scene_a]['HDTIME_NUM']=result_start_end_num
+
+    stats_end_year=result_hdd18['年'].iloc[-1]
+    ##%% 增加一下 1.5℃和2.0℃
+    if int(stats_end_year) >= 2020:
+        for insti_b,insti_b_table in pre_data.items():
+            pre_data[insti_b]['1.5℃']=dict()
+            pre_data[insti_b]['1.5℃']['HDD18']=pre_data[insti_b]['ssp126']['HDD18'][(pre_data[insti_b]['ssp126']['HDD18']['年']>=2020) & (pre_data[insti_b]['ssp126']['HDD18']['年']<=2039)]
+            pre_data[insti_b]['1.5℃']['HD']=pre_data[insti_b]['ssp126']['HD'][(pre_data[insti_b]['ssp126']['HD']['年']>=2020) & (pre_data[insti_b]['ssp126']['HD']['年']<=2039)]
+            pre_data[insti_b]['1.5℃']['HDTIME']=pre_data[insti_b]['ssp126']['HDTIME'][(pre_data[insti_b]['ssp126']['HDTIME']['年']>=2020) & (pre_data[insti_b]['ssp126']['HDTIME']['年']<=2039)]
+            pre_data[insti_b]['1.5℃']['HDTIME_NUM']=pre_data[insti_b]['ssp126']['HDTIME_NUM'][(pre_data[insti_b]['ssp126']['HDTIME_NUM']['年']>=2020) & (pre_data[insti_b]['ssp126']['HDTIME_NUM']['年']<=2039)]
+
+        scene=['ssp126','ssp245','ssp585','1.5℃']
+
+    if int(stats_end_year) >= 2040:
+        for insti_b,insti_b_table in pre_data.items():
+            pre_data[insti_b]['2.0℃']=dict()
+            pre_data[insti_b]['2.0℃']['HDD18']=pre_data[insti_b]['ssp245']['HDD18'][(pre_data[insti_b]['ssp245']['HDD18']['年']>=2040) & (pre_data[insti_b]['ssp245']['HDD18']['年']<=2059)]
+            pre_data[insti_b]['2.0℃']['HD']=pre_data[insti_b]['ssp245']['HD'][(pre_data[insti_b]['ssp245']['HD']['年']>=2040) & (pre_data[insti_b]['ssp245']['HD']['年']<=2059)]
+            pre_data[insti_b]['2.0℃']['HDTIME']=pre_data[insti_b]['ssp245']['HDTIME'][(pre_data[insti_b]['ssp245']['HDTIME']['年']>=2040) & (pre_data[insti_b]['ssp245']['HDTIME']['年']<=2059)]
+            pre_data[insti_b]['2.0℃']['HDTIME_NUM']=pre_data[insti_b]['ssp245']['HDTIME_NUM'][(pre_data[insti_b]['ssp245']['HDTIME_NUM']['年']>=2040) & (pre_data[insti_b]['ssp245']['HDTIME_NUM']['年']<=2059)]
+
+        scene=['ssp126','ssp245','ssp585','1.5℃','2.0℃']
         
 #%% 基准期    
     base_p=pd.DataFrame(columns=refer_result_days_z.columns[1::])
@@ -214,9 +236,9 @@ def energy_winter_heating(data_json):
 
     result_df_dict['时序图']=dict()
     result_df_dict['时序图']['集合_多模式' ]=dict()
-    result_df_dict['时序图']['集合_多模式' ]['采暖日']=percentile_std(scene,insti,pre_data,'HD',refer_result_days)
-    result_df_dict['时序图']['集合_多模式' ]['采暖度日']=percentile_std(scene,insti,pre_data,'HDD18',refer_result_hdd18)
-    result_df_dict['时序图']['集合_多模式' ]['采暖起始日_日序']=percentile_std_time(scene,insti,pre_data,result_start_end_num)
+    result_df_dict['时序图']['集合_多模式' ]['采暖日']=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'HD',refer_result_days)
+    result_df_dict['时序图']['集合_多模式' ]['采暖度日']=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'HDD18',refer_result_hdd18)
+    result_df_dict['时序图']['集合_多模式' ]['采暖起始日_日序']=percentile_std_time(['ssp126','ssp245','ssp585'],insti,pre_data,result_start_end_num)
     
     result_df_dict['时序图']['单模式' ]=pre_data_result
     result_df_dict['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()
@@ -244,24 +266,25 @@ def energy_winter_heating(data_json):
         cmip_res=result_df_dict['表格']['预估']
         
         for exp, sub_dict1 in cmip_res.items():
-            all_png['预估'][exp] = dict()
-            for insti,stats_table in sub_dict1.items():
-                all_png['预估'][exp][insti] = dict()
-                stats_table = pd.DataFrame(stats_table[find_keys_by_value(elem_dict, element)[0]]).iloc[:,:-5:]
-                for i in range(len(stats_table)):
-                    value_list = stats_table.iloc[i,1::]
-                    year_name = stats_table.iloc[i,0]
-                    exp_name = exp
-                    insti_name = insti
-                    # 插值/掩膜/画图/保存
-                    mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
-                    
-                    # 转url
-                    png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-                    png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-
-                    all_png['预估'][exp][insti][year_name] = png_path
+            if exp in ['ssp126','ssp245','ssp585']:
+                all_png['预估'][exp] = dict()
+                for insti,stats_table in sub_dict1.items():
+                    all_png['预估'][exp][insti] = dict()
+                    stats_table = pd.DataFrame(stats_table[find_keys_by_value(elem_dict, element)[0]]).iloc[:,:-5:]
+                    for i in range(len(stats_table)):
+                        value_list = stats_table.iloc[i,1::]
+                        year_name = stats_table.iloc[i,0]
+                        exp_name = exp
+                        insti_name = insti
+                        # 插值/掩膜/画图/保存
+                        mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+                        png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
+                        
+                        # 转url
+                        png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+                        png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+    
+                        all_png['预估'][exp][insti][year_name] = png_path
     else:
         all_png=None
     

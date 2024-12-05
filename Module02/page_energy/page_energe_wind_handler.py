@@ -46,15 +46,9 @@ import uuid
 import psycopg2
 from psycopg2 import sql
 from Utils.config import cfg
-from Module02.page_energy.wrapped.func00_function import choose_mod_path
-from Module02.page_energy.wrapped.func00_function import time_choose
 from Module02.page_energy.wrapped.func00_function import data_deal
-from Module02.page_energy.wrapped.func00_function import data_deal_num
 from Module02.page_energy.wrapped.func00_function import data_deal_2
-from Module02.page_energy.wrapped.func00_function import data_deal_num_2
-from Module02.page_energy.wrapped.func00_function import calculate_average_hd
 from Module02.page_energy.wrapped.func00_function import percentile_std
-from Module02.page_energy.wrapped.func00_function import percentile_std_time
 
 from Module02.page_energy.wrapped.func04_wind_power_his import energy_wind_power_his
 from Module02.page_energy.wrapped.func07_wind_power_pre import wind_power_pre
@@ -182,8 +176,19 @@ def energy_wind_power(data_json):
             pre_data[insti_a][scene_a]=dict()
             result= wind_power_pre(element,data_dir,time_scale,insti_a,scene_a,var,stats_times,time_freq,sta_ids2,station_dict)
             pre_data[insti_a][scene_a]=result
-            
+    
+    stats_end_year=result['年'].iloc[-1]
+    ##%% 增加一下 1.5℃和2.0℃
+    if int(stats_end_year) >= 2020:
+        for insti_b,insti_b_table in pre_data.items():
+            pre_data[insti_b]['1.5℃']=pre_data[insti_b]['ssp126'][(pre_data[insti_b]['ssp126']['年']>=2020) & (pre_data[insti_b]['ssp126']['年']<=2039)]
+        scene=['ssp126','ssp245','ssp585','1.5℃']
 
+    if int(stats_end_year) >= 2040:
+        for insti_b,insti_b_table in pre_data.items():
+            pre_data[insti_b]['2.0℃']=pre_data[insti_b]['ssp245'][(pre_data[insti_b]['ssp245']['年']>=2040) & (pre_data[insti_b]['ssp245']['年']<=2059)]
+        scene=['ssp126','ssp245','ssp585','1.5℃','2.0℃']
+        
     if element in ['WDF','WSF']:
         result_df=dict()
         result_df['站点']=station_dict.to_dict(orient='records')
@@ -216,7 +221,7 @@ def energy_wind_power(data_json):
 
         result_df['时序图']=dict()
         result_df['时序图']['集合_多模式' ]=dict()
-        result_df['时序图']['集合_多模式' ]=percentile_std(scene,insti,pre_data,'none',result)
+        result_df['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'none',result)
         
         result_df['时序图']['单模式' ]=pre_data_result.copy()
         result_df['时序图']['单模式' ]['基准期']=base_p.copy()
@@ -261,24 +266,25 @@ def energy_wind_power(data_json):
             cmip_res=result_df['表格']['预估']
             
             for exp, sub_dict1 in cmip_res.items():
-                all_png['预估'][exp] = dict()
-                for insti,stats_table in sub_dict1.items():
-                    all_png['预估'][exp][insti] = dict()
-                    stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
-                    for i in range(len(stats_table)):
-                        value_list = stats_table.iloc[i,1::]
-                        year_name = stats_table.iloc[i,0]
-                        exp_name = exp
-                        insti_name = insti
-                        # 插值/掩膜/画图/保存
-                        mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                        png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
-                        
-                        # 转url
-                        png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-                        png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-     
-                        all_png['预估'][exp][insti][year_name] = png_path
+                if exp in ['ssp126','ssp245','ssp585']:
+                    all_png['预估'][exp] = dict()
+                    for insti,stats_table in sub_dict1.items():
+                        all_png['预估'][exp][insti] = dict()
+                        stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
+                        for i in range(len(stats_table)):
+                            value_list = stats_table.iloc[i,1::]
+                            year_name = stats_table.iloc[i,0]
+                            exp_name = exp
+                            insti_name = insti
+                            # 插值/掩膜/画图/保存
+                            mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+                            png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
+                            
+                            # 转url
+                            png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+                            png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+         
+                            all_png['预估'][exp][insti][year_name] = png_path
         else:
             all_png=None
    

@@ -52,34 +52,34 @@ def data_deal_2(data_df,refer_df,flag):
         data_df.set_index(data_df['年'],inplace=True)
         data_df.drop(['年'], axis=1, inplace=True) 
         
-        if flag == 2 or flag==3:
-            a=data_df['区域均值'].copy()
-            data_df.drop(['区域均值'], axis=1, inplace=True) 
-            
-        tmp_df = pd.DataFrame(columns=data_df.columns)
-        tmp_df.loc['平均'] = np.round(data_df.iloc[:, :].mean(axis=0).astype(float),2)
-        tmp_df.loc['变率'] = np.round(data_df.apply(trend_rate, axis=0),2)
-        tmp_df.loc['最大值'] = data_df.iloc[:, :].max(axis=0)
-        tmp_df.loc['最小值'] = data_df.iloc[:, :].min(axis=0)
-        tmp_df.loc['参考时段均值'] =  np.round(refer_df.iloc[:, :].mean(axis=0).astype(float),2)
-        tmp_df.loc['距平'] =  np.round((tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']).astype(float),2)
-        tmp_df.loc['距平百分率'] =  np.round(((tmp_df.loc['距平'] / tmp_df.loc['参考时段均值']) * 100).astype(float),2)
-    
-        # 合并所有结果
-        stats_result = data_df.copy()
-        if flag==1:
-            stats_result['区域均值'] = np.round(data_df.iloc[:, :].mean(axis=1).astype(float),2)
-        elif flag ==2 or flag==3:
-            stats_result['区域均值']=a
-        stats_result['区域距平'] = np.round((data_df.iloc[:, :].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).astype(float),2)
-        stats_result['区域距平百分率'] = np.round(((stats_result['区域距平']/tmp_df.loc['参考时段均值'].mean())*100).astype(float),2)
-        stats_result['区域最大值'] = data_df.iloc[:, :].max(axis=1)
-        stats_result['区域最小值'] = data_df.iloc[:, :].min(axis=1)
-    
-        if flag==3:
-            stats_days_result = stats_result
-        else:
-            stats_days_result = pd.concat((stats_result, tmp_df), axis=0)
+    if flag == 2 or flag==3:
+        a=data_df['区域均值'].copy()
+        data_df.drop(['区域均值'], axis=1, inplace=True) 
+        
+    tmp_df = pd.DataFrame(columns=data_df.columns)
+    tmp_df.loc['平均'] = np.round(data_df.iloc[:, :].mean(axis=0).astype(float),2)
+    tmp_df.loc['变率'] = np.round(data_df.apply(trend_rate, axis=0),2)
+    tmp_df.loc['最大值'] = data_df.iloc[:, :].max(axis=0)
+    tmp_df.loc['最小值'] = data_df.iloc[:, :].min(axis=0)
+    tmp_df.loc['参考时段均值'] =  np.round(refer_df.iloc[:, :].mean(axis=0).astype(float),2)
+    tmp_df.loc['距平'] =  np.round((tmp_df.loc['平均'] - tmp_df.loc['参考时段均值']).astype(float),2)
+    tmp_df.loc['距平百分率'] =  np.round(((tmp_df.loc['距平'] / tmp_df.loc['参考时段均值']) * 100).astype(float),2)
+
+    # 合并所有结果
+    stats_result = data_df.copy()
+    if flag==1:
+        stats_result['区域均值'] = np.round(data_df.iloc[:, :].mean(axis=1).astype(float),2)
+    elif flag ==2 or flag==3:
+        stats_result['区域均值']=a
+    stats_result['区域距平'] = np.round((data_df.iloc[:, :].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).astype(float),2)
+    stats_result['区域距平百分率'] = np.round(((stats_result['区域距平']/tmp_df.loc['参考时段均值'].mean())*100).astype(float),2)
+    stats_result['区域最大值'] = data_df.iloc[:, :].max(axis=1)
+    stats_result['区域最小值'] = data_df.iloc[:, :].min(axis=1)
+
+    if flag==3:
+        stats_days_result = stats_result
+    else:
+        stats_days_result = pd.concat((stats_result, tmp_df), axis=0)
 
     stats_days_result.insert(loc=0, column='时间', value=stats_days_result.index)
     stats_days_result.reset_index(drop=True, inplace=True)
@@ -421,7 +421,27 @@ def grass_table_def(data_json):
             
             result_4_1=data_deal_2(result_4,refer_evaluate_station,2)
             pre_data_4[insti_a][scene_a]=result_4_1.to_dict(orient='records')
-    
+
+    ##%% 增加一下 1.5℃和2.0℃
+    if int(stats_end_year) >= 2020:
+        for insti_b,insti_b_table in pre_data_5.items():
+            break
+            pre_data_5[insti_b]['1.5℃']=dict()
+            pre_data_5[insti_b]['1.5℃'][main_element]=dict()
+            pre_data_5[insti_b]['1.5℃'][main_element]=insti_b_table['ssp126'][main_element][(insti_b_table['ssp126'][main_element]['年']>=2020) & (insti_b_table['ssp126'][main_element]['年']<=2039)]
+            result_4_1=data_deal_2(pre_data_5[insti_b]['1.5℃'][main_element].copy(),refer_evaluate_station,2)
+            pre_data_4[insti_a]['1.5℃']=result_4_1.to_dict(orient='records')
+        scene=['ssp126','ssp245','ssp585','1.5℃']
+
+    if int(stats_end_year) >= 2040:
+        for insti_b,insti_b_table in pre_data_5.items():
+            pre_data_5[insti_b]['2.0℃']=dict()
+            pre_data_5[insti_b]['2.0℃'][main_element]=dict()
+            pre_data_5[insti_b]['2.0℃'][main_element]=insti_b_table['ssp245'][main_element][(insti_b_table['ssp245'][main_element]['年']>=2040) & (insti_b_table['ssp245'][main_element]['年']<=2059)]
+            result_4_1=data_deal_2(pre_data_5[insti_b]['2.0℃'][main_element].copy(),refer_evaluate_station,2)
+            pre_data_4[insti_a]['2.0℃']=result_4_1.to_dict(orient='records')
+        scene=['ssp126','ssp245','ssp585','1.5℃','2.0℃']    
+        
     #%% 时序图
     pre_data_6=dict()
     for i in instis:
@@ -445,26 +465,26 @@ def grass_table_def(data_json):
 
     result_df_dict['时序图']=dict()
     result_df_dict['时序图']['集合_多模式' ]=dict()
-    result_df_dict['时序图']['集合_多模式' ]=percentile_std(scene,instis,pre_data_5,main_element,refer_evaluate_station)
+    result_df_dict['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],instis,pre_data_5,main_element,refer_evaluate_station)
     
     result_df_dict['时序图']['单模式' ]=pre_data_6
     result_df_dict['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()
     
     if plot==1:
         
-        all_png['历史']['模拟模式']=dict()
+        # all_png['历史']['模拟模式']=dict()
         
-        cmip_res=result_df_dict['表格']['历史']['模拟模式']
-        for insti,stats_table in cmip_res.items():
-            all_png['历史']['模拟模式'][insti] = dict()
-            stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
-            for i in np.arange(len(stats_table)):
-                mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, stats_table.iloc[i,1::], method)
-                png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, '历史', '模拟模式', str(stats_table.iloc[i,0]), data_out)
+        # cmip_res=result_df_dict['表格']['历史']['模拟模式']
+        # for insti,stats_table in cmip_res.items():
+        #     all_png['历史']['模拟模式'][insti] = dict()
+        #     stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
+        #     for i in np.arange(len(stats_table)):
+        #         mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, stats_table.iloc[i,1::], method)
+        #         png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, '历史', '模拟模式', str(stats_table.iloc[i,0]), data_out)
                         
-                png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-                png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-                all_png['历史']['模拟模式'][insti][str(stats_table.iloc[i,0])] = png_path
+        #         png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+        #         png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+        #         all_png['历史']['模拟模式'][insti][str(stats_table.iloc[i,0])] = png_path
             
             
         # 预估
@@ -472,25 +492,27 @@ def grass_table_def(data_json):
         cmip_res=result_df_dict['表格']['预估']
         
         for exp, sub_dict1 in cmip_res.items():
-            all_png['预估'][exp] = dict()
-            for insti,stats_table in sub_dict1.items():
-                all_png['预估'][exp][insti] = dict()
-                stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
-                
-                for i in range(len(stats_table)):
-                    value_list = stats_table.iloc[i,1::]
-                    year_name = stats_table.iloc[i,0]
-                    exp_name = exp
-                    insti_name = insti
-                    # 插值/掩膜/画图/保存
-                    mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
-                    
-                    # 转url
-                    png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-                    png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+            if exp in ['ssp126','ssp245','ssp585']:
 
-                    all_png['预估'][exp][insti][year_name] = png_path
+                all_png['预估'][exp] = dict()
+                for insti,stats_table in sub_dict1.items():
+                    all_png['预估'][exp][insti] = dict()
+                    stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
+                    
+                    for i in range(len(stats_table)):
+                        value_list = stats_table.iloc[i,1::]
+                        year_name = stats_table.iloc[i,0]
+                        exp_name = exp
+                        insti_name = insti
+                        # 插值/掩膜/画图/保存
+                        mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+                        png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
+                        
+                        # 转url
+                        png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+                        png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+    
+                        all_png['预估'][exp][insti][year_name] = png_path
    
 
     

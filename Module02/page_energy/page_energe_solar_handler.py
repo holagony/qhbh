@@ -178,7 +178,18 @@ def energy_solar_power(data_json):
             result= solar_power_pre(element,data_dir,time_scale,insti_a,scene_a,var,stats_times,time_freq,sta_ids2,station_dict)
             pre_data[insti_a][scene_a]=result
             
- 
+    stats_end_year=result['年'].iloc[-1]
+    ##%% 增加一下 1.5℃和2.0℃
+    if int(stats_end_year) >= 2020:
+        for insti_b,insti_b_table in pre_data.items():
+            pre_data[insti_b]['1.5℃']=pre_data[insti_b]['ssp126'][(pre_data[insti_b]['ssp126']['年']>=2020) & (pre_data[insti_b]['ssp126']['年']<=2039)]
+        scene=['ssp126','ssp245','ssp585','1.5℃']
+
+    if int(stats_end_year) >= 2040:
+        for insti_b,insti_b_table in pre_data.items():
+            pre_data[insti_b]['2.0℃']=pre_data[insti_b]['ssp245'][(pre_data[insti_b]['ssp245']['年']>=2040) & (pre_data[insti_b]['ssp245']['年']<=2059)]
+        scene=['ssp126','ssp245','ssp585','1.5℃','2.0℃']
+        
     #%% 基准期    
     base_p=refer_result_z.iloc[0:-4,1::].mean().to_frame().T.reset_index(drop=True)
 
@@ -201,7 +212,7 @@ def energy_solar_power(data_json):
 
     result_df['时序图']=dict()
     result_df['时序图']['集合_多模式' ]=dict()
-    result_df['时序图']['集合_多模式' ]=percentile_std(scene,insti,pre_data,'none',result)
+    result_df['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'none',result)
     
     result_df['时序图']['单模式' ]=pre_data_result.copy()
     result_df['时序图']['单模式' ]['基准期']=base_p.copy()
@@ -243,24 +254,25 @@ def energy_solar_power(data_json):
         cmip_res=result_df['表格']['预估']
         
         for exp, sub_dict1 in cmip_res.items():
-            all_png['预估'][exp] = dict()
-            for insti,stats_table in sub_dict1.items():
-                all_png['预估'][exp][insti] = dict()
-                stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
-                for i in range(len(stats_table)):
-                    value_list = stats_table.iloc[i,1::]
-                    year_name = stats_table.iloc[i,0]
-                    exp_name = exp
-                    insti_name = insti
-                    # 插值/掩膜/画图/保存
-                    mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
-                    
-                    # 转url
-                    png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-                    png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
- 
-                    all_png['预估'][exp][insti][year_name] = png_path
+            if exp in ['ssp126','ssp245','ssp585']:
+                all_png['预估'][exp] = dict()
+                for insti,stats_table in sub_dict1.items():
+                    all_png['预估'][exp][insti] = dict()
+                    stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
+                    for i in range(len(stats_table)):
+                        value_list = stats_table.iloc[i,1::]
+                        year_name = stats_table.iloc[i,0]
+                        exp_name = exp
+                        insti_name = insti
+                        # 插值/掩膜/画图/保存
+                        mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+                        png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
+                        
+                        # 转url
+                        png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+                        png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+     
+                        all_png['预估'][exp][insti][year_name] = png_path
     else:
         all_png=None
    
