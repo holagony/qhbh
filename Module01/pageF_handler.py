@@ -78,6 +78,9 @@ def agriculture_features(data_json):
 
     if element in ['sowin_date','maturity']:
         station_df,stats_result,post_data_df,post_refer_df,reg_params,data_r_df=agriculture_features_stats(data_json)
+        data_r_df.reset_index(inplace=True)
+        data_r_df.rename(columns={'Datetime': '年'}, inplace=True)
+        
 
     elif element in ['reproductive_period']:
         stats_result=agriculture_features_stats(data_json)

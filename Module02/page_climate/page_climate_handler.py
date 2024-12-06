@@ -210,7 +210,7 @@ def climate_esti(data_json):
     res_d['100'] = '1.00deg'
     
     if os.name == 'nt':
-        data_dir = r'C:\Users\MJY\Desktop\station_data\csv' # 本地
+        data_dir = r'D:\Project\qh' # 本地
     else:
         if cmip_type == 'original':
             data_dir = '/model_data/station_data/csv' # 容器内
@@ -329,6 +329,10 @@ def climate_esti(data_json):
     stats_result_his, _, _ = table_stats_simple(refer_df, element_str)
     result_dict['表格']['历史'] = stats_result_his.to_dict(orient='records')
     
+    # 插入
+    #%% 基准期    
+    base_p=stats_result_his.iloc[0:-4,1::].mean().to_frame().T.reset_index(drop=True)
+    
     # 2.表格-预估-各个情景的集合
     evaluate_cmip_res = dict()
     for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tas']
@@ -395,7 +399,7 @@ def climate_esti(data_json):
         std_percent[exp]['百分位数75'] = per75.to_dict(orient='records')
 
     result_dict['时序图'] = std_percent
-
+    result_dict['时序图']['基准期'] = base_p.to_dict(orient='records').copy()
     # 5.分布图 实时画（后面改为提取提前画好的图）
     if plot == 1:
         # 预估-单模式数据画图
