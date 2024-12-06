@@ -208,10 +208,10 @@ def hbv_single_calc(data_json):
     res_d = dict()
     res_d['25'] = '0.25deg'
     res_d['50'] = '0.52deg'
-    res_d['100'] = '1deg'
+    res_d['100'] = '1.00deg'
     
     if os.name == 'nt':
-        data_dir = r'C:\Users\MJY\Desktop\station_data\csv' # 本地
+        data_dir = r'D:\Project\qh' # 本地
     else:
         if cmip_type == 'original':
             data_dir = '/model_data/station_data/csv' # 容器内
@@ -631,6 +631,10 @@ def hbv_single_calc(data_json):
             
     single_cmip_res = stats_result_3(single_cmip_res, refer_df)
     
+    #%% 基准期    
+    base_p=q_sim_yearly1.iloc[0:-7,3::].mean().to_frame().T.reset_index(drop=True)
+    
+    
     result_dict = dict()
     result_dict['uuid'] = uuid4
     result_dict['表格历史'] = dict()
@@ -670,6 +674,7 @@ def hbv_single_calc(data_json):
         std_percent[exp]['百分位数75'] = per75.to_dict(orient='records')
     
     result_dict['时序图'] = std_percent
+    result_dict['时序图']['基准期'] = base_p.to_dict(orient='records').copy()
 
     return result_dict, mon_dict
 
