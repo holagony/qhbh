@@ -331,8 +331,12 @@ def get_database_data(sta_ids, element_str, table_name, time_freq, stats_times):
         data = cur.fetchall()
 
     # 统计年份数据处理为df
-    df = pd.DataFrame(data)
-    df.columns = elements.split(',')
+    try:
+        df = pd.DataFrame(data)
+        df.columns = elements.split(',')
+    except Exception:
+        raise Exception('数据库选择的时段无数据')
+        
     try:
         element_str= elements.split(',')[-1]
         df[element_str] = df[element_str].astype(float).apply(lambda x: np.nan if x > 9999 else x)
@@ -494,8 +498,12 @@ def get_database_result(sta_ids, elements, table_name, time_freq, stats_times,ty
         data = cur.fetchall()
 
     # 统计年份数据处理为df
-    df = pd.DataFrame(data)
-    df.columns = elements.split(',')
+    try:
+        df = pd.DataFrame(data)
+        df.columns = elements.split(',')
+    except Exception:
+        raise Exception('数据库选择的时段无数据')
+    
     df.set_index('Datetime', inplace=True)
     if float_flag==1:
         df['value']=df['value'].astype(float)
