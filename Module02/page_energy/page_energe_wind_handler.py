@@ -177,19 +177,31 @@ def energy_wind_power(data_json):
             result= wind_power_pre(element,data_dir,time_scale,insti_a,scene_a,var,stats_times,time_freq,sta_ids2,station_dict)
             pre_data[insti_a][scene_a]=result
     
-    stats_end_year=result['年'].iloc[-1]
-    ##%% 增加一下 1.5℃和2.0℃
-    if int(stats_end_year) >= 2020:
-        for insti_b,insti_b_table in pre_data.items():
-            pre_data[insti_b]['1.5℃']=pre_data[insti_b]['ssp126'][(pre_data[insti_b]['ssp126']['年']>=2020) & (pre_data[insti_b]['ssp126']['年']<=2039)]
-        scene=['ssp126','ssp245','ssp585','1.5℃']
+    
 
-    if int(stats_end_year) >= 2040:
-        for insti_b,insti_b_table in pre_data.items():
-            pre_data[insti_b]['2.0℃']=pre_data[insti_b]['ssp245'][(pre_data[insti_b]['ssp245']['年']>=2040) & (pre_data[insti_b]['ssp245']['年']<=2059)]
-        scene=['ssp126','ssp245','ssp585','1.5℃','2.0℃']
-        
     if element in ['WDF','WSF']:
+        
+        stats_end_year=pd.DataFrame(result[sta_ids2[0]])['年'].iloc[-1]
+
+        ##%% 增加一下 1.5℃和2.0℃
+        if int(stats_end_year) >= 2020:
+            for insti_b,insti_b_table in pre_data.items():
+                pre_data[insti_b]['1.5℃']=dict()
+                station_b_table=insti_b_table['ssp126']
+                for d_b,d_b_table in station_b_table.items():
+                    
+                    d_b_table=pd.DataFrame(d_b_table)   
+                    
+                    pre_data[insti_b]['1.5℃'][d_b]=d_b_table[(d_b_table['年']>=2020) & (d_b_table['年']<=2039)].to_dict(orient='records')
+
+        if int(stats_end_year) >= 2040:
+            for insti_b,insti_b_table in pre_data.items():
+                pre_data[insti_b]['2.0℃']=dict()
+                station_b_table=insti_b_table['ssp245']
+                for d_b,d_b_table in station_b_table.items():
+                    d_b_table=pd.DataFrame(d_b_table)   
+                    pre_data[insti_b]['2.0℃']=d_b_table[(d_b_table['年']>=2040) & (d_b_table['年']<=2059)].to_dict(orient='records')
+        
         result_df=dict()
         result_df['站点']=station_dict.to_dict(orient='records')
 
@@ -199,6 +211,18 @@ def energy_wind_power(data_json):
         return result_df
     else:
  
+        stats_end_year=result['年'].iloc[-1]
+        ##%% 增加一下 1.5℃和2.0℃
+        if int(stats_end_year) >= 2020:
+            for insti_b,insti_b_table in pre_data.items():
+                pre_data[insti_b]['1.5℃']=pre_data[insti_b]['ssp126'][(pre_data[insti_b]['ssp126']['年']>=2020) & (pre_data[insti_b]['ssp126']['年']<=2039)]
+            scene=['ssp126','ssp245','ssp585','1.5℃']
+
+        if int(stats_end_year) >= 2040:
+            for insti_b,insti_b_table in pre_data.items():
+                pre_data[insti_b]['2.0℃']=pre_data[insti_b]['ssp245'][(pre_data[insti_b]['ssp245']['年']>=2040) & (pre_data[insti_b]['ssp245']['年']<=2059)]
+            scene=['ssp126','ssp245','ssp585','1.5℃','2.0℃']
+            
     #%% 基准期    
         base_p=refer_result_z.iloc[0:-4,1::].mean().to_frame().T.reset_index(drop=True)
 
@@ -298,7 +322,7 @@ if __name__ == '__main__':
     #  element: 有效风功率密度：WPD 风向频率： WDF;风速频率：WSF；有效小时数：AH
     
     data_json = dict()
-    data_json['element'] ='WPD'
+    data_json['element'] ='WSF'
     data_json['refer_times'] = '2010,2024'
     data_json['time_freq'] = 'Y'
     data_json['stats_times'] = '2020,2040'

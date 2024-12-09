@@ -182,12 +182,12 @@ def energy_solar_power(data_json):
     ##%% 增加一下 1.5℃和2.0℃
     if int(stats_end_year) >= 2020:
         for insti_b,insti_b_table in pre_data.items():
-            pre_data[insti_b]['1.5℃']=pre_data[insti_b]['ssp126'][(pre_data[insti_b]['ssp126']['年']>=2020) & (pre_data[insti_b]['ssp126']['年']<=2039)]
+            pre_data[insti_b]['1.5℃']=pre_data[insti_b]['ssp126'][(pre_data[insti_b]['ssp126']['年'].astype(int)>=2020) & (pre_data[insti_b]['ssp126']['年'].astype(int)<=2039)]
         scene=['ssp126','ssp245','ssp585','1.5℃']
 
     if int(stats_end_year) >= 2040:
         for insti_b,insti_b_table in pre_data.items():
-            pre_data[insti_b]['2.0℃']=pre_data[insti_b]['ssp245'][(pre_data[insti_b]['ssp245']['年']>=2040) & (pre_data[insti_b]['ssp245']['年']<=2059)]
+            pre_data[insti_b]['2.0℃']=pre_data[insti_b]['ssp245'][(pre_data[insti_b]['ssp245']['年'].astype(int)>=2040) & (pre_data[insti_b]['ssp245']['年'].astype(int)<=2059)]
         scene=['ssp126','ssp245','ssp585','1.5℃','2.0℃']
         
     #%% 基准期    
