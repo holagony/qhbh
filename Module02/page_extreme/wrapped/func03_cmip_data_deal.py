@@ -250,7 +250,7 @@ def extreme_pre(ele,data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
              
     #%% 数据转换
       
-    if ele in ['TN10p', 'TX10p', 'TN90p', 'TX90p', 'ID', 'FD', 'SU','TR','GSL','RZ','RZD','SDII','R25D','R50D','R10D','R95%D','R95%','R50','R','RD','GaWIN']:
+    if ele in ['TN10p', 'TX10p', 'TN90p', 'TX90p', 'ID', 'FD', 'SU','TR','GSL','RZ','RZD','SDII','R25D','R50D','R10D','R95%D','R95%','R50','R','RD','GaWIN','drought','light_drought','medium_drought','heavy_drought','severe_drought']:
        
         # if time_freq in ['Y','Q']:
             

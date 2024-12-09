@@ -50,6 +50,7 @@ from Module02.page_energy.wrapped.func00_function import percentile_std
 from Module02.page_extreme.wrapped.func01_tem_table_stats import tem_table_stats
 from Module02.page_extreme.wrapped.func02_pre_table_stats import pre_table_stats
 from Module02.page_extreme.wrapped.func03_cmip_data_deal import extreme_pre
+from Module02.page_extreme.wrapped.func04_other_data_deal import other_table_stats
 from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
 from Utils.data_loader_with_threads import get_database_data
 
@@ -181,7 +182,12 @@ def extreme_climate_esti(data_json):
     nc_dict['TEM_Min']='tasmin'
     nc_dict['PRE_Time_2020']='pr'
     nc_dict['win_s_2mi_avg']='ws'
-
+    
+    nc_dict['drought']='drought'
+    nc_dict['light_drought']='light_drought'
+    nc_dict['medium_drought']='medium_drought'
+    nc_dict['heavy_drought']='heavy_drought'
+    nc_dict['severe_drought']='severe_drought'
     #%% 参考时段
     elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,'+ele_dict[element]
     sta_ids1 = tuple(sta_ids.split(','))
@@ -199,8 +205,8 @@ def extreme_climate_esti(data_json):
         refer_result = tem_table_stats(refer_df,time_freq, element,l_data=l_data,n_data=n_data)
     elif element in pre_table:
         refer_result= pre_table_stats(refer_df,time_freq, element,GaWIN=GaWIN,GaWIN_flag=GaWIN_flag,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
-    # elif element in other_table:
-    #     stats_result, post_data_df, post_refer_df, reg_params = other_table_stats(data_df, refer_df, nearly_df, time_freq,element, last_year)
+    elif element in other_table:
+        stats_result, post_data_df, post_refer_df, reg_params = other_table_stats(refer_df, time_freq,element)
 
     refer_result_z=data_deal(refer_result)
 
