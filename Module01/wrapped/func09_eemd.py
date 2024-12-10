@@ -41,6 +41,7 @@ def eemd(df, output_filepath):
 
     all_result = dict()
     for i in range(len(columns)):
+        
         dat = df_new.iloc[:, i].values
         col = columns[i]
         name = ''.join(col)
@@ -71,15 +72,18 @@ def eemd(df, output_filepath):
             plt.subplot(nIMFs + 1, 1, 1)
             plt.plot(t, dat_norm, 'r')
             plt.title(columns[i])
+            plt.xlim([year[0],year[-1]])
 
             for n in range(nIMFs):
                 plt.subplot(nIMFs + 1, 1, n + 2)
                 plt.plot(t, eIMFs[n], 'g')
                 plt.ylabel("eIMF %i" % (n + 1))
                 plt.locator_params(axis='y', nbins=5)
+                plt.xlim([year[0],year[-1]])
 
             plt.xlabel("年份")
             plt.tight_layout()
+            plt.xlim([year[0],year[-1]])
 
             result_picture = os.path.join(output_filepath, name+'_eemd.png')
             fig.savefig(result_picture, dpi=200, bbox_inches='tight')
