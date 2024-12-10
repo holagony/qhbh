@@ -309,7 +309,7 @@ def wavelet_main(df, output_filepath):
             n = len(sst)
             dt = 1
             time = np.arange(len(sst)) * dt + year[0]  # construct time array
-            xlim = ([year[0] - 1, year[-1] + 1])  # plotting range
+            xlim = ([year[0], year[-1]])  # plotting range
             pad = 1  # pad the time series with zeroes (recommended)
             dj = 0.25  # this will do 4 sub-octaves per octave
             s0 = 0.5  # this says start at a scale of 6 months
