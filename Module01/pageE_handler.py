@@ -92,7 +92,7 @@ def freeze_features_stats(data_json):
     time_freq = data_json['time_freq']
     stats_times = data_json['stats_times']
     sta_ids = data_json['sta_ids']
-    interp_method = data_json['interp_method']
+    interp_method = data_json.get('interp_method','idw')
     ci = data_json['ci']
     shp_path = data_json.get('shp_path')
     degree = data_json.get('degree')
