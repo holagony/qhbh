@@ -109,6 +109,8 @@ def climate_esti(data_json):
         降水日数	PRE_Days
         平均风速	WIN_S_2mi_Avg
         平均相对湿度	RHU_Avg
+        日照时数 SSH
+        雪水当量 SNOW
     '''
     # 1.参数读取
     time_freq = data_json['time_freq']  # 控制预估时段
@@ -125,7 +127,11 @@ def climate_esti(data_json):
 
     if shp_path is not None:
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
-
+    
+    # 如果是SSH和SNOW
+    if element in ['SSH', 'SNOW']:
+        assert cmip_model == ['BCM_BCC'], '要素为日照时和雪水当量的时候，模式只能选BCM_BCC'
+    
     # 2.参数处理
     degree = None
     uuid4 = uuid.uuid4().hex
@@ -140,34 +146,24 @@ def climate_esti(data_json):
         
     ######################################################
     # 站点数据获取
-    if time_freq == 'Y':
-        table_name = 'qh_qhbh_cmadaas_year'
-    elif time_freq in ['Q', 'M1', 'M2']:
-        table_name = 'qh_qhbh_cmadaas_month'
-    elif time_freq in ['D1', 'D2']:
-        table_name = 'qh_qhbh_cmadaas_day'
+    # if time_freq == 'Y':
+    #     table_name = 'qh_climate_cmadaas_year'
+    # elif time_freq in ['Q', 'M1', 'M2']:
+    #     table_name = 'qh_climate_cmadaas_month'
+    # elif time_freq in ['D1', 'D2']:
+    #     table_name = 'qh_climate_cmadaas_day'
+    
+    table_name = 'qh_climate_cmadaas_day' # 固定用日数据表
     element_str = element
-
-    # 从数据库获取
     sta_ids = tuple(sta_ids.split(','))
-    refer_df = get_database_data(sta_ids, element_str, table_name, time_freq, refer_years)
-
+        
+    if element != 'SNOW':
+        refer_df = get_database_data(sta_ids, element_str, table_name, time_freq, refer_years)
+    else:
+        refer_df = None
+        
     ######################################################
     # 模式数据获取
-    # 先确定年份
-    if time_freq == 'Y':  # '%Y,%Y'
-        start_year = int(evaluate_times.split(',')[0])
-        end_year = int(evaluate_times.split(',')[1])
-
-    elif time_freq in ['Q', 'M2', 'D2']:  # ['%Y,%Y','3,4,5']
-        years = evaluate_times[0]
-        start_year = int(years.split(',')[0])
-        end_year = int(years.split(',')[1])
-
-    elif time_freq in ['M1', 'D1']:  # '%Y%m,%Y%m'
-        start_year = int(evaluate_times.split(',')[0][:4])
-        end_year = int(evaluate_times.split(',')[1][:4])
-
     # 确定模式原始要素
     var_dict = dict()
     var_dict['TEM_Avg'] = 'tas'
@@ -176,9 +172,25 @@ def climate_esti(data_json):
     var_dict['PRE_Time_2020'] = 'pr'
     var_dict['PRE_Days'] = 'pr'
     var_dict['RHU_Avg'] = 'hurs'
-    # var_dict['WIN_S_2mi_Avg'] = 'uas,vas'
+    var_dict['SSH'] = 'sund'
+    var_dict['SNOW'] = 'snv'
+    var_dict['WIN_S_2mi_Avg'] = 'ws'
     var = var_dict[element]
     
+    # 确定年份
+    # if time_freq == 'Y':  # '%Y,%Y'
+    #     start_year = int(evaluate_times.split(',')[0])
+    #     end_year = int(evaluate_times.split(',')[1])
+
+    # elif time_freq in ['Q', 'M2', 'D2']:  # ['%Y,%Y','3,4,5']
+    #     years = evaluate_times[0]
+    #     start_year = int(years.split(',')[0])
+    #     end_year = int(years.split(',')[1])
+
+    # elif time_freq in ['M1', 'D1']:  # '%Y%m,%Y%m'
+    #     start_year = int(evaluate_times.split(',')[0][:4])
+    #     end_year = int(evaluate_times.split(',')[1][:4])
+
     # 读取数据
     # 原来的读取nc
     # inpath = '/cmip_data'
@@ -227,6 +239,9 @@ def climate_esti(data_json):
             evaluate_cmip[exp][insti] = dict()
             excel_data = read_model_data(data_dir,time_scale,insti,exp,var,evaluate_times,time_freq,station_id)
             
+            if element == 'SSH':
+                excel_data = (excel_data/3600).round(1)
+
             # 转nc
             time_tmp = excel_data.index
             location_tmp = excel_data.columns.tolist()
@@ -236,14 +251,15 @@ def climate_esti(data_json):
     
     ######################################################
     ##### 站点数据处理
-    refer_df = data_processing(refer_df, element_str, degree)
-    df_unique = refer_df.drop_duplicates(subset='Station_Id_C')  # 删除重复行
-
-    # 重要!!!
-    lon_list = df_unique['Lon'].tolist()
-    lat_list = df_unique['Lat'].tolist()
-    sta_list = df_unique['Station_Id_C'].tolist()
-
+    try:
+        refer_df = data_processing(refer_df, element_str, degree)
+        df_unique = refer_df.drop_duplicates(subset='Station_Id_C')  # 删除重复行
+        lon_list = df_unique['Lon'].tolist()
+        lat_list = df_unique['Lat'].tolist()
+        sta_list = df_unique['Station_Id_C'].tolist()
+    except:    
+        sta_list = sta_ids
+        
     ######################################################
     ##### 模式数据处理
     # 首先筛选时间
@@ -284,12 +300,8 @@ def climate_esti(data_json):
     time_index = time_index[~((time_index.month == 2) & (time_index.day == 29))]  # 由于数据原因，删除2月29号
 
     # 插值到多个站点
-    interp_lon = xr.DataArray(lon_list, dims="location", coords={
-        "location": sta_list,
-    })
-    interp_lat = xr.DataArray(lat_list, dims="location", coords={
-        "location": sta_list,
-    })
+    # interp_lon = xr.DataArray(lon_list, dims="location", coords={"location": sta_list,})
+    # interp_lat = xr.DataArray(lat_list, dims="location", coords={"location": sta_list,})
 
     for _, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
         for _, sub_dict2 in sub_dict1.items():
@@ -313,26 +325,24 @@ def climate_esti(data_json):
 
     # 首先获取站号对应的站名
     station_df = pd.DataFrame()
-    station_df['站号'] = [
-        51886, 51991, 52602, 52633, 52645, 52657, 52707, 52713, 52737, 52745, 52754, 52765, 52818, 52825, 52833, 52836, 52842, 52851, 52853, 52855, 52856, 52859, 52862, 52863, 52866, 52868, 52869, 52874, 52875, 52876, 52877, 52908, 52942, 52943,
-        52955, 52957, 52963, 52968, 52972, 52974, 56004, 56015, 56016, 56018, 56021, 56029, 56033, 56034, 56043, 56045, 56046, 56065, 56067, 56125, 56151
-    ]
-    station_df['站名'] = [
-        '茫崖', '那陵格勒', '冷湖', '托勒', '野牛沟', '祁连', '小灶火', '大柴旦', '德令哈', '天峻', '刚察', '门源', '格尔木', '诺木洪', '乌兰', '都兰', '茶卡', '江西沟', '海晏', '湟源', '共和', '瓦里关', '大通', '互助', '西宁', '贵德', '湟中', '乐都', '平安', '民和', '化隆', '五道梁', '河卡', '兴海', '贵南', '同德', '尖扎', '泽库',
-        '循化', '同仁', '沱沱河', '曲麻河', '治多', '杂多', '曲麻莱', '玉树', '玛多', '清水河', '玛沁', '甘德', '达日', '河南', '久治', '囊谦', '班玛'
-    ]
+    station_df['站号'] = [51886, 51991, 52602, 52633, 52645, 52657, 52707, 52713, 52737, 52745, 52754, 52765, 52818, 52825, 52833, 52836, 52842, 52851, 52853, 52855, 52856, 52859, 52862, 52863, 52866, 52868, 52869, 52874, 52875, 52876, 52877, 52908, 52942, 52943,
+        52955, 52957, 52963, 52968, 52972, 52974, 56004, 56015, 56016, 56018, 56021, 56029, 56033, 56034, 56043, 56045, 56046, 56065, 56067, 56125, 56151]
+    station_df['站名'] = ['茫崖', '那陵格勒', '冷湖', '托勒', '野牛沟', '祁连', '小灶火', '大柴旦', '德令哈', '天峻', '刚察', '门源', '格尔木', '诺木洪', '乌兰', '都兰', '茶卡', '江西沟', '海晏', '湟源', '共和', '瓦里关', '大通', '互助', '西宁', '贵德', '湟中', '乐都', '平安', '民和', '化隆', '五道梁', '河卡', '兴海', '贵南', '同德', '尖扎', '泽库',
+        '循化', '同仁', '沱沱河', '曲麻河', '治多', '杂多', '曲麻莱', '玉树', '玛多', '清水河', '玛沁', '甘德', '达日', '河南', '久治', '囊谦', '班玛']
     station_df['站号'] = station_df['站号'].map(str)
     new_station = station_df[station_df['站号'].isin(sta_ids)]
     result_dict['站号'] = new_station.to_dict(orient='records')
 
     # 1.表格-历史
-    stats_result_his, _, _ = table_stats_simple(refer_df, element_str)
-    result_dict['表格']['历史'] = stats_result_his.to_dict(orient='records')
-    
-    # 插入
-    #%% 基准期    
-    base_p=stats_result_his.iloc[0:-4,1::].mean().to_frame().T.reset_index(drop=True)
-    
+    try:
+        stats_result_his, _, _ = table_stats_simple(refer_df, element_str)
+        base_p = stats_result_his.iloc[0:-4,1::].mean().to_frame().T.reset_index(drop=True) # 基准期
+        result_dict['表格']['历史'] = stats_result_his.to_dict(orient='records')
+    except:
+        stats_result_his = None
+        base_p = None
+        result_dict['表格']['历史'] = None
+
     # 2.表格-预估-各个情景的集合
     evaluate_cmip_res = dict()
     for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tas']
@@ -399,7 +409,12 @@ def climate_esti(data_json):
         std_percent[exp]['百分位数75'] = per75.to_dict(orient='records')
 
     result_dict['时序图'] = std_percent
-    result_dict['时序图']['基准期'] = base_p.to_dict(orient='records').copy()
+    
+    if base_p is not None:
+        result_dict['时序图']['基准期'] = base_p.to_dict(orient='records').copy()
+    else:
+        result_dict['时序图']['基准期'] = None
+    
     # 5.分布图 实时画（后面改为提取提前画好的图）
     if plot == 1:
         # 预估-单模式数据画图
