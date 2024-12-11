@@ -121,7 +121,7 @@ def pageb_water_hbv():
     return return_data
 
 @module02.route('/v1/water_model', methods=['POST'])
-def pageb_water_hbv():
+def pageb_water_model():
     '''
     重点领域与行业预估-水资源影响预估-统计建模
     '''
@@ -137,7 +137,7 @@ def pageb_water_hbv():
     return return_data
 
 @module02.route('/v1/water_table', methods=['POST'])
-def pageb_water_hbv():
+def pageb_water_table():
     '''
     重点领域与行业预估-水资源影响预估-HBV
     '''
