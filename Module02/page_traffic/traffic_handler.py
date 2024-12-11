@@ -300,6 +300,10 @@ def traffic_esti(data_json):
     stats_result_his, _, _ = table_stats_simple(refer_df, 'traffic')
     result_dict['表格']['历史'] = stats_result_his.to_dict(orient='records')
     
+    # 添加 基准期
+    base_p=stats_result_his.iloc[0:-4,1::].mean().to_frame().T.reset_index(drop=True)
+
+    
     # 2.表格-预估-各个情景的集合
     evaluate_cmip_res = dict()
     for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tas']
@@ -352,7 +356,8 @@ def traffic_esti(data_json):
             std_percent[exp]['百分位数75'] = per75.to_dict(orient='records')
     
     result_dict['时序图'] = std_percent
-        
+    result_dict['时序图']['基准期'] = base_p.to_dict(orient='records').copy()
+    
     # 5.分布图 实时画（后面改为提取提前画好的图）
     if plot == 1:
         all_png = dict()
