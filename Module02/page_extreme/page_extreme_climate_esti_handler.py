@@ -182,7 +182,8 @@ def extreme_climate_esti(data_json):
     nc_dict['TEM_Min']='tasmin'
     nc_dict['PRE_Time_2020']='pr'
     nc_dict['win_s_2mi_avg']='ws'
-    
+    nc_dict['TEM_Min,TEM_Max']='ws'
+
     nc_dict['drought']='drought'
     nc_dict['light_drought']='light_drought'
     nc_dict['medium_drought']='medium_drought'
