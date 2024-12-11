@@ -136,7 +136,7 @@ def pageb_water_hbv():
     return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result_dict}, ensure_ascii=False, ignore_nan=True)
     return return_data
 
-@module02.route('/v1/water_source_hbv', methods=['POST'])
+@module02.route('/v1/water_table', methods=['POST'])
 def pageb_water_hbv():
     '''
     重点领域与行业预估-水资源影响预估-HBV
