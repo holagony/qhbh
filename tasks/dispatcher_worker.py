@@ -5,13 +5,12 @@ import json
 import simplejson
 from celery.result import AsyncResult
 from flask import Blueprint, jsonify
-from tasks.celery_factory import my_celery
+from tasks.celery_factory import make_celery
 from Utils.name_utils import *
 
 bp_tasks = Blueprint('tasks', __name__)
 log = logging.getLogger(__name__)
 
-sys.path.append("Module00")
 sys.path.append("Module01")
 sys.path.append("Module02")
 sys.path.append("Module02/page_energy")
@@ -23,20 +22,10 @@ sys.path.append("Module02/page_grass")
 sys.path.append("Module02/page_risk")
 sys.path.append("Module02/page_extreme")
 sys.path.append("Module03")
-sys.path.append("Module04")
-sys.path.append("Module05")
-sys.path.append("Module06")
-sys.path.append("Module07")
-sys.path.append("Module08")
-sys.path.append("Module09")
-sys.path.append("Module10")
-sys.path.append("Module11")
-sys.path.append("Module12")
-sys.path.append("Module13")
 sys.path.append("Utils")
 sys.path.append(".")
-sys.path.append("Flood")
 
+my_celery = make_celery()
 
 
 def callback(url, result_id, result):
@@ -116,23 +105,3 @@ def celery_task_status(task_id):
         response = {'code': 500, 'msg': "error", 'data': {}, 'state': async_result.state, 'current': 1, 'total': 1, 'status': str(async_result.info)}
 
     return jsonify(response)
-
-
-def get_plugin_by_name(self, package, clazz_name):
-    """
-    package 类所在路径
-    clazz_name 类名
-    http://stackoverflow.com/questions/547829/how-to-dynamically-load-a-python-class
-    https://docs.python.org/2/library/functions.html?highlight=__import__#__import__
-    :param package:
-    :param clazz_name:
-    :return:
-    """
-    try:
-        plugin_name = clazz_name.capitalize() + 'Plugin'
-        module = __import__(package + '.' + clazz_name, fromlist=[plugin_name])
-        clazz = getattr(module, plugin_name)
-        return clazz(region_id=self.get_current_region_id(), access_key=self.aliyun_access_key)
-
-    except Exception as exp:
-        log.error("Get plugin: %s by package: %s error for %s" % (clazz_name, package, exp))
