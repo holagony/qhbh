@@ -229,7 +229,7 @@ def risk_esti(data_json):
     if time_freq == 'Y':
         s = evaluate_times.split(',')[0]
         e = evaluate_times.split(',')[1]
-        time_index = pd.date_range(start=s, end=e, freq='D')[:-1] # 'Y'
+        time_index = pd.date_range(start=s, end=e, freq='D') # 'Y'
 
     elif time_freq in ['Q', 'M2']:
         s = evaluate_times[0].split(',')[0]
