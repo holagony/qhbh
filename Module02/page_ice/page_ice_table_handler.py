@@ -492,6 +492,7 @@ def ice_table_def(data_json):
 
                 all_png['预估'][exp] = dict()
                 for insti,stats_table in sub_dict1.items():
+    
                     all_png['预估'][exp][insti] = dict()
                     stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
                     

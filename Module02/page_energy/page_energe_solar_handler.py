@@ -206,20 +206,21 @@ def energy_solar_power(data_json):
     
     #%% 结果保存   
     result_df=dict()
+    result_df['站点']=station_dict.to_dict(orient='records')
     result_df['表格']=dict()
     result_df['表格']['预估']=dict()
-    for insti_a in insti:
-        result_df['表格']['预估'][insti_a]=dict()
-        for scene_a in scene:
-            result_df['表格']['预估'][insti_a][scene_a]=dict()
-            result_df['表格']['预估'][insti_a][scene_a]=data_deal_2(pre_data[insti_a][scene_a],result,1)
+    for scene_a in scene:
+        result_df['表格']['预估'][scene_a]=dict()
+        for insti_a in insti:
+            result_df['表格']['预估'][scene_a][insti_a]=dict()
+            result_df['表格']['预估'][scene_a][insti_a]=data_deal_2(pre_data[insti_a][scene_a],result,1).to_dict(orient='records')
 
     result_df['时序图']=dict()
     result_df['时序图']['集合_多模式' ]=dict()
     result_df['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'none',result)
     
     result_df['时序图']['单模式' ]=pre_data_result.copy()
-    result_df['时序图']['单模式' ]['基准期']=base_p.copy()
+    result_df['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()
 
    
     def convert_dataframes_to_dicts(multi_dict):
@@ -295,7 +296,7 @@ if __name__ == '__main__':
     data_json['refer_times'] = '2023,2024'
     data_json['time_freq'] = 'Y'
     data_json['stats_times'] = '2025,2100'
-    data_json['sta_ids'] = '52737,52754,56029,52874'
+    data_json['sta_ids'] = "51886,52602,52633,52645,52657,52707,52713,52737,52745,52754,52765,52818,52825,52833,52836,52842,52853,52855,52856,52862,52863,52866,52868,52869,52874,52875,52876,52877,52908,52943,52955,52957,52963,52968,52972,52974,56004,56016,56018,56021,56029,56033,56034,56043,56045,56046,56065,56067,56125,56151"
     data_json['data_cource'] = 'original'
     data_json['insti'] = 'Set'
     # data_json['res'] ='1'

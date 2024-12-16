@@ -269,6 +269,7 @@ def energy_winter_heating(data_json):
             if exp in ['ssp126','ssp245','ssp585']:
                 all_png['预估'][exp] = dict()
                 for insti,stats_table in sub_dict1.items():
+    
                     all_png['预估'][exp][insti] = dict()
                     stats_table = pd.DataFrame(stats_table[find_keys_by_value(elem_dict, element)[0]]).iloc[:,:-5:]
                     for i in range(len(stats_table)):

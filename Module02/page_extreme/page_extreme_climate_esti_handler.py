@@ -297,6 +297,8 @@ def extreme_climate_esti(data_json):
             if exp in ['ssp126','ssp245','ssp585']:
                 all_png['预估'][exp] = dict()
                 for insti,stats_table in sub_dict1.items():
+               
+
                     all_png['预估'][exp][insti] = dict()
                     stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
                     for i in range(len(stats_table)):

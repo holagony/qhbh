@@ -236,19 +236,20 @@ def energy_wind_power(data_json):
     #%% 结果保存   
         result_df=dict()
         result_df['表格']=dict()
+        result_df['站点']=station_dict.to_dict(orient='records')
         result_df['表格']['预估']=dict()
-        for insti_a in insti:
-            result_df['表格']['预估'][insti_a]=dict()
-            for scene_a in scene:
-                result_df['表格']['预估'][insti_a][scene_a]=dict()
-                result_df['表格']['预估'][insti_a][scene_a]=data_deal_2(pre_data[insti_a][scene_a],result,1)
+        for scene_a in scene:
+            result_df['表格']['预估'][scene_a]=dict()
+            for insti_a in insti:
+                result_df['表格']['预估'][scene_a][insti_a]=dict()
+                result_df['表格']['预估'][scene_a][insti_a]=data_deal_2(pre_data[insti_a][scene_a],result,1).to_dict(orient='records')
 
         result_df['时序图']=dict()
         result_df['时序图']['集合_多模式' ]=dict()
         result_df['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'none',result)
         
         result_df['时序图']['单模式' ]=pre_data_result.copy()
-        result_df['时序图']['单模式' ]['基准期']=base_p.copy()
+        result_df['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()
     
        
         def convert_dataframes_to_dicts(multi_dict):
