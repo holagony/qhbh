@@ -104,7 +104,10 @@ def energy_solar_power(data_json):
     time_scale='daily'
     
     # 变量
-    var='sund'
+    if element=='TR':
+        var='rsds'
+    else:
+        var='sund'
     
     # 情景选择
     scene=['ssp126','ssp245','ssp585']
@@ -175,6 +178,7 @@ def energy_solar_power(data_json):
         pre_data[insti_a]=dict()
         for scene_a in scene:
             pre_data[insti_a][scene_a]=dict()
+            
             result= solar_power_pre(element,data_dir,time_scale,insti_a,scene_a,var,stats_times,time_freq,sta_ids2,station_dict)
             pre_data[insti_a][scene_a]=result
             
@@ -287,13 +291,13 @@ if __name__ == '__main__':
     # 日照时数：SH；
     # 有效日照天数：ASD    
     data_json = dict()
-    data_json['element'] ='SH'
+    data_json['element'] ='TR'
     data_json['refer_times'] = '2023,2024'
     data_json['time_freq'] = 'Y'
-    data_json['stats_times'] = '2020,2040'
-    data_json['sta_ids'] = '52863,52754,56029,52874'
+    data_json['stats_times'] = '2025,2100'
+    data_json['sta_ids'] = '52737,52754,56029,52874'
     data_json['data_cource'] = 'original'
-    data_json['insti'] = 'RCM_BCC'
+    data_json['insti'] = 'Set'
     # data_json['res'] ='1'
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
     data_json['plot'] = 1

@@ -144,13 +144,13 @@ def data_processing(data_in, element, degree=None):
     # 2.时间转换
     resample_max = ['PRS_Max', 'WIN_S_Max', 'WIN_S_Inst_Max', 'GST_Max', 'Crop_Heigh','PRE_Max_Day']
     resample_min = ['PRS_Min', 'GST_Min', 'RHU_Min']
-    resample_sum = ['ssh','PRE_Time_2020', 'PRE_Days', 'EVP_Big', 'EVP', 'EVP_Taka', 'PMET','sa','rainstorm','light_snow','snow',
+    resample_sum = ['v14311','ssh','PRE_Time_2020', 'PRE_Days', 'EVP_Big', 'EVP', 'EVP_Taka', 'PMET','sa','rainstorm','light_snow','snow',
                     'medium_snow','heavy_snow','severe_snow','Hail_Days','Hail','GaWIN',
                     'GaWIN_Days','SaSt','SaSt_Days','FlSa','FlSa_Days','FlDu','FlDu_Days',
                     'Thund','Thund_Days','high_tem','drought','light_drought','medium_drought',
                     'heavy_drought','severe_drought','Accum_Tem','V14311','SSH']
     
-    resample_mean = ['v14311','q','TEM_Max','TEM_Min','TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 
+    resample_mean = ['q','TEM_Max','TEM_Min','TEM_Avg', 'PRS_Avg', 'WIN_S_2mi_Avg', 'WIN_D_S_Max_C', 'GST_Avg', 'GST_Avg_5cm', 'GST_Avg_10cm', 
                      'GST_Avg_15cm', 'GST_Avg_20cm', 'GST_Avg_40cm', 'GST_Avg_80cm', 'GST_Avg_160cm', 'GST_Avg_320cm', 
                      'CLO_Cov_Avg', 'CLO_Cov_Low_Avg', 'SSP_Mon', 'EVP_Big', 'EVP', 'RHU_Avg', 'Cov', 'pmet','EVP_Taka',
                      'huangku','fanqing','dwei','fwei']

@@ -45,10 +45,10 @@ def a_b_statiuon(station_id):
 def solar_power_pre(element,data_dir,time_scale,insti,scene,var,stats_times,time_freq,station_ids,station_dict):
     
     df=read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,station_ids)
-    df=df/3600
 
 
     if element=='SH':
+        df=df/3600
 
         # 3.日照时数
         result=df.resample('Y').sum()
@@ -58,6 +58,7 @@ def solar_power_pre(element,data_dir,time_scale,insti,scene,var,stats_times,time
         result.columns.values[0] = '年'
         
     elif element=='ASD':
+        df=df/3600
 
         # 4. 有效日照天数
     
@@ -68,22 +69,30 @@ def solar_power_pre(element,data_dir,time_scale,insti,scene,var,stats_times,time
         result.columns.values[0] = '年'
     
     elif element=='TR':
-    
-        df_a=df.copy()
-        df_b=df.copy()
-        for index, row in df.iterrows():
-            month = index.month
-            row=row.to_frame().T
-            
-            for column in row.columns:
-                df_a.at[index,column]=a_b_statiuon(column).at[0,str(month)]
-                df_b.at[index,column]=a_b_statiuon(column).at[1,str(month)]
-                
-        result=df_a*df+df_b
-        result = result.resample('Y').sum().round(2)
+        
+        df = df*24 * 3600 / 1e6
+        result=df.resample('Y').sum()
+
         result.index = result.index.strftime('%Y')
         result.reset_index(inplace=True)
         result.columns.values[0] = '年'
+
+
+        # df_a=df.copy()
+        # df_b=df.copy()
+        # for index, row in df.iterrows():
+        #     month = index.month
+        #     row=row.to_frame().T
+            
+        #     for column in row.columns:
+        #         df_a.at[index,column]=a_b_statiuon(column).at[0,str(month)]
+        #         df_b.at[index,column]=a_b_statiuon(column).at[1,str(month)]
+                
+        # result=df_a*df+df_b
+        # result = result.resample('Y').sum().round(2)
+        # result.index = result.index.strftime('%Y')
+        # result.reset_index(inplace=True)
+        # result.columns.values[0] = '年'
     
     return result
     
