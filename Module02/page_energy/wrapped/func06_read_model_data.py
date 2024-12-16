@@ -22,7 +22,11 @@ def read_xlsx_data(file,station_id):
     data_1.columns=data_1.loc[0]
     data_1=data_1.copy()
     data_1.loc[0] =ori_columns
-    data_11=data_1[['station id']+station_id]    
+    
+    common_strings = set(data_1.columns).intersection(set(station_id))
+    formatted_common_strings = [string.lower().replace(" ", "") for string in common_strings]
+
+    data_11=data_1[['station id']+formatted_common_strings]    
     data_11.rename(columns={data_11.columns[0]: 'Datetime'}, inplace=True)
     data_11=data_11.iloc[3::,:]
     data_11['Datetime'] = pd.to_datetime(data_11['Datetime'])
