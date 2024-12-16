@@ -40,11 +40,9 @@ import numpy as np
 import pandas as pd
 import uuid
 from Utils.config import cfg
-from Module02.page_energy.wrapped.func00_function import choose_mod_path
 from Module02.page_energy.wrapped.func00_function import time_choose
 from Module02.page_energy.wrapped.func00_function import data_deal
 from Module02.page_energy.wrapped.func00_function import data_deal_2
-from Module02.page_energy.wrapped.func00_function import calculate_average_hd
 from Module02.page_energy.wrapped.func00_function import percentile_std
 
 from Module02.page_extreme.wrapped.func01_tem_table_stats import tem_table_stats
@@ -193,7 +191,10 @@ def extreme_climate_esti(data_json):
     elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,'+ele_dict[element]
     sta_ids1 = tuple(sta_ids.split(','))
     
-    refer_df = get_database_data(sta_ids1, elements, 'qh_qhbh_cmadaas_day', time_freq, refer_times)
+    if element in other_table:
+        refer_df = get_database_data(sta_ids1, elements, 'qh_qhbh_calc_elements_day', time_freq, refer_times)
+    else:
+        refer_df = get_database_data(sta_ids1, elements, 'qh_qhbh_cmadaas_day', time_freq, refer_times)
     
     refer_df.set_index('Datetime', inplace=True)
     refer_df.index = pd.DatetimeIndex(refer_df.index)
@@ -207,7 +208,7 @@ def extreme_climate_esti(data_json):
     elif element in pre_table:
         refer_result= pre_table_stats(refer_df,time_freq, element,GaWIN=GaWIN,GaWIN_flag=GaWIN_flag,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
     elif element in other_table:
-        stats_result, post_data_df, post_refer_df, reg_params = other_table_stats(refer_df, time_freq,element)
+        refer_result = other_table_stats(refer_df, time_freq,element)
 
     refer_result_z=data_deal(refer_result)
 
@@ -329,8 +330,8 @@ if __name__ == '__main__':
     data_json['cmip_type'] = 'original' # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None # 分辨率 1/5/10/25/50/100 km
     data_json['cmip_model'] = ['Set']# 模式，列表：['CanESM5','CESM2']等
-    data_json['element'] = 'TN10p'
-    data_json['l_data'] = 10
+    data_json['element'] = 'drought'
+    data_json['GaWIN'] = 18
     data_json['GaWIN_flag'] = 3
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
     data_json['plot'] = 1

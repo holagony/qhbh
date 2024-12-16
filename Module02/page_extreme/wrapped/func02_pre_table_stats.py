@@ -115,13 +115,13 @@ def pre_table_stats(data_df, time_freq, ele,GaWIN=None,GaWIN_flag=None,R=None,R_
         for i in np.arange(np.size(data_df,1)):
             
             if GaWIN_flag==1:
-                data_df.iloc[((data_df.iloc[:,i] <= GaWIN)),i] = 0
+                data_df.iloc[:,i] = ((data_df.iloc[:,i] <= GaWIN)).astype(int)
             elif GaWIN_flag==2:
-                data_df.iloc[((data_df.iloc[:,i] < GaWIN)),i] = 0
+                data_df.iloc[:,i] = ((data_df.iloc[:,i] < GaWIN)).astype(int)
             elif GaWIN_flag==3:
-                data_df.iloc[((data_df.iloc[:,i] > GaWIN)),i] = 0
+                data_df.iloc[:,i] = ((data_df.iloc[:,i] > GaWIN)).astype(int)
             elif GaWIN_flag==4:
-                data_df.iloc[((data_df.iloc[:,i] >= GaWIN)),i] = 0
+                data_df.iloc[:,i] = ((data_df.iloc[:,i] >= GaWIN)).astype(int)
                 
     # 自定义降水
     elif ele =='R':

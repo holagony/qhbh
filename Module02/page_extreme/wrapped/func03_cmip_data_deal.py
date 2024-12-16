@@ -194,13 +194,13 @@ def extreme_pre(ele,data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
         for i in np.arange(np.size(data_df,1)):
             
             if GaWIN_flag==1:
-                data_df.iloc[((data_df.iloc[:,i] <= GaWIN)),i] = 0
+                data_df.iloc[:,i] = ((data_df.iloc[:,i] <= GaWIN)).astype(int)
             elif GaWIN_flag==2:
-                data_df.iloc[((data_df.iloc[:,i] < GaWIN)),i] = 0
+                data_df.iloc[:,i] = ((data_df.iloc[:,i] < GaWIN)).astype(int)
             elif GaWIN_flag==3:
-                data_df.iloc[((data_df.iloc[:,i] > GaWIN)),i] = 0
+                data_df.iloc[:,i] = ((data_df.iloc[:,i] > GaWIN)).astype(int)
             elif GaWIN_flag==4:
-                data_df.iloc[((data_df.iloc[:,i] >= GaWIN)),i] = 0
+                data_df.iloc[:,i] = ((data_df.iloc[:,i] >= GaWIN)).astype(int)
                 
     # 自定义降水
     elif ele =='R':
