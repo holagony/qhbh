@@ -298,7 +298,7 @@ def extreme_climate_esti(data_json):
                 all_png['预估'][exp] = dict()
                 for insti,stats_table in sub_dict1.items():
                
-                    break
+                    
                     all_png['预估'][exp][insti] = dict()
                     stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
                     stats_table=stats_table[['时间']+(station_dict['站号'].to_list())]
