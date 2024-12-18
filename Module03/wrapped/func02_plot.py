@@ -236,10 +236,10 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     year_name: 年份or最大/最小/变率，用于保存文件名
     '''
     
-    lon_min=89
-    lon_max=104
-    lat_min=31
-    lat_max=40
+    # lon_min=89
+    # lon_max=104
+    # lat_min=31
+    # lat_max=40
     # lakes_shp=cfg.FILES.LAKE
     # glaciers_shp=cfg.FILES.ICE
     
@@ -254,10 +254,17 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     # ax.spines['left'].set_visible(False)
 
     # 画结果网格
-    mesh = ax.contourf(lon_grid, lat_grid, mask_grid, transform=ccrs.PlateCarree(), alpha=0.8, cmap='jet', extend='both')
+    mesh = ax.contourf(lon_grid, lat_grid, mask_grid, levels=np.linspace(np.nanmin(np.nanmin(mask_grid)),np.nanmax(np.nanmax(mask_grid))+0.1,10), transform=ccrs.PlateCarree(), alpha=0.8, cmap='jet', extend='both')
     
     # 画边界
     shp = gpd.read_file(shp_path,encoding='gbk')
+    lon_min, lat_min, lon_max, lat_max = shp.total_bounds
+    lon_min=lon_min-(lon_max-lon_min)/8
+    lon_max=lon_max+(lon_max-lon_min)/8
+    lat_min=lat_min-(lat_max-lat_min)/8
+    lat_max=lat_max+(lat_max-lat_min)/8
+
+
     shp_feature = cfeat.ShapelyFeature(shp['geometry'], ccrs.PlateCarree(), edgecolor='k', facecolor='none')
     ax.add_feature(shp_feature, linewidth=0.7, alpha=0.4)
     
@@ -302,7 +309,7 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     
     # 画指南针和比例尺
     add_north(ax)
-    add_scalebar(ax,0.8, 0.05,200,size=0.014)
+    add_scalebar(ax,0.8, 0.05,np.int(lon_min-(lon_max-lon_min)*100/8),size=0.014)
 
     # lakes_handle = mpatches.Rectangle((0, 0), 1, 1, facecolor='blue', label='湖泊')
     # glaciers_handle = mpatches.Rectangle((0, 0), 1, 1, facecolor='#73ffdf', label='冰川')
@@ -329,7 +336,7 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     cbar.ax.tick_params(labelsize=7)  
     cax.text(0.5, 1.5, label_name, ha='center', va='bottom', transform=cax.transAxes)
 
-    countries=BasicReader(shp_path)
+    countries=BasicReader(shp_path,encoding='gbk')
     geo_list=list(countries.geometries())
     poly=geo_list
     path=Path.make_compound_path(*geos_to_path(poly))

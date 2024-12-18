@@ -7,23 +7,14 @@ Created on Thu Dec 12 14:39:36 2024
 
 import os
 import uuid
-import time
-import glob
 import numpy as np
 import pandas as pd
-import xarray as xr
-import psycopg2
-from tqdm import tqdm
-from io import StringIO
-from psycopg2 import sql
-from datetime import date, datetime, timedelta
 from Module03.wrapped.func01_table_stats import table_stats_simple
-from Module02.page_climate.wrapped.func02_table_stats_cmip import table_stats_simple_cmip
 from Module03.wrapped.func02_plot import interp_and_mask, plot_and_save,line_chart_plot,bar_chart_plot,line_chart_cmip_plot
 from Utils.config import cfg
 from Utils.data_processing import data_processing
 from Utils.data_loader_with_threads import get_database_data
-from Utils.read_model_data import read_model_data
+from Module02.page_energy.wrapped.func06_read_model_data import read_model_data
 
 def find_non_min_keys(d):
     if not d:  
@@ -53,13 +44,18 @@ def page_report(data_json):
     refer_years = data_json['refer_years']  
     evaluate_element = data_json['evaluate_element'] 
     evaluate_years = data_json['evaluate_years'] 
-    cmip_type = data_json['cmip_type']  
-    cmip_res = data_json.get('cmip_res') 
+    cmip_type = data_json.get('cmip_type','original')  
+    cmip_res = data_json.get('cmip_res','25') 
     cmip_model = data_json['cmip_model']  
     cmip_scenes = data_json['cmip_scenes']  
     sta_ids = data_json['sta_ids']  
     shp_path = data_json['shp_path']
     method = 'idw'
+
+    print(refer_years)   
+    print(evaluate_years)
+    print(shp_path)
+    print(sta_ids)
 
     if shp_path is not None:
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  
@@ -100,7 +96,6 @@ def page_report(data_json):
         elif cmip_type == 'delta':
             data_dir = '/model_data/station_data_delta/csv' # 容器内
             data_dir = os.path.join(data_dir, res_d[cmip_res])
-        
     time_scale= 'yearly'
         
         
@@ -260,7 +255,16 @@ def page_report(data_json):
                     
                     #分布图
                     stats_result_cmip_jp = table_stats_simple(excel_data_1-stats_result_his_cmip['区域均值'].mean().round(1), element,'cmip')
-                    value_list = stats_result_cmip_jp[station_list_list].iloc[-1,::].tolist()
+                    # value_list = stats_result_cmip_jp[station_list_list].iloc[-1,::].tolist()
+                    
+                    value_list = []
+                    for station in station_list_list:
+                        if station in stats_result_cmip_jp.columns:
+                            value_list.append(stats_result_cmip_jp[station].iloc[-1])
+                            print(station)
+                        else:
+                            value_list.append(np.nan)
+                            
                     mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
                     png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp, insti,element , data_out,'年平均气温距平变化率（℃/10年）')
                     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
@@ -317,7 +321,16 @@ def page_report(data_json):
                     
                     #分布图
                     stats_result_cmip_jp = table_stats_simple(((excel_data_1-pre_mean)/pre_mean)*100, element,'cmip')
-                    value_list = stats_result_cmip_jp[station_list_list].iloc[-1,::].tolist()
+                    # value_list = stats_result_cmip_jp[station_list_list].iloc[-1,::].tolist()
+                    
+                    value_list = []
+                    for station in station_list_list:
+                        if station in stats_result_cmip_jp.columns:
+                            value_list.append(stats_result_cmip_jp[station].iloc[-1])
+                            print(station)
+                        else:
+                            value_list.append(np.nan)
+                            
                     mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
                     png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp, insti,element , data_out,'年降水距平百分率变化率（%/10年）')
                     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
@@ -354,7 +367,6 @@ if __name__ == '__main__':
     data_json['cmip_res'] = None  # 分辨率 1/5/10/25/50/100 km
     data_json['cmip_model'] = ['Set']  # 模式，列表：['CanESM5','CESM2']/
     data_json['cmip_scenes'] = ['ssp126','ssp245']  # 模式，列表：['CanESM5','CESM2']/
-    data_json['sta_ids'] = '51886,52602,52633,52645,52657,52707,52713'
+    data_json['sta_ids'] = '51886,52602,52633,52645,52657,52707,52713,52737,52745,52754,52765,52818,52825,52833,52836,52842,52853,52855,52856,52862,52863,52866,52868,52869,52874,52875,52876,52877,52908,52943,52955,52957,52963,52968,52972,52974,56004,56016,56018,56021,56029,56033,56034,56043,56045,56046,56065,56067,56125,56151'
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
-    res_table = climate_esti(data_json)
     

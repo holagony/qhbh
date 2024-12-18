@@ -14,7 +14,7 @@ __C = edict()
 cfg = __C
 
 if os.name == 'nt':
-    flag = 'local'
+    flag = 'LOCAL'
 elif os.name == 'posix':
     flag = 'HX'
 else:
@@ -66,16 +66,16 @@ elif flag == 'LOCAL': # 青海服务器
 
 if flag == 'QH':
     __C.INFO.IN_UPLOAD_FILE = '/zipdata' # 上传数据路径
-    __C.INFO.OUT_UPLOAD_FILE = '/mnt/PRESKY/project/bgdb/qihou/zipdata'
+    __C.INFO.OUT_UPLOAD_FILE = '/home/hadoop/qhbh/zipdata'
     __C.INFO.IN_DATA_DIR = '/data' # 容器内保存文件夹
-    __C.INFO.OUT_DATA_DIR = '/mnt/PRESKY/project/bgdb/qihou/data' # 容器外挂载保存文件夹
-    __C.INFO.OUT_DATA_URL = 'http://221.122.67.145:8889/qh_climate/result/'
-    __C.INFO.REDIS_HOST = '192.168.1.119'
-    __C.INFO.REDIS_PORT = '8086'
+    __C.INFO.OUT_DATA_DIR = '/home/hadoop/qhbh/data' # 容器外挂载保存文件夹
+    __C.INFO.OUT_DATA_URL = 'http://10.181.22.149:80/qh_climate/result/'
+    __C.INFO.REDIS_HOST = '172.17.0.5'
+    __C.INFO.REDIS_PORT = '6379'
     __C.INFO.REDIS_PWD = 'hC%34okFq&'
     __C.INFO.DB_USER = 'postgres'
-    __C.INFO.DB_PWD = '2023p+yuiL34gf+hx+##!!'
-    __C.INFO.DB_HOST = '192.168.1.122' # 内网
+    __C.INFO.DB_PWD = 'hxkj123..'
+    __C.INFO.DB_HOST = '10.181.22.149' # 内网
     __C.INFO.DB_PORT = '5432'
     __C.INFO.DB_NAME = 'postgres'
     __C.INFO.SCHEMA_NAME = 'public'
@@ -90,6 +90,7 @@ __C.FILES.FONT = os.path.join(data_file_dir, 'fonts/simhei.ttf')
 
 # 站点信息
 __C.FILES.STATION = os.path.join(data_file_dir, 'qh_station.csv')
+__C.FILES.CMIP_STATION = os.path.join(data_file_dir, 'cmip_station.csv')
 __C.FILES.IDW_W = os.path.join(data_file_dir, 'idw/idw.dll')
 __C.FILES.IDW_L = os.path.join(data_file_dir, 'idw/libidw.so')
 
