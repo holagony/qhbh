@@ -296,6 +296,8 @@ def energy_wind_power(data_json):
                     for insti,stats_table in sub_dict1.items():
                         all_png['预估'][exp][insti] = dict()
                         stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
+                        stats_table=stats_table[['时间']+(station_dict['站号'].to_list())]
+                        
                         for i in range(len(stats_table)):
                             value_list = stats_table.iloc[i,1::]
                             year_name = stats_table.iloc[i,0]

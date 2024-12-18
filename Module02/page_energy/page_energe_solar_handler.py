@@ -153,12 +153,11 @@ def energy_solar_power(data_json):
     refer_result_z=refer_result_z
     
     # 加一个 站点站名字典
-    station_id=refer_df['Station_Id_C'].unique()
+    cmip_station=pd.read_csv(cfg.FILES.CMIP_STATION,encoding='gbk')
+    station_id=sta_ids.split(',')
+    cmip_station['Station_Id_C']=cmip_station['Station_Id_C'].astype(str)
     
-    matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name']],on='Station_Id_C')
-    matched_stations_unique = matched_stations.drop_duplicates()
-
-    matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name','Lon','Lat']],on='Station_Id_C')
+    matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),cmip_station[['Station_Id_C', 'Station_Name','Lon','Lat']],on='Station_Id_C')
     matched_stations_unique = matched_stations.drop_duplicates(subset='Station_Id_C')
 
     station_name = matched_stations_unique['Station_Name'].values
@@ -264,6 +263,8 @@ def energy_solar_power(data_json):
                 for insti,stats_table in sub_dict1.items():
                     all_png['预估'][exp][insti] = dict()
                     stats_table = pd.DataFrame(stats_table).iloc[:,:-5:]
+                    stats_table=stats_table[['时间']+(station_dict['站号'].to_list())]
+                    
                     for i in range(len(stats_table)):
                         value_list = stats_table.iloc[i,1::]
                         year_name = stats_table.iloc[i,0]

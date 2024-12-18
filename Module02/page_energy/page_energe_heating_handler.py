@@ -272,6 +272,7 @@ def energy_winter_heating(data_json):
     
                     all_png['预估'][exp][insti] = dict()
                     stats_table = pd.DataFrame(stats_table[find_keys_by_value(elem_dict, element)[0]]).iloc[:,:-5:]
+                    stats_table=stats_table[['时间']+(station_dict['站号'].to_list())]
                     for i in range(len(stats_table)):
                         value_list = stats_table.iloc[i,1::]
                         year_name = stats_table.iloc[i,0]
