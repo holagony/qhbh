@@ -227,7 +227,8 @@ def traffic_esti(data_json):
     if time_freq == 'Y':
         s = evaluate_times.split(',')[0]
         e = evaluate_times.split(',')[1]
-        time_index = pd.date_range(start=s, end=e, freq='D') # 'Y'
+        e = str(int(e)+1)
+        time_index = pd.date_range(start=s, end=e, freq='D')[:-1] # 'Y'
 
     elif time_freq in ['Q', 'M2']:
         s = evaluate_times[0].split(',')[0]
@@ -301,26 +302,26 @@ def traffic_esti(data_json):
     result_dict['表格']['历史'] = stats_result_his.to_dict(orient='records')
     
     # 添加 基准期
-    base_p=stats_result_his.iloc[0:-4,1::].mean().to_frame().T.reset_index(drop=True)
+    base_p=stats_result_his.iloc[0:-4,1::].mean().round(1).to_frame().T.reset_index(drop=True)
 
     
     # 2.表格-预估-各个情景的集合
-    evaluate_cmip_res = dict()
-    for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tas']
-        evaluate_cmip_res[exp] = dict()
-        for var in ['tas', 'pr', 'uas', 'vas']:
-            ds_list = []
-            for insti, sub_dict2 in sub_dict1.items():            
-                ds = sub_dict2[var]
-                ds_list.append(ds)
+    # evaluate_cmip_res = dict()
+    # for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tas']
+    #     evaluate_cmip_res[exp] = dict()
+    #     for var in ['tas', 'pr', 'uas', 'vas']:
+    #         ds_list = []
+    #         for insti, sub_dict2 in sub_dict1.items():            
+    #             ds = sub_dict2[var]
+    #             ds_list.append(ds)
 
-            ds_daily = xr.concat(ds_list, 'new_dim')
-            ds_daily = ds_daily.mean(dim='new_dim')
-            evaluate_cmip_res[exp][var] = ds_daily # 先平均情景下相同要素的xr
+    #         ds_daily = xr.concat(ds_list, 'new_dim')
+    #         ds_daily = ds_daily.mean(dim='new_dim')
+    #         evaluate_cmip_res[exp][var] = ds_daily # 先平均情景下相同要素的xr
             
-    # 调用生成表格
-    res_table_multi = traffic_cmip_multi(evaluate_cmip_res, stats_result_his)
-    result_dict['表格']['预估集合'] = res_table_multi
+    # # 调用生成表格
+    # res_table_multi = traffic_cmip_multi(evaluate_cmip_res, stats_result_his)
+    # result_dict['表格']['预估集合'] = res_table_multi
         
     # 3.表格-预估-各个情景的单模式
     # evaluate_cmip 原始插值后数据
@@ -367,7 +368,7 @@ def traffic_esti(data_json):
                 all_png[exp][insti] = dict()
                 stats_table = pd.DataFrame(stats_table)
                 for i in tqdm(range(len(stats_table))):
-                    value_list = stats_table.iloc[i,1:-3].tolist()
+                    value_list = stats_table.iloc[i,1:-5].tolist()
                     year_name = stats_table.iloc[i,0]
                     exp_name = exp
                     insti_name = insti
@@ -383,49 +384,49 @@ def traffic_esti(data_json):
 
 
         # 预估-集合数据画图
-        all_png1 = dict()
-        for exp, stats_table1 in res_table_multi.items():
-            all_png1[exp] = dict()
-            stats_table1 = pd.DataFrame(stats_table1)
-            for i in tqdm(range(len(stats_table1))):
-                value_list = stats_table1.iloc[i,1:-3].tolist()
-                year_name = stats_table1.iloc[i,0]
-                exp_name = exp
-                insti_name = '集合'
-                # 插值/掩膜/画图/保存
-                mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
+        # all_png1 = dict()
+        # for exp, stats_table1 in res_table_multi.items():
+        #     all_png1[exp] = dict()
+        #     stats_table1 = pd.DataFrame(stats_table1)
+        #     for i in tqdm(range(len(stats_table1))):
+        #         value_list = stats_table1.iloc[i,1:-3].tolist()
+        #         year_name = stats_table1.iloc[i,0]
+        #         exp_name = exp
+        #         insti_name = '集合'
+        #         # 插值/掩膜/画图/保存
+        #         mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+        #         png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
                 
-                # 转url
-                png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-                png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-                all_png1[exp][year_name] = png_path
+        #         # 转url
+        #         png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+        #         png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+        #         all_png1[exp][year_name] = png_path
         
-        # 历史-观测画图
-        all_png2 = dict()
-        stats_result_his = pd.DataFrame(stats_result_his)
-        for i in tqdm(range(len(stats_result_his))):
-            value_list = stats_result_his.iloc[i,1:-3].tolist()
-            year_name = stats_result_his.iloc[i,0]
-            exp_name = ''
-            insti_name = ''
-            # 插值/掩膜/画图/保存
-            mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-            png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
+        # # 历史-观测画图
+        # all_png2 = dict()
+        # stats_result_his = pd.DataFrame(stats_result_his)
+        # for i in tqdm(range(len(stats_result_his))):
+        #     value_list = stats_result_his.iloc[i,1:-3].tolist()
+        #     year_name = stats_result_his.iloc[i,0]
+        #     exp_name = ''
+        #     insti_name = ''
+        #     # 插值/掩膜/画图/保存
+        #     mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+        #     png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
             
-            # 转url
-            png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-            png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-            all_png2[year_name] = png_path
+        #     # 转url
+        #     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+        #     png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+        #     all_png2[year_name] = png_path
 
     else: # 直接获取现成的，目前没做，所有图片路径都是None
         all_png = dict()
-        all_png1 = dict()
-        all_png2 = dict()
+        # all_png1 = dict()
+        # all_png2 = dict()
 
     result_dict['分布图']['预估单模式'] = all_png
-    result_dict['分布图']['预估集合'] = all_png1
-    result_dict['分布图']['历史'] = all_png2
+    # result_dict['分布图']['预估集合'] = all_png1
+    # result_dict['分布图']['历史'] = all_png2
     
     return result_dict
 

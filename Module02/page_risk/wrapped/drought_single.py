@@ -37,26 +37,33 @@ def drought_cmip_single(cmip_data_dict, czt_data, yz_data, gdp_data):
         risk_dict[exp] = dict()
         for insti, sub_dict1 in sub_dict.items():             
             # 读取数据转化为numpy array
-            tem = sub_dict1['tas']
-            tem_array = tem.tas.data
-            tem_df = pd.DataFrame(tem_array, columns=tem.location, index=tem.time)
-            tem_df = tem_df.resample('1M').mean()
-
-            pre = sub_dict1['pr']
-            pre_array = pre.pr.data
-            pre_df = pd.DataFrame(pre_array, columns=pre.location, index=pre.time)
-            pre_df = pre_df.resample('1M').sum()
-
+            light = sub_dict1['light_drought']
+            light_array = light.light_drought.data
+            light_df = pd.DataFrame(light_array, columns=light.location, index=light.time)
+            light_df = light_df.resample('1A').sum()
+            
+            medium = sub_dict1['medium_drought']
+            medium_array = medium.medium_drought.data
+            medium_df = pd.DataFrame(medium_array, columns=medium.location, index=medium.time)
+            medium_df = medium_df.resample('1A').sum()
+            
+            heavy = sub_dict1['heavy_drought']
+            heavy_array = heavy.heavy_drought.data
+            heavy_df = pd.DataFrame(heavy_array, columns=heavy.location, index=heavy.time)
+            heavy_df = heavy_df.resample('1A').sum()
+            
+            severe = sub_dict1['severe_drought']
+            severe_array = severe.severe_drought.data
+            severe_df = pd.DataFrame(severe_array, columns=severe.location, index=severe.time)
+            severe_df = severe_df.resample('1A').sum()
+            
             result_risk = []
             for i in range(len(czt_val)):
-                col = tem_df.columns[i]
-                        
-                # 站点的危险性
-                tmp_df = pd.concat([tem_df[col],pre_df[col]],axis=1)
-                tmp_df.columns = ['TEM_Avg','PRE_Time_2020']
-                mci = calc_mci(tmp_df, 0.3, 0.5, 0.3, 0.2)
-                mci = mci[['轻度干旱', '中度干旱', '重度干旱', '特度干旱']]
-                mci_year = mci.resample('1A').sum()
+                col = light_df.columns[i]
+                mci_year = pd.concat([light_df[col],medium_df[col],heavy_df[col],severe_df[col]],axis=1)
+                mci_year.columns = ['轻度干旱', '中度干旱', '重度干旱', '特度干旱']
+                mci_year = mci_year.apply(lambda x: (x - x.min()) / (x.max() - x.min()), axis=1)
+                mci_year = mci_year.fillna(0)
                 mci_risk = 0.12*mci_year['轻度干旱'] + 0.23*mci_year['中度干旱'] + 0.37*mci_year['重度干旱'] + 0.28*mci_year['特度干旱']
                 
                 # 站点的承灾体和孕灾
@@ -69,7 +76,7 @@ def drought_cmip_single(cmip_data_dict, czt_data, yz_data, gdp_data):
                 result_risk.append(total_risk)
             
             result_risk = pd.concat(result_risk,axis=1)
-            result_risk.columns = tem_df.columns
+            result_risk.columns = light_df.columns
             result_risk.index = result_risk.index.strftime('%Y')
 
             # 创建临时下方统计的df
@@ -93,6 +100,6 @@ def drought_cmip_single(cmip_data_dict, czt_data, yz_data, gdp_data):
             stats_result.insert(loc=0, column='时间', value=stats_result.index)
             stats_result.reset_index(drop=True, inplace=True)
             
-            risk_dict[exp][insti] = stats_result
+            risk_dict[exp][insti] = stats_result.to_dict(orient='records')
 
     return risk_dict

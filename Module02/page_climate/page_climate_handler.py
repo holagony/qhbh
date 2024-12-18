@@ -266,7 +266,8 @@ def climate_esti(data_json):
     if time_freq == 'Y':
         s = evaluate_times.split(',')[0]
         e = evaluate_times.split(',')[1]
-        time_index = pd.date_range(start=s, end=e, freq='D')  # 'Y'
+        e = str(int(e)+1)
+        time_index = pd.date_range(start=s, end=e, freq='D')[:-1]  # 'Y'
 
     elif time_freq in ['Q', 'M2']:
         s = evaluate_times[0].split(',')[0]
@@ -344,25 +345,25 @@ def climate_esti(data_json):
         result_dict['表格']['历史'] = None
 
     # 2.表格-预估-各个情景的集合
-    evaluate_cmip_res = dict()
-    for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tas']
-        ds_list = []
-        for insti, sub_dict2 in sub_dict1.items():
-            ds = sub_dict2[var]
-            ds_list.append(ds)
+    # evaluate_cmip_res = dict()
+    # for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tas']
+    #     ds_list = []
+    #     for insti, sub_dict2 in sub_dict1.items():
+    #         ds = sub_dict2[var]
+    #         ds_list.append(ds)
         
-        ds_daily = xr.concat(ds_list, 'new_dim')
-        ds_daily = ds_daily.mean(dim='new_dim')
+    #     ds_daily = xr.concat(ds_list, 'new_dim')
+    #     ds_daily = ds_daily.mean(dim='new_dim')
         
-        try:
-            ds_yearly = ds_daily.resample(time='YE').mean()
-        except:
-            ds_yearly = ds_daily.resample(time='Y').mean()
+    #     try:
+    #         ds_yearly = ds_daily.resample(time='YE').mean()
+    #     except:
+    #         ds_yearly = ds_daily.resample(time='Y').mean()
             
-        res_table = table_stats_simple_cmip(ds_yearly, stats_result_his, var, sta_list)  # 调用生成表格
-        evaluate_cmip_res[exp] = res_table.to_dict(orient='records')
+    #     res_table = table_stats_simple_cmip(ds_yearly, stats_result_his, var, sta_list)  # 调用生成表格
+    #     evaluate_cmip_res[exp] = res_table.to_dict(orient='records')
 
-    result_dict['表格']['预估集合'] = evaluate_cmip_res
+    # result_dict['表格']['预估集合'] = evaluate_cmip_res
     
     # 3.表格-预估-各个情景的单模式
     single_cmip_res = dict()
@@ -439,23 +440,23 @@ def climate_esti(data_json):
                     all_png[exp][insti][year_name] = png_path
 
         # 预估-集合数据画图
-        all_png1 = dict()
-        for exp, stats_table1 in evaluate_cmip_res.items():
-            all_png1[exp] = dict()
-            stats_table1 = pd.DataFrame(stats_table1)
-            for i in tqdm(range(len(stats_table1))):
-                value_list = stats_table1.iloc[i, 1:-5].tolist()
-                year_name = stats_table1.iloc[i, 0]
-                exp_name = exp
-                insti_name = '集合'
-                # 插值/掩膜/画图/保存
-                mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
+        # all_png1 = dict()
+        # for exp, stats_table1 in evaluate_cmip_res.items():
+        #     all_png1[exp] = dict()
+        #     stats_table1 = pd.DataFrame(stats_table1)
+        #     for i in tqdm(range(len(stats_table1))):
+        #         value_list = stats_table1.iloc[i, 1:-5].tolist()
+        #         year_name = stats_table1.iloc[i, 0]
+        #         exp_name = exp
+        #         insti_name = '集合'
+        #         # 插值/掩膜/画图/保存
+        #         mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+        #         png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
 
-                # 转url
-                png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-                png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-                all_png1[exp][year_name] = png_path
+        #         # 转url
+        #         png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+        #         png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+        #         all_png1[exp][year_name] = png_path
 
         # 历史-观测画图
         # all_png2 = dict()
@@ -476,11 +477,11 @@ def climate_esti(data_json):
 
     else:  # 直接获取现成的，目前没做，所有图片路径都是None
         all_png = dict()
-        all_png1 = dict()
+        # all_png1 = dict()
         # all_png2 = dict()
 
     result_dict['分布图']['预估单模式'] = all_png
-    result_dict['分布图']['预估集合'] = all_png1
+    # result_dict['分布图']['预估集合'] = all_png1
     # result_dict['分布图']['历史'] = all_png2
 
     return result_dict

@@ -54,12 +54,16 @@ def calc_spi(df, period, weigth_flag=0):
         if np.isnan(val):
             SPI = np.nan
         else:
-            data = df.loc[df.index.month == month, 'cum_pre']
-            data.dropna(inplace=True)
-            a, loc, scale = gamma.fit(data)
-            gamma_prob = gamma.cdf(val, a, loc, scale)
-            SPI = norm.ppf(gamma_prob)
-            SPI = round(SPI, 5)
+            try:
+                data = df.loc[df.index.month == month, 'cum_pre']
+                data.dropna(inplace=True)
+                a, loc, scale = gamma.fit(data)
+                gamma_prob = gamma.cdf(val, a, loc, scale)
+                SPI = norm.ppf(gamma_prob)
+                SPI = round(SPI, 5)
+            except:
+                SPI=np.nan
+                
         return SPI
 
     df['SPI'] = df.apply(sample, axis=1)
@@ -81,6 +85,31 @@ def calc_spi(df, period, weigth_flag=0):
     #         SPI = round(SPI, 5)
 
     #     spi_list.append(SPI)
+
+    # if weigth_flag == 0:
+    #     df['cum_pre'] = df['PRE_Time_2020'].rolling(window=period).sum().round(1)
+    # else:        
+    #     alpha = 0.85 # 规范中计算SPIW,period=2的时候，取值0.85
+    #     df['cum_pre'] = df['PRE_Time_2020'].rolling(window=2).apply(lambda x: (alpha**1)*x[0] + (alpha**2)*x[1])
+    
+    # grouped = df.groupby([df.index.month, df.index.day])
+    
+    # spi_list = []
+    
+    # for (month, day), group in grouped:
+        
+    #     try:
+    #         data = group['cum_pre'].dropna()
+    #         if len(data) == 0:
+    #             continue  
+    #         a, loc, scale = gamma.fit(data)
+    #         gamma_prob = gamma.cdf(data, a, loc, scale)
+    #         SPI = norm.ppf(gamma_prob)
+    #         SPI = SPI.round(5)
+    #     except:
+    #         SPI=np.zeros(len(data))
+
+    #     spi_list.extend(SPI)
 
     return spi_list
 

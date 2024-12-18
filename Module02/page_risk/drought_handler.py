@@ -66,13 +66,13 @@ def drought_esti(data_json):
     # 2.参数处理
     method = 'idw'
     uuid4 = uuid.uuid4().hex
-    data_dir = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-        os.chmod(data_dir, 0o007 | 0o070 | 0o700)
+    save_dir = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+        os.chmod(save_dir, 0o007 | 0o070 | 0o700)
 
-    if shp_path is not None:
-        shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+    # if shp_path is not None:
+    #     shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
 
     if '集合' in cmip_model:
         cmip_model.remove('集合')
@@ -93,7 +93,7 @@ def drought_esti(data_json):
     res_d['100'] = '1deg'
 
     if os.name == 'nt':
-        data_dir = r'C:\Users\MJY\Desktop\station_data\csv'  # 本地
+        data_dir = r'C:\Users\MJY\Desktop\qhbh\zipdata\station_data\csv'  # 本地
     else:
         if cmip_type == 'original':
             data_dir = '/model_data/station_data/csv'  # 容器内
@@ -108,7 +108,7 @@ def drought_esti(data_json):
         evaluate_cmip[exp] = dict()
         for insti in cmip_model:
             evaluate_cmip[exp][insti] = dict()
-            for var in ['tas', 'pr']:
+            for var in ['light_drought','medium_drought','heavy_drought','severe_drought']:
                 excel_data = read_model_data(data_dir, time_scale, insti, exp, var, evaluate_times, time_freq, station_id)
                 # 转nc
                 time_tmp = excel_data.index
@@ -116,7 +116,7 @@ def drought_esti(data_json):
                 da = xr.DataArray(excel_data.values, coords=[time_tmp, location_tmp], dims=['time', 'location'])
                 ds_excel = xr.Dataset({var: da.astype('float32')})
                 evaluate_cmip[exp][insti][var] = ds_excel
-
+                
     ######################################################
     # 重要!!! 获取站点经纬度
     df_unique = refer_df.drop_duplicates(subset='Station_Id_C')  # 删除重复行
@@ -152,6 +152,7 @@ def drought_esti(data_json):
     if time_freq == 'Y':
         s = evaluate_times.split(',')[0]
         e = evaluate_times.split(',')[1]
+        e = str(int(e) + 1)
         time_index = pd.date_range(start=s, end=e, freq='D')[:-1]  # 'Y'
 
     elif time_freq in ['Q', 'M2']:
@@ -184,14 +185,10 @@ def drought_esti(data_json):
         time_index = dates[((dates.month == s_mon) & (dates.day >= s_day)) | ((dates.month > s_mon) & (dates.month < e_mon)) | ((dates.month == e_mon) & (dates.day <= e_day))]
 
     time_index = time_index[~((time_index.month == 2) & (time_index.day == 29))]  # 由于数据原因，删除2月29号
-
+    
     # 插值到多个站点
-    interp_lon = xr.DataArray(lon_list, dims="location", coords={
-        "location": sta_list,
-    })
-    interp_lat = xr.DataArray(lat_list, dims="location", coords={
-        "location": sta_list,
-    })
+    interp_lon = xr.DataArray(lon_list, dims="location", coords={"location": sta_list,})
+    interp_lat = xr.DataArray(lat_list, dims="location", coords={"location": sta_list,})
 
     for _, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
         for _, sub_dict2 in sub_dict1.items():
@@ -232,28 +229,28 @@ def drought_esti(data_json):
     # result_dict['表格']['历史'] = stats_result_his.to_dict(orient='records')
 
     # 2.表格-预估-各个情景的集合
-    evaluate_cmip_res = dict()
-    for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti][var]
-        evaluate_cmip_res[exp] = dict()
-        for var in ['tas', 'pr']:
-            ds_list = []
-            for insti, sub_dict2 in sub_dict1.items():
-                ds = sub_dict2[var]
-                ds_list.append(ds)
+    # evaluate_cmip_res = dict()
+    # for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti][var]
+    #     evaluate_cmip_res[exp] = dict()
+    #     for var in ['tas', 'pr']:
+    #         ds_list = []
+    #         for insti, sub_dict2 in sub_dict1.items():
+    #             ds = sub_dict2[var]
+    #             ds_list.append(ds)
 
-            ds_daily = xr.concat(ds_list, 'new_dim')
-            ds_daily = ds_daily.mean(dim='new_dim')
-            evaluate_cmip_res[exp][var] = ds_daily  # 先平均情景下相同要素的xr
+    #         ds_daily = xr.concat(ds_list, 'new_dim')
+    #         ds_daily = ds_daily.mean(dim='new_dim')
+    #         evaluate_cmip_res[exp][var] = ds_daily  # 先平均情景下相同要素的xr
     
-    # 调用生成表格
-    res_table_multi = drought_cmip_multi(evaluate_cmip_res, czt_data, yz_data, gdp_data)
-    result_dict['表格']['预估集合'] = res_table_multi
+    # # 调用生成表格
+    # res_table_multi = drought_cmip_multi(evaluate_cmip_res, czt_data, yz_data, gdp_data)
+    # result_dict['表格']['预估集合'] = res_table_multi
 
     # 3.表格-预估-各个情景的单模式
     # evaluate_cmip 原始插值后数据
     single_cmip_res = drought_cmip_single(evaluate_cmip, czt_data, yz_data, gdp_data)
     result_dict['表格']['预估单模式'] = single_cmip_res
-
+    
     # 4.时序图-各个情景的集合
     std_percent = dict()
     for exp, sub_dict in single_cmip_res.items():
@@ -290,15 +287,16 @@ def drought_esti(data_json):
             for insti, stats_table in sub_dict1.items():
                 all_png[exp][insti] = dict()
                 stats_table = pd.DataFrame(stats_table)
-                for i in tqdm(range(len(stats_table))):
+                # for i in tqdm(range(len(stats_table))):
+                for i in tqdm(range(77,78)):
                     value_list = stats_table.iloc[i, 1:-3].tolist()
                     year_name = stats_table.iloc[i, 0]
                     exp_name = exp
                     insti_name = insti
                     # 插值/掩膜/画图/保存
                     mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
-
+                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, save_dir)
+                    
                     # 转url
                     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
                     png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
@@ -306,23 +304,23 @@ def drought_esti(data_json):
                     all_png[exp][insti][year_name] = png_path
 
         # 预估-集合数据画图
-        all_png1 = dict()
-        for exp, stats_table1 in res_table_multi.items():
-            all_png1[exp] = dict()
-            stats_table1 = pd.DataFrame(stats_table1)
-            for i in tqdm(range(len(stats_table1))):
-                value_list = stats_table1.iloc[i, 1:-3].tolist()
-                year_name = stats_table1.iloc[i, 0]
-                exp_name = exp
-                insti_name = '集合'
-                # 插值/掩膜/画图/保存
-                mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
+        # all_png1 = dict()
+        # for exp, stats_table1 in res_table_multi.items():
+        #     all_png1[exp] = dict()
+        #     stats_table1 = pd.DataFrame(stats_table1)
+        #     for i in tqdm(range(len(stats_table1))):
+        #         value_list = stats_table1.iloc[i, 1:-3].tolist()
+        #         year_name = stats_table1.iloc[i, 0]
+        #         exp_name = exp
+        #         insti_name = '集合'
+        #         # 插值/掩膜/画图/保存
+        #         mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+        #         png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
 
-                # 转url
-                png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-                png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-                all_png1[exp][year_name] = png_path
+        #         # 转url
+        #         png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+        #         png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+        #         all_png1[exp][year_name] = png_path
 
         # 历史-观测画图
         # all_png2 = dict()
@@ -343,11 +341,11 @@ def drought_esti(data_json):
 
     else:  # 直接获取现成的，目前没做，所有图片路径都是None
         all_png = dict()
-        all_png1 = dict()
+        # all_png1 = dict()
         # all_png2 = dict()
 
     result_dict['分布图']['预估单模式'] = all_png
-    result_dict['分布图']['预估集合'] = all_png1
+    # result_dict['分布图']['预估集合'] = all_png1
     # result_dict['分布图']['历史'] = all_png2
 
     return result_dict
@@ -356,19 +354,17 @@ def drought_esti(data_json):
 if __name__ == '__main__':
     data_json = dict()
     data_json['time_freq'] = 'Y'
-    data_json['evaluate_times'] = '2045,2050'  # 预估时段时间条
+    data_json['evaluate_times'] = '2025,2100'  # 预估时段时间条
     data_json['refer_years'] = '2018,2024'  # 参考时段时间条
-    data_json['sta_ids'] = '52943,52955,52957,52968,56033,56043,56045,56046,56065,56067'
+    data_json['sta_ids'] = '51886,52602,52633,52645,52657,52707,52713,52737,52745,52754,52765,52818,52825,52833,52836,52842,52853,52855,52856,52862,52863,52866,52868,52869,52874,52876,52877,52908,52943,52955,52957,52963,52968,52972,52974,56004,56016,56018,56021,56029,56033,56034,56043,56045,56046,56065,56067,56125,56151'
     data_json['cmip_type'] = 'original'  # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None  # 分辨率 1/5/10/25/50/100 km
-    data_json['cmip_model'] = ['Set']  # 模式，列表：['CanESM5','CESM2']等
-    data_json['plot'] = 0
+    data_json['cmip_model'] = ['NESM3']  # 模式，列表：['CanESM5','CESM2']等
+    data_json['plot'] = 1
     data_json['shp_path'] = r'C:/Users/MJY/Desktop/qhbh/zipdata/shp/qh/qh.shp'
-    data_json['element'] = 'rain'
+    data_json['element'] = 'drought'
     result_dict = drought_esti(data_json)
 
-    
-    
     
     
     

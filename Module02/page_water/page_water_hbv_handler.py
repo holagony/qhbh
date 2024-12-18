@@ -440,7 +440,8 @@ def hbv_single_calc(data_json):
     if time_freq == 'Y':
         s = evaluate_times.split(',')[0]
         e = evaluate_times.split(',')[1]
-        time_index = pd.date_range(start=s, end=e, freq='D') # 'Y'
+        e = str(int(e)+1)
+        time_index = pd.date_range(start=s, end=e, freq='D')[:-1] # 'Y'
 
     elif time_freq in ['Q', 'M2']:
         s = evaluate_times[0].split(',')[0]
@@ -486,6 +487,7 @@ def hbv_single_calc(data_json):
         
     # 结果计算
     mon_dict = dict()
+    
     # 1.水文站数据的原始统计结果
     result_q = stats_q(data_df, refer_df)
     result_q = result_q.to_dict(orient='records')
@@ -564,42 +566,42 @@ def hbv_single_calc(data_json):
     vaild_cmip_res = stats_result_2(vaild_cmip_res, refer_df)
     
     # 4.预估-集合模式
-    evaluate_cmip_res = dict()
-    for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
-        tmp_list = []
-        pre_list = []
-        for insti, sub_dict2 in sub_dict1.items():
-            tmp = sub_dict2['tmp']
-            pre = sub_dict2['pre']
-            tmp_list.append(tmp)
-            pre_list.append(pre)
+    # evaluate_cmip_res = dict()
+    # for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
+    #     tmp_list = []
+    #     pre_list = []
+    #     for insti, sub_dict2 in sub_dict1.items():
+    #         tmp = sub_dict2['tmp']
+    #         pre = sub_dict2['pre']
+    #         tmp_list.append(tmp)
+    #         pre_list.append(pre)
         
-        tem_daily = xr.concat(tmp_list, 'new_dim')
-        tem_daily = tem_daily.mean(dim='new_dim')
-        pre_daily = xr.concat(pre_list, 'new_dim')
-        pre_daily = pre_daily.mean(dim='new_dim')
+    #     tem_daily = xr.concat(tmp_list, 'new_dim')
+    #     tem_daily = tem_daily.mean(dim='new_dim')
+    #     pre_daily = xr.concat(pre_list, 'new_dim')
+    #     pre_daily = pre_daily.mean(dim='new_dim')
         
-        # 数据处理
-        tem_monthly = tem_daily.resample(time='1M').mean()
-        tem_monthly = tem_monthly.tas.to_series()
-        pre_monthly = pre_daily.resample(time='1M').sum()
-        pre_monthly = pre_monthly.pr.to_series()
-        evp_monthly = 3100*tem_monthly/(3100+1.8*(pre_monthly**2)*np.exp((-34.4*tem_monthly)/(235+tem_monthly)))
-        evp_monthly = evp_monthly.where(evp_monthly>0,0)
+    #     # 数据处理
+    #     tem_monthly = tem_daily.resample(time='1M').mean()
+    #     tem_monthly = tem_monthly.tas.to_series()
+    #     pre_monthly = pre_daily.resample(time='1M').sum()
+    #     pre_monthly = pre_monthly.pr.to_series()
+    #     evp_monthly = 3100*tem_monthly/(3100+1.8*(pre_monthly**2)*np.exp((-34.4*tem_monthly)/(235+tem_monthly)))
+    #     evp_monthly = evp_monthly.where(evp_monthly>0,0)
         
-        # hbv-input
-        date_time = pd.to_datetime(tem_daily.time)
-        month = np.array(pd.to_datetime(tem_daily.time).month)
-        temp = tem_daily.tas.data  # 气温 单位：度
-        precip = pre_daily.pr.data  # 单位：mm
-        q_sim = hbv_main(len(temp), date_time, month, temp, precip, evp_monthly, tem_monthly, d, fc, beta, c, k0, k1, k2, kp, l, pwp, Tsnow_thresh, ca)
-        q_sim_2 = pd.DataFrame(q_sim, index=pd.to_datetime(tem_daily.time), columns=['Q'])
-        q_sim_yearly = q_sim_2.resample('1A').mean().round(2)
-        evaluate_cmip_res[exp] = q_sim_yearly
+    #     # hbv-input
+    #     date_time = pd.to_datetime(tem_daily.time)
+    #     month = np.array(pd.to_datetime(tem_daily.time).month)
+    #     temp = tem_daily.tas.data  # 气温 单位：度
+    #     precip = pre_daily.pr.data  # 单位：mm
+    #     q_sim = hbv_main(len(temp), date_time, month, temp, precip, evp_monthly, tem_monthly, d, fc, beta, c, k0, k1, k2, kp, l, pwp, Tsnow_thresh, ca)
+    #     q_sim_2 = pd.DataFrame(q_sim, index=pd.to_datetime(tem_daily.time), columns=['Q'])
+    #     q_sim_yearly = q_sim_2.resample('1A').mean().round(2)
+    #     evaluate_cmip_res[exp] = q_sim_yearly
 
-        mon_dict[exp]['预估集合径流'] = q_sim_2.resample('1M').mean().round(1)
+    #     mon_dict[exp]['预估集合径流'] = q_sim_2.resample('1M').mean().round(1)
 
-    evaluate_cmip_res = stats_result_2(evaluate_cmip_res, refer_df)
+    # evaluate_cmip_res = stats_result_2(evaluate_cmip_res, refer_df)
 
     # 5.预估-单情景-单模式
     single_cmip_res = dict()
@@ -631,8 +633,8 @@ def hbv_single_calc(data_json):
             
     single_cmip_res = stats_result_3(single_cmip_res, refer_df)
     
-    #%% 基准期    
-    base_p=q_sim_yearly1.iloc[0:-7,3::].mean().to_frame().T.reset_index(drop=True)
+    # 基准期    
+    base_p=q_sim_yearly1.iloc[0:-7,3::].mean().round(1).to_frame().T.reset_index(drop=True)
     
     
     result_dict = dict()
@@ -642,7 +644,7 @@ def hbv_single_calc(data_json):
     result_dict['表格历史']['观测'] = result_q
     result_dict['表格历史']['模拟观测'] = q_sim_yearly1.to_dict(orient='records')
     result_dict['表格历史']['模拟模式'] = vaild_cmip_res
-    result_dict['表格预估']['集合'] = evaluate_cmip_res
+    # result_dict['表格预估']['集合'] = evaluate_cmip_res
     result_dict['表格预估']['单模式'] = single_cmip_res
     
     # 4.时序图-各个情景的集合

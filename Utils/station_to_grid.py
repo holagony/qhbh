@@ -76,15 +76,15 @@ def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
         import numpy as np
         from scipy import spatial
 
-        def idw_interpolation(point_xy, point_z, grid_xy, leafsize, k, p, eps, offset):
+        def idw_interpolation(point_xy, point_z, grid_xy, k, offset):
 
             grid_shape = grid_xy[0].shape
             grid_flatten = np.reshape(grid_xy, (2, -1)).T
-            tree = spatial.cKDTree(point_xy, leafsize=leafsize)
-            distances, idx = tree.query(grid_flatten, k=k, eps=eps, p=p)
+            tree = spatial.cKDTree(point_xy)
+            distances, idx = tree.query(grid_flatten, k=k)
             distances += offset
             weights = point_z[idx.ravel()].reshape(idx.shape)
-            grid_z = np.sum(weights / distances, axis=1) / np.sum(1 / distances, axis=1)
+            grid_z = np.sum(weights / (distances**2), axis=1) / np.sum(1 / (distances**2), axis=1)
             grid_z = grid_z.reshape(grid_shape)
 
             return grid_z
@@ -95,12 +95,9 @@ def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
         grid_xy = (lon, lat)
 
         # 使用idw_interpolation函数进行插值
-        leafsize = 600
-        k = 40
-        p = 2
-        eps = 1e-6
-        offset = 1e-9
-        data = idw_interpolation(point_xy, point_z, grid_xy, leafsize, k, p, eps, offset)
+        k = 10
+        offset = 1e-10
+        data = idw_interpolation(point_xy, point_z, grid_xy, k, offset)
         data = data.astype(float)
         
     elif method == 'idw':
@@ -115,7 +112,6 @@ def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
                 idw_path=cfg.FILES.IDW_L
             else:
                 idw_path   =cfg.FILES.IDW_L
-                
             lib = ctypes.CDLL(idw_path) 
             
             # 设置参数类型  
