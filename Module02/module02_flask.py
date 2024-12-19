@@ -8,7 +8,7 @@ from Module02.page_energy.page_energe_solar_handler import energy_solar_power
 from Module02.page_ice.page_ice_model_handler import ice_model_def
 from Module02.page_ice.page_ice_table_handler import ice_table_def
 
-from Module02.page_water.page_rain_source_handler import rain_source_estimate
+from Module02.page_water.page_rain_source_handler import rain_source_esti
 from Module02.page_water.page_water_hbv_handler import hbv_single_calc
 from Module02.page_water.page_water_model_handler import water_model_def
 from Module02.page_water.page_water_table_handler import water_table_def
@@ -118,7 +118,7 @@ def pageb_rain_source():
         result = celery_submit.delay('workerPageRainSource', json_str)
         return jsonify({'code': 202, 'msg': '任务提交成功，开始计算...', 'data': {'task_id': result.id}})
 
-    result_dict = rain_source_estimate(data_json)
+    result_dict = rain_source_esti(data_json)
     return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result_dict}, ensure_ascii=False, ignore_nan=True)
     return return_data
 
