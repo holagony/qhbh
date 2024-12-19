@@ -372,10 +372,17 @@ def climate_esti(data_json):
         for insti, sub_dict2 in sub_dict1.items():
             ds_daily = sub_dict2[var]
             
-            try:
-                ds_yearly = ds_daily.resample(time='YE').mean()
-            except:
-                ds_yearly = ds_daily.resample(time='Y').mean()
+            if var == 'pr':
+                try:
+                    ds_yearly = ds_daily.resample(time='YE').sum()
+                except:
+                    ds_yearly = ds_daily.resample(time='Y').sum()
+            
+            else:
+                try:
+                    ds_yearly = ds_daily.resample(time='YE').mean()
+                except:
+                    ds_yearly = ds_daily.resample(time='Y').mean()
             
             res_table = table_stats_simple_cmip(ds_yearly, stats_result_his, var, sta_list)
             single_cmip_res[exp][insti] = res_table.to_dict(orient='records')

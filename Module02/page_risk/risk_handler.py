@@ -18,8 +18,10 @@ from Module02.page_risk.wrapped.func01_table_stats import table_stats_rain
 
 from Module02.page_risk.wrapped.func02_rain_multi import rain_cmip_multi
 from Module02.page_risk.wrapped.func03_rain_single import rain_cmip_single
-from Module02.page_traffic.wrapped.func03_plot import interp_and_mask, plot_and_save
+from Module02.page_traffic.wrapped.func03_plot import interp_and_mask#, plot_and_save
 from Utils.read_model_data import read_model_data
+
+from Module03.wrapped.plot_new import plot_and_save
 
 # 气候变化风险预估
 
@@ -112,7 +114,7 @@ def risk_esti(data_json):
         os.chmod(save_dir, 0o007 | 0o070 | 0o700)
 
     if shp_path is not None:
-       shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
+        shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
     
     if '集合' in cmip_model:
         cmip_model.remove('集合')
@@ -189,7 +191,7 @@ def risk_esti(data_json):
     time_scale= 'daily'
     evaluate_cmip = dict()
     station_id = list(sta_ids)
-    for exp in ['ssp126', 'ssp245', 'ssp585']:
+    for exp in ['ssp126','ssp245','ssp585']:
     # for exp in ['ssp245']:
         evaluate_cmip[exp] = dict()
         for insti in cmip_model:
@@ -370,13 +372,15 @@ def risk_esti(data_json):
                 all_png[exp][insti] = dict()
                 stats_table = pd.DataFrame(stats_table)
                 for i in tqdm(range(len(stats_table))):
+                # for i in tqdm(range(77,78)):
                     value_list = stats_table.iloc[i,1:-5].tolist()
                     year_name = stats_table.iloc[i,0]
                     exp_name = exp
                     insti_name = insti
+                    bar_name = str(stats_table.iloc[i,0])
                     # 插值/掩膜/画图/保存
                     mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, save_dir)
+                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, save_dir, '降水风险指数'+bar_name)
                     
                     # 转url
                     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径

@@ -90,6 +90,7 @@ __C.FILES.FONT = os.path.join(data_file_dir, 'fonts/simhei.ttf')
 
 # 站点信息
 __C.FILES.STATION = os.path.join(data_file_dir, 'qh_station.csv')
+__C.FILES.STATION_AREA = os.path.join(data_file_dir, 'station_area.csv')
 __C.FILES.CMIP_STATION = os.path.join(data_file_dir, 'cmip_station.csv')
 __C.FILES.IDW_W = os.path.join(data_file_dir, 'idw/idw.dll')
 __C.FILES.IDW_L = os.path.join(data_file_dir, 'idw/libidw.so')
