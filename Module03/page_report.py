@@ -85,7 +85,11 @@ def page_report(data_json):
     namelable['TEM_Min']='平均最低气温（℃）'
     namelable['PRE_Time_2020']='降雨量（mm）'
 
-    
+    namelable2=dict()
+    namelable2['TEM_Avg']='平均气温'
+    namelable2['TEM_Max']='最高气温'
+    namelable2['TEM_Min']='最低气温'
+        
     var_dict = dict()
     var_dict['TEM_Avg'] = 'tas'
     var_dict['TEM_Max'] = 'tasmax'
@@ -170,7 +174,7 @@ def page_report(data_json):
             #分布图
             value_list = stats_result_his[station_list_list].iloc[-1,::].tolist()
             mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-            png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, '统计', '统计',element , data_out,'气温变率℃/10年')
+            png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, '统计', '统计',element , data_out,f'{namelable2[element]}/10年')
             png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
             png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
             result['统计'][element]['分布图'] = png_path
@@ -278,7 +282,7 @@ def page_report(data_json):
                             value_list.append(np.nan)
                             
                     mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp, insti,element , data_out,'年平均气温距平变化率（℃/10年）')
+                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp, insti,element , data_out,f'年{namelable2[element]}距平变化率（℃/10年）')
                     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
                     png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
                     result['评估'][element][exp+'分布图'] = png_path
