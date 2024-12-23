@@ -24,6 +24,7 @@ import matplotlib as mpl
 from cartopy.io.shapereader import BasicReader
 from matplotlib.path import Path
 from cartopy.mpl.patch import geos_to_path
+from matplotlib import ticker
 
 mpl.rcParams['font.sans-serif'] = [u'SimHei']  # 中文字体可修改
 mpl.rcParams['axes.unicode_minus'] = False
@@ -119,8 +120,10 @@ def interp_and_mask(shp_path, lon_list, lat_list, value_list, method):
     lon_min = bounds[0]
     lat_max = bounds[3]
     lat_min = bounds[1]
-    gridx = np.arange(lon_min, lon_max + 0.01, 0.01)
-    gridy = np.arange(lat_min, lat_max + 0.01, 0.01)
+    # gridx = np.arange(lon_min, lon_max + 0.01, 0.01)
+    # gridy = np.arange(lat_min, lat_max + 0.01, 0.01)
+    gridx = np.linspace(lon_min, lon_max,1000)
+    gridy = np.linspace(lat_min, lat_max,1000)
 
     # 散点数据插值
     # 数据清洗，洗掉nan
@@ -254,8 +257,9 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     # ax.spines['left'].set_visible(False)
 
     # 画结果网格
-    mesh = ax.contourf(lon_grid, lat_grid, mask_grid, levels=np.linspace(np.nanmin(np.nanmin(mask_grid)),np.nanmax(np.nanmax(mask_grid))+0.1,10), transform=ccrs.PlateCarree(), alpha=0.8, cmap='jet', extend='both')
-    
+    mesh = ax.contourf(lon_grid, lat_grid, mask_grid, levels=np.linspace(np.nanmin(np.nanmin(mask_grid)),np.nanmax(np.nanmax(mask_grid))+0.0001,100), transform=ccrs.PlateCarree(), alpha=0.8, cmap='jet', extend='both')
+    # mesh = ax.contourf(lon_grid, lat_grid, mask_grid,  levels=100,transform=ccrs.PlateCarree(), alpha=0.8, cmap='jet', extend='both')
+
     # 画边界
     shp = gpd.read_file(shp_path,encoding='gbk')
     lon_min, lat_min, lon_max, lat_max = shp.total_bounds
@@ -309,7 +313,7 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     
     # 画指南针和比例尺
     add_north(ax)
-    add_scalebar(ax,0.8, 0.05,np.int(lon_min-(lon_max-lon_min)*100/8),size=0.014)
+    add_scalebar(ax,0.8, 0.05,np.int_(lon_min-(lon_max-lon_min)*100/8),size=0.014)
 
     # lakes_handle = mpatches.Rectangle((0, 0), 1, 1, facecolor='blue', label='湖泊')
     # glaciers_handle = mpatches.Rectangle((0, 0), 1, 1, facecolor='#73ffdf', label='冰川')
@@ -334,6 +338,8 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     cax = ax.inset_axes([0.02, 0.055, 0.4, 0.02]) 
     cbar = fig.colorbar(mesh, cax=cax,orientation='horizontal',shrink=0.01, spacing='uniform',extend='none')
     cbar.ax.tick_params(labelsize=7)  
+    # cbar.locator = ticker.MaxNLocator(nbins=1)
+    cbar.set_ticks([np.nanmin(np.nanmin(mask_grid)),(np.nanmax(np.nanmax(mask_grid))+0.0001+np.nanmin(mask_grid))/2,np.nanmax(np.nanmax(mask_grid))+0.0001])
     cax.text(0.5, 1.5, label_name, ha='center', va='bottom', transform=cax.transAxes)
 
     countries=BasicReader(shp_path,encoding='gbk')

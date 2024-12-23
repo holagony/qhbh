@@ -116,8 +116,8 @@ def interp_and_mask(shp_path, lon_list, lat_list, value_list, method):
     lon_min = bounds[0]
     lat_max = bounds[3]
     lat_min = bounds[1]
-    gridx = np.arange(lon_min, lon_max + 0.01, 0.01)
-    gridy = np.arange(lat_min, lat_max + 0.01, 0.01)
+    gridx = np.arange(lon_min, lon_max + 0.5, 0.5)
+    gridy = np.arange(lat_min, lat_max + 0.5, 0.5)
 
     # 散点数据插值
     # 数据清洗，洗掉nan
