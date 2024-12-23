@@ -236,8 +236,12 @@ def freeze_features_stats(data_json):
 
         stats_result, post_data_df, post_refer_df, reg_params = table_stats(data_df, refer_df, nearly_df, element_str, last_year)
         print('统计表完成')
+        
+        
+        new_station=pd.DataFrame()
+        new_station.at[0,'站号']=data_df['Station_Id_C'].iloc[0]
+        new_station.at[0,'站名']=data_df['bcname'].iloc[0]
 
-        new_station=None
     
     
     
@@ -349,7 +353,7 @@ if __name__ == '__main__':
     data_json['nearly_years'] = '2003,2010'
     data_json['time_freq'] = 'Y'
     data_json['stats_times'] = '2010,2019'  # '198105,202009' # '1981,2023'
-    data_json['sta_ids'] = '3020201'
+    data_json['sta_ids'] = '56043'
     data_json['interp_method'] = 'idw'
     data_json['ci'] = 95
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\01-青海省\青海省县级数据.shp'
