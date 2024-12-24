@@ -65,6 +65,7 @@ def agriculture_features_stats(data_json):
     nearly_years = data_json['nearly_years']
     stats_times = data_json['stats_times']
     sta_ids = data_json['sta_ids']
+    time_freq = data_json['time_freq']
     last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
 
     # 2.参数处理
@@ -154,56 +155,194 @@ def agriculture_features_stats(data_json):
     
     
     # 3. 读取数据
-    def get_database_data(elements,element_str,crop_str,sta_ids,table_name,stats_times,station_flag):
-        conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
-        cur = conn.cursor()
-            
-        query = sql.SQL(f"""
-                        SELECT {elements}
-                        FROM public.{table_name}
-                        WHERE
-                            CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
-                            AND station_id_c IN %s
-                            AND crop_name = %s
-                            AND groper_name_ten IN %s
-                            
-                        """)
-    
-        # 根据sql获取统计年份data
+    def get_database_data(elements,element_str,crop_str,sta_ids,table_name,stats_times,station_flag,time_freq):
+        '''
+        从数据库获取数据
+        '''
         sta_ids = tuple(sta_ids.split(','))
         
         if ',' in element_str:
             element_tuple = tuple(element_str.split(','))
         else:
             element_tuple = (element_str,)
-
-        start_year = stats_times.split(',')[0]
-        end_year = stats_times.split(',')[1]
-        cur.execute(query, (start_year, end_year, sta_ids,crop_str,element_tuple))
-        data = cur.fetchall()
+                
+        conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
+        cur = conn.cursor()
         
-        df = pd.DataFrame(data)
-        df.columns = elements.split(',')
-        df['Datetime'] = pd.to_datetime(df['Datetime'])
-        df.set_index('Datetime', inplace=True, drop=False)
+        if time_freq == 'Y':  # '%Y,%Y'
+                
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.{table_name}
+                            WHERE
+                                CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND station_id_c IN %s
+                                AND crop_name = %s
+                                AND groper_name_ten IN %s
+                                
+                            """)
         
-        df['date_num'] = df.index.dayofyear
-        df['date'] = df['Mon'].astype(str)+'月'+ df['Day'].astype(str)+'日'
-        
-        
-        if station_flag==1:
-            station_df=df[['Station_Id_C','Station_Name','Lon','Lat']]
-            station_df.drop_duplicates(inplace=True)
+            # 根据sql获取统计年份data
+            start_year = stats_times.split(',')[0]
+            end_year = stats_times.split(',')[1]
+            cur.execute(query, (start_year, end_year, sta_ids,crop_str,element_tuple))
+            data = cur.fetchall()
             
-            return df,station_df
-        else:
-            return df
+    
+        elif time_freq == 'Q':  # ['%Y,%Y','3,4,5']
+            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
+            mon_ = tuple(mon_list)
+            years = stats_times[0]
+            start_year = years.split(',')[0]
+            end_year = years.split(',')[1]
+    
+            if 12 in mon_list:
+                query = sql.SQL(f"""
+                                SELECT {elements}
+                                FROM public.{table_name}
+                                    WHERE (SUBSTRING(datetime, 1, 4) BETWEEN %s AND %s) 
+                                    AND SUBSTRING(datetime, 6, 2) IN ('12', '01', '02')
+                                    OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) = '12')
+                                    OR (SUBSTRING(datetime, 1, 4) = %s AND SUBSTRING(datetime, 6, 2) IN ('01', '02'))
+                                    AND station_id_c IN %s
+                                    AND crop_name = %s
+                                    AND groper_name_ten IN %s
+                                """)
+                cur.execute(query, (start_year, end_year,str(int(start_year)-1),str(int(end_year)+1), sta_ids))
+    
+            else:    
+                query = sql.SQL(f"""
+                                SELECT {elements}
+                                FROM public.{table_name}
+                                WHERE
+                                    (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                    AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
+                                    AND station_id_c IN %s
+                                    AND crop_name = %s
+                                    AND groper_name_ten IN %s
+                                """)  
+                cur.execute(query, (start_year, end_year, mon_, sta_ids))
+    
+            data = cur.fetchall()
+    
+        elif time_freq == 'M1':  # '%Y%m,%Y%m'
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.{table_name}
+                            WHERE
+                                ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) >= %s)
+                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
+                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) <= %s))
+                                AND station_id_c IN %s
+                                AND crop_name = %s
+                                AND groper_name_ten IN %s
+                            """)
+    
+            start_year = stats_times.split(',')[0][:4]
+            end_year = stats_times.split(',')[1][:4]
+            start_month = stats_times.split(',')[0][4:]
+            end_month = stats_times.split(',')[1][4:]
+            cur.execute(query, (start_year, start_month, start_year, end_year, end_year, end_month, sta_ids))
+            data = cur.fetchall()
+    
+        elif time_freq == 'M2':  # ['%Y,%Y','11,12,1,2']
+            mon_list = [int(mon_) for mon_ in stats_times[1].split(',')]  # 提取月份
+            mon_ = tuple(mon_list)
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.{table_name}
+                            WHERE
+                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) IN %s)
+                                AND station_id_c IN %s
+                                AND crop_name = %s
+                                AND groper_name_ten IN %s
+                            """)
+    
+            years = stats_times[0]
+            start_year = years.split(',')[0]
+            end_year = years.split(',')[1]
+            cur.execute(query, (start_year, end_year, mon_, sta_ids))
+            data = cur.fetchall()
+    
+        elif time_freq == 'D1':  # '%Y%m%d,%Y%m%d'
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.{table_name}
+                            WHERE
+                                ((CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) >= %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
+                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) < %s)
+                                OR (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) <= %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s))
+                                AND station_id_c IN %s
+                                AND crop_name = %s
+                                AND groper_name_ten IN %s
+                            """)
+    
+            start_year = stats_times.split(',')[0][:4]
+            end_year = stats_times.split(',')[1][:4]
+            start_month = stats_times.split(',')[0][4:6]
+            end_month = stats_times.split(',')[1][4:6]
+            start_date = stats_times.split(',')[0][6:]
+            end_date = stats_times.split(',')[1][6:]
+            cur.execute(query, (start_year, start_month, start_date, start_year, end_year, end_year, end_month, end_date, sta_ids))
+            data = cur.fetchall()
+    
+        elif time_freq == 'D2':  # ['%Y,%Y','%m%d,%m%d']
+            query = sql.SQL(f"""
+                            SELECT {elements}
+                            FROM public.{table_name}
+                            WHERE
+                                (CAST(SUBSTRING(datetime FROM 1 FOR 4) AS INT) BETWEEN %s AND %s
+                                AND (
+                                    (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) >= %s)
+                                    OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) > %s AND CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) < %s)
+                                    OR (CAST(SUBSTRING(datetime FROM 6 FOR 2) AS INT) = %s AND CAST(SUBSTRING(datetime FROM 9 FOR 2) AS INT) <= %s)
+                                ))
+                                AND station_id_c IN %s
+                                AND crop_name = %s
+                                AND groper_name_ten IN %s
+                            """)
+    
+            years = stats_times[0]
+            dates = stats_times[1]
+            start_year = years.split(',')[0]
+            end_year = years.split(',')[1]
+            start_mon = dates.split(',')[0][:2]
+            end_mon = dates.split(',')[1][:2]
+            start_date = dates.split(',')[0][2:]
+            end_date = dates.split(',')[1][2:]
+            cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_mon, end_date, sta_ids))
+            data = cur.fetchall()
+    
+        cur.close()
+        conn.close()
+        try:
+            df = pd.DataFrame(data)
+            df.columns = elements.split(',')
+            df['Datetime'] = pd.to_datetime(df['Datetime'])
+            df.set_index('Datetime', inplace=True, drop=False)
+            
+            df['date_num'] = df.index.dayofyear
+            df['date'] = df['Mon'].astype(str)+'月'+ df['Day'].astype(str)+'日'
+            
+            
+            if station_flag==1:
+                station_df=df[['Station_Id_C','Station_Name','Lon','Lat']]
+                station_df.drop_duplicates(inplace=True)
+                
+                return df,station_df
+            else:
+                return df
         
+        except Exception:
+            raise Exception('数据库选择的时段无数据')
+    
+    
     # 播种、成熟、发育读取数据库的方法
     if element in ['sowin_date','maturity','reproductive_period','reproductive_day']:
-        data_df_1,station_df= get_database_data(elements,element_str,crop_str,sta_ids,table_name,stats_times,1)
-        refer_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,refer_years,0)
-        nearly_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,nearly_years,0)
+        data_df_1,station_df= get_database_data(elements,element_str,crop_str,sta_ids,table_name,stats_times,1,time_freq)
+        refer_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,refer_years,0,'U',time_freq)
+        nearly_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,nearly_years,0,time_freq)
         last_df=nearly_df[nearly_df.index.year==last_year].copy()
    
     # 解决冬小麦 跨年问题
