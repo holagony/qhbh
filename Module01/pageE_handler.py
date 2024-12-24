@@ -118,7 +118,7 @@ def freeze_features_stats(data_json):
         element_str = 'area'
         
     elif element in ['ICE_RESERVES']:
-        element_str = 'bcid'
+        element_str = 'reserves'
     
     if element in ['FRS_DEPTH', 'FRS_START', 'FRS_END', 'FRS_TIME','SNOW_DEPTH', 'SNOW_DAYS']:
         table_name = 'qh_climate_cmadaas_day'
@@ -348,7 +348,7 @@ def freeze_features_stats(data_json):
 if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
-    data_json['element'] = 'ICE_AREA'
+    data_json['element'] = 'ICE_RESERVES'
     data_json['refer_years'] = '2003,2018'
     data_json['nearly_years'] = '2003,2010'
     data_json['time_freq'] = 'Y'
