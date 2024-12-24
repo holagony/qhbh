@@ -153,7 +153,9 @@ def agriculture_features_stats(data_json):
     elif crop in ['potato']:
        crop_name_dict['reproductive_period'] ='播种,出苗,分支,花絮形成,开花,可收'       
     
-    
+    # 区域名
+    zone=['城东区', '城中区', '城西区', '城北区', '西宁市', '大通县', '湟中县', '湟源县', '平安县', '民和县', '乐都县', '互助县', '化隆县', '循化县', '门源县', '祁连县', '海晏县', '刚察县', '共和县', '贵德县', '贵南县', '同德县', '兴海县', '同仁县', '尖扎县', '泽库县', '河南县', '玛沁县', '班玛县', '甘德县', '达日县', '久治县', '玛多县', '玉树县', '杂多县', '称多县', '治多县', '囊谦县', '曲麻莱县', '格尔木市', '德令哈镇', '乌兰县', '都兰县', '天峻县', '茫崖行委', '大柴旦镇', '冷湖镇']
+
     # 3. 读取数据
     def get_database_data(elements,element_str,crop_str,sta_ids,table_name,stats_times,station_flag,time_freq):
         '''
@@ -447,6 +449,7 @@ def agriculture_features_stats(data_json):
                 elif element=='yield':
                     df.columns=['粮食','小麦','薯类','油料']
                 
+                df=df.astype(float).round(1)
                 return df
 
             data_df= acreage_yield_province_get(element,elements,table_name,stats_times)
@@ -479,23 +482,31 @@ def agriculture_features_stats(data_json):
                 df['datatime'] = pd.to_datetime(df['datatime'])
                 df.set_index('datatime', inplace=True, drop=True)
                 df.index = df.index.strftime('%Y')
-                                
-                if station_flag==1:
-                    station_df=df[['station_id_c','zone','lon','lat']]
-                    station_df.drop_duplicates(inplace=True)
-                    if element=='crop_acreage':
-                        df=df.pivot_table(index=df.index, columns=['station_id_c'], values='sowing_area')
-                    else:
-                        df=df.pivot_table(index=df.index, columns=['station_id_c'], values='yield')
+                
+                station_df=df[['station_id_c','zone','lon','lat']]
+                station_df.drop_duplicates(inplace=True)
+                
+                if element=='crop_acreage':
+                    df=df.pivot_table(index=df.index, columns=['station_id_c'], values='sowing_area')
+                else:
+                    df=df.pivot_table(index=df.index, columns=['station_id_c'], values='yield')
 
+                df=df.astype(float).round(1)
+                
+                station_df.reset_index(inplace=True,drop=True)
+                existing_columns = [col for col in zone if col in station_df['zone'].values]
+                existing_df = pd.DataFrame({'zone': existing_columns})
+                station_df = station_df.merge(existing_df, on='zone', how='right')
+                
+
+                df=df.astype(float).round(1)
+                    
+                if station_flag==1:
 
                     return df,station_df
                 
                 else:
-                    if element=='crop_acreage':
-                        df=df.pivot_table(index=df.index, columns=['station_id_c'], values='sowing_area')
-                    else:
-                        df=df.pivot_table(index=df.index, columns=['station_id_c'], values='yield')
+
                     return df
 
             data_df,station_df= acreage_yield_get(elements,table_name,stats_times,sta_ids,crop_str,1)
@@ -588,7 +599,7 @@ if __name__ == '__main__':
     data_json['nearly_years'] = '2004,2024'
     data_json['time_freq'] = 'Y'
     data_json['stats_times'] = '2008,2024'
-    data_json['sta_ids'] = '52868,52876'
+    data_json['sta_ids'] = "52866,52866,52866,52866,52866,52862,52869,52855"
 
     station_df,stats_result,post_data_df,post_refer_df,reg_params = agriculture_features_stats(data_json)
     t2 = time.time()
