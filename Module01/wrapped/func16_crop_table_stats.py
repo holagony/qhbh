@@ -343,7 +343,7 @@ def agriculture_features_stats(data_json):
     # 播种、成熟、发育读取数据库的方法
     if element in ['sowin_date','maturity','reproductive_period','reproductive_day']:
         data_df_1,station_df= get_database_data(elements,element_str,crop_str,sta_ids,table_name,stats_times,1,time_freq)
-        refer_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,refer_years,0,'U',time_freq)
+        refer_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,refer_years,0,time_freq)
         nearly_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,nearly_years,0,time_freq)
         last_df=nearly_df[nearly_df.index.year==last_year].copy()
    
@@ -356,7 +356,7 @@ def agriculture_features_stats(data_json):
 
      # 播种、成熟的表格
     if element in ['sowin_date','maturity']:
-        data_date_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,stats_times,0)
+        data_date_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,stats_times,0,time_freq)
         data_df=data_df_1.pivot_table(index=data_df_1.index, columns=['Station_Id_C'], values='date_num')
         refer_df=refer_df.pivot_table(index=refer_df.index, columns=['Station_Id_C'], values='date_num')
         nearly_df=nearly_df.pivot_table(index=nearly_df.index, columns=['Station_Id_C'], values='date_num')
