@@ -18,7 +18,7 @@ def frs_processing(element,df):
     if element in ['FRS_DEPTH']:
     # 最大冻结深度
         ele='frs_depth' 
-        df.index=df.index+pd.DateOffset(months=-8)
+        #df.index=df.index+pd.DateOffset(months=-8)
         df = df.pivot_table(index=df.index, columns=['Station_Id_C'], values=ele)  # 参考时段df
         df.replace(999999, np.nan, inplace=True)
     
@@ -32,6 +32,7 @@ def frs_processing(element,df):
     if element in ['FRS_START','FRS_END','FRS_TIME']:
 
         df["时间分组"] = df.index.year - (df.index.month < 9)
+        df = df.resample(rule='AS-SEP').max()
         grouped = df.groupby(["Station_Id_C", "时间分组"])
         start_times = grouped.apply(lambda x: x[x["frs_state"] == 2].index.min())
         end_times = grouped.apply(lambda x: x[x["frs_state"] == 2].index.max())

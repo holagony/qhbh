@@ -204,7 +204,7 @@ def ice_table_def(data_json):
     df_station=pd.read_csv(cfg.FILES.STATION,encoding='gbk')
     df_station['区站号']=df_station['区站号'].astype(str)
     
-    station_id=verify_evaluate_station.columns
+    station_id=sta_ids.split(',')
     
     matched_stations = pd.merge(pd.DataFrame({'区站号': station_id}),df_station[['区站号', '站点名']],on='区站号')
     matched_stations_unique = matched_stations.drop_duplicates()
