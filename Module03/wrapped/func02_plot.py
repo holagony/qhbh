@@ -114,7 +114,11 @@ def interp_and_mask(shp_path, lon_list, lat_list, value_list, method):
         lon_grid 掩膜后的经度网格
         lat_grid 掩膜后的纬度网格
     '''
-    shp = gpd.read_file(shp_path,encoding='gbk')
+    try:
+        shp = gpd.read_file(shp_path,encoding='gbk')
+    except:
+        shp = gpd.read_file(shp_path)
+        
     bounds = shp['geometry'].total_bounds
     lon_max = bounds[2]
     lon_min = bounds[0]
@@ -261,7 +265,10 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     # mesh = ax.contourf(lon_grid, lat_grid, mask_grid,  levels=100,transform=ccrs.PlateCarree(), alpha=0.8, cmap='jet', extend='both')
 
     # 画边界
-    shp = gpd.read_file(shp_path,encoding='gbk')
+    try:
+        shp = gpd.read_file(shp_path,encoding='gbk')
+    except:
+        shp = gpd.read_file(shp_path)
     lon_min, lat_min, lon_max, lat_max = shp.total_bounds
     lon_min=lon_min-(lon_max-lon_min)/8
     lon_max=lon_max+(lon_max-lon_min)/8
@@ -342,8 +349,8 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     cbar.set_ticks([np.nanmin(np.nanmin(mask_grid)),(np.nanmax(np.nanmax(mask_grid))+0.0001+np.nanmin(mask_grid))/2,np.nanmax(np.nanmax(mask_grid))+0.0001])
     cax.text(0.5, 1.5, label_name, ha='center', va='bottom', transform=cax.transAxes)
 
-    countries=BasicReader(shp_path,encoding='gbk')
-    geo_list=list(countries.geometries())
+    geo_list=list(shp.geometry)
+
     poly=geo_list
     path=Path.make_compound_path(*geos_to_path(poly))
     for col in mesh.collections:
