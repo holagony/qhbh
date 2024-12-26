@@ -269,9 +269,10 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     lat_max=lat_max+(lat_max-lat_min)/8
 
 
-    shp1 = r'C:/Users/MJY/Desktop/qhbh/zipdata/shp/qh/qh.shp'
-    shp_feature = cfeat.ShapelyFeature(shp1['geometry'], ccrs.PlateCarree(), edgecolor='k', facecolor='none')
-    ax.add_feature(shp_feature, linewidth=0.7, alpha=0.4)
+    # path1 = r'C:/Users/MJY/Desktop/qhbh/app/Files/青海边界/10100.shp'
+    # shp1 = gpd.read_file(path1,encoding='utf-8')
+    # shp_feature = cfeat.ShapelyFeature(shp1['geometry'], ccrs.PlateCarree(), edgecolor='k', facecolor='none')
+    # ax.add_feature(shp_feature, linewidth=0.7, alpha=0.4)
     
     # # 合并所有多边形
     # try:

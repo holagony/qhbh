@@ -25,7 +25,7 @@ def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
 
         #　variogram_model是变差函数模型，pykrige提供 linear, power, gaussian, spherical, exponential, hole-effect几种variogram_model可供选择，默认的为linear模型。
         # 使用不同的variogram_model，预测效果是不一样的，应该针对自己的任务选择合适的variogram_model。
-        variogram_model = 'exponential'
+        variogram_model = 'spherical'
 
         krig = OrdinaryKriging(lon_sta, lat_sta, value_sta, variogram_model=variogram_model, verbose=False, enable_plotting=False)
         data, ss3d = krig.execute("grid", gridx, gridy)
@@ -34,7 +34,7 @@ def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
 
         #%% 泛克里金
 
-        variogram_model = 'exponential'
+        variogram_model = 'spherical'
 
         ukrig = UniversalKriging(lon_sta, lat_sta, value_sta, variogram_model=variogram_model, verbose=False, enable_plotting=False)
         data, ss3d = ukrig.execute("grid", gridx, gridy)

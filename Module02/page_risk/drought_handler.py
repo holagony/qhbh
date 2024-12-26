@@ -75,7 +75,7 @@ def drought_esti(data_json):
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
         method = 'idw'
     else:
-        method = 'idw'
+        method = 'kri'
         
     if '集合' in cmip_model:
         cmip_model.remove('集合')
@@ -107,8 +107,8 @@ def drought_esti(data_json):
     time_scale = 'daily'
     evaluate_cmip = dict()
     station_id = list(sta_ids)
-    # for exp in ['ssp126','ssp245','ssp585']:
-    for exp in ['ssp245']:
+    for exp in ['ssp126','ssp245','ssp585']:
+    # for exp in ['ssp245']:
         evaluate_cmip[exp] = dict()
         for insti in cmip_model:
             evaluate_cmip[exp][insti] = dict()
@@ -287,8 +287,9 @@ def drought_esti(data_json):
             for insti, stats_table in sub_dict1.items():
                 all_png[exp][insti] = dict()
                 stats_table = pd.DataFrame(stats_table)
-                # for i in tqdm(range(len(stats_table))):
-                for i in tqdm(range(77,78)):
+                
+                for i in tqdm(range(len(stats_table))):
+                # for i in tqdm(range(77,78)):
                     value_list = stats_table.iloc[i, 1:-3].tolist()
                     year_name = stats_table.iloc[i, 0]
                     exp_name = exp
