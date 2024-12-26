@@ -12,7 +12,7 @@ from pykrige.uk import UniversalKriging
 from scipy.interpolate import griddata
 import os
 from Utils.config import cfg
-
+from scipy import spatial
 
 def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
     import numpy as np
@@ -73,31 +73,51 @@ def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
 
         #%% windows临时方法，idw更快，呈现效果差
     elif method == 'idw2':
-        import numpy as np
-        from scipy import spatial
-
-        def idw_interpolation(point_xy, point_z, grid_xy, k, offset):
+    
+        def idw_interpolation(point_xy, point_z, grid_xy, k=12, p=2, offset=1e-10):
+            # 计算球面距离
+            def haversine_distance(p1, p2):
+                lon1, lat1 = p1
+                lon2, lat2 = p2
+                R = 6371  # 地球平均半径(km)
+                
+                # 转换为弧度
+                lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])
+                
+                dlon = lon2 - lon1
+                dlat = lat2 - lat1
+                
+                a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2
+                c = 2 * np.arcsin(np.sqrt(a))
+                return R * c
 
             grid_shape = grid_xy[0].shape
             grid_flatten = np.reshape(grid_xy, (2, -1)).T
+            
+            # 使用KDTree找到最近邻点
             tree = spatial.cKDTree(point_xy)
             distances, idx = tree.query(grid_flatten, k=k)
-            distances += offset
-            weights = point_z[idx.ravel()].reshape(idx.shape)
-            grid_z = np.sum(weights / (distances**2), axis=1) / np.sum(1 / (distances**2), axis=1)
-            grid_z = grid_z.reshape(grid_shape)
+            
+            # 计算实际球面距离
+            distances = np.array([[haversine_distance(grid_flatten[i], point_xy[j]) 
+                                 for j in idx[i]] for i in range(len(grid_flatten))])
+            
+            distances = distances + offset  # 避免除零错误
+            weights = 1.0 / (distances ** p)
+            
+            # 计算加权平均
+            weighted_values = weights * point_z[idx]
+            grid_z = np.sum(weighted_values, axis=1) / np.sum(weights, axis=1)
+            
+            return grid_z.reshape(grid_shape)
 
-            return grid_z
-
+        # 准备输入数据
         point_xy = np.column_stack((lon_sta, lat_sta))
         point_z = value_sta
-
         grid_xy = (lon, lat)
 
-        # 使用idw_interpolation函数进行插值
-        k = 10
-        offset = 1e-10
-        data = idw_interpolation(point_xy, point_z, grid_xy, k, offset)
+        # 执行插值
+        data = idw_interpolation(point_xy, point_z, grid_xy)
         data = data.astype(float)
         
     elif method == 'idw':
@@ -112,6 +132,7 @@ def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
                 idw_path=cfg.FILES.IDW_L
             else:
                 idw_path   =cfg.FILES.IDW_L
+
             lib = ctypes.CDLL(idw_path) 
             
             # 设置参数类型  

@@ -119,8 +119,8 @@ def interp_and_mask(shp_path, lon_list, lat_list, value_list, method):
     lon_min = bounds[0]
     lat_max = bounds[3]
     lat_min = bounds[1]
-    gridx = np.arange(lon_min, lon_max + 0.01, 0.01)
-    gridy = np.arange(lat_min, lat_max + 0.01, 0.01)
+    gridx = np.linspace(lon_min-1, lon_max+1,1000)
+    gridy = np.linspace(lat_min-1, lat_max+1,1000)
 
     # 散点数据插值
     # 数据清洗，洗掉nan
@@ -269,7 +269,8 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     lat_max=lat_max+(lat_max-lat_min)/8
 
 
-    shp_feature = cfeat.ShapelyFeature(shp['geometry'], ccrs.PlateCarree(), edgecolor='k', facecolor='none')
+    shp1 = r'C:/Users/MJY/Desktop/qhbh/zipdata/shp/qh/qh.shp'
+    shp_feature = cfeat.ShapelyFeature(shp1['geometry'], ccrs.PlateCarree(), edgecolor='k', facecolor='none')
     ax.add_feature(shp_feature, linewidth=0.7, alpha=0.4)
     
     # # 合并所有多边形

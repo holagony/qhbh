@@ -65,16 +65,18 @@ def drought_esti(data_json):
     shp_path = data_json['shp_path']
 
     # 2.参数处理
-    method = 'idw'
     uuid4 = uuid.uuid4().hex
     save_dir = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
         os.chmod(save_dir, 0o007 | 0o070 | 0o700)
 
-    if shp_path is not None:
+    if os.name != 'nt':
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
-
+        method = 'idw'
+    else:
+        method = 'idw'
+        
     if '集合' in cmip_model:
         cmip_model.remove('集合')
         cmip_model.append('Set')
@@ -105,8 +107,8 @@ def drought_esti(data_json):
     time_scale = 'daily'
     evaluate_cmip = dict()
     station_id = list(sta_ids)
-    for exp in ['ssp126','ssp245','ssp585']:
-    # for exp in ['ssp245']:
+    # for exp in ['ssp126','ssp245','ssp585']:
+    for exp in ['ssp245']:
         evaluate_cmip[exp] = dict()
         for insti in cmip_model:
             evaluate_cmip[exp][insti] = dict()
@@ -285,8 +287,8 @@ def drought_esti(data_json):
             for insti, stats_table in sub_dict1.items():
                 all_png[exp][insti] = dict()
                 stats_table = pd.DataFrame(stats_table)
-                for i in tqdm(range(len(stats_table))):
-                # for i in tqdm(range(77,78)):
+                # for i in tqdm(range(len(stats_table))):
+                for i in tqdm(range(77,78)):
                     value_list = stats_table.iloc[i, 1:-3].tolist()
                     year_name = stats_table.iloc[i, 0]
                     exp_name = exp
@@ -358,9 +360,9 @@ if __name__ == '__main__':
     data_json['sta_ids'] = '51886,52602,52633,52645,52657,52707,52713,52737,52745,52754,52765,52818,52825,52833,52836,52842,52853,52855,52856,52862,52863,52866,52868,52869,52874,52876,52877,52908,52943,52955,52957,52963,52968,52972,52974,56004,56016,56018,56021,56029,56033,56034,56043,56045,56046,56065,56067,56125,56151'
     data_json['cmip_type'] = 'original'  # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None  # 分辨率 1/5/10/25/50/100 km
-    data_json['cmip_model'] = ['NESM3']  # 模式，列表：['CanESM5','CESM2']等
+    data_json['cmip_model'] = ['KIOST-ESM','MPI-ESM1-2-LR']  # 模式，列表：['CanESM5','CESM2']等
     data_json['plot'] = 1
-    data_json['shp_path'] = r'C:/Users/MJY/Desktop/qhbh/zipdata/shp/qh/qh.shp'
+    data_json['shp_path'] = r'C:\Users\MJY\Desktop\qh_hx\qh_hx\qh_hx.shp'
     data_json['element'] = 'drought'
     result_dict = drought_esti(data_json)
 
