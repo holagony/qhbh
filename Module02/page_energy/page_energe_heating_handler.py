@@ -195,8 +195,9 @@ def energy_winter_heating(data_json):
     base_p=pd.DataFrame(columns=refer_result_days_z.columns[1::])
     base_p.loc[0,:]=refer_result_days_z.iloc[0:-4,1::].mean().T
     base_p.loc[1,:]=refer_result_hdd18_z.iloc[0:-4,1::].mean().T
-    base_p.loc[2,:]=refer_result_start_end_num_z.iloc[0:-4,1::].mean().T
-    base_p.insert(0, '要素', ['采暖日','采暖度日','采暖起始日_日序'])
+    base_p.loc[2,:]=refer_result_start_end_num_z.iloc[1:-4,1::2].astype(float).mean().T.values
+    base_p.loc[3,:]=refer_result_start_end_num_z.iloc[1:-4,2::2].astype(float).mean().T.values
+    base_p.insert(0, '要素', ['采暖日','采暖度日','采暖起始日_日序_开始','采暖起始日_日序_结束'])
     
 #%% 单模式距平和距平百分率
 

@@ -148,7 +148,7 @@ def energy_solar_power(data_json):
     refer_result= energy_solar_his(element,refer_df)
         
     refer_result['年'] = refer_result['年'].astype(str)
-    refer_result_z=data_deal(refer_result)
+    refer_result_z=data_deal(refer_result.copy())
     
     refer_result_z=refer_result_z
     
@@ -201,7 +201,7 @@ def energy_solar_power(data_json):
     for i in insti:
         pre_data_result[i]=dict()
         for j in scene:
-            pre_data_result[i][j]=data_deal_2(pre_data[i][j],result,1)
+            pre_data_result[i][j]=data_deal_2(pre_data[i][j],refer_result,1)
     
     #%% 结果保存   
     result_df=dict()
@@ -212,11 +212,11 @@ def energy_solar_power(data_json):
         result_df['表格']['预估'][scene_a]=dict()
         for insti_a in insti:
             result_df['表格']['预估'][scene_a][insti_a]=dict()
-            result_df['表格']['预估'][scene_a][insti_a]=data_deal_2(pre_data[insti_a][scene_a],result,1).to_dict(orient='records')
+            result_df['表格']['预估'][scene_a][insti_a]=data_deal_2(pre_data[insti_a][scene_a],refer_result,1).to_dict(orient='records')
 
     result_df['时序图']=dict()
     result_df['时序图']['集合_多模式' ]=dict()
-    result_df['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'none',result)
+    result_df['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'none',refer_result)
     
     result_df['时序图']['单模式' ]=pre_data_result.copy()
     result_df['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()
@@ -271,14 +271,18 @@ def energy_solar_power(data_json):
                         exp_name = exp
                         insti_name = insti
                         # 插值/掩膜/画图/保存
-                        mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                        png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
                         
-                        # 转url
-                        png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-                        png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-     
-                        all_png['预估'][exp][insti][year_name] = png_path
+                        try:
+                            mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+                            png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
+                            
+                            # 转url
+                            png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+                            png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+         
+                            all_png['预估'][exp][insti][year_name] = png_path
+                        except:
+                            all_png['预估'][exp][insti][year_name] =None
     else:
         all_png=None
    
@@ -294,7 +298,7 @@ if __name__ == '__main__':
     # 有效日照天数：ASD    
     data_json = dict()
     data_json['element'] ='TR'
-    data_json['refer_times'] = '2023,2024'
+    data_json['refer_times'] = '1995,2024'
     data_json['time_freq'] = 'Y'
     data_json['stats_times'] = '2025,2100'
     data_json['sta_ids'] = "51886,52602,52633,52645,52657,52707,52713,52737,52745,52754,52765,52818,52825,52833,52836,52842,52853,52855,52856,52862,52863,52866,52868,52869,52874,52875,52876,52877,52908,52943,52955,52957,52963,52968,52972,52974,56004,56016,56018,56021,56029,56033,56034,56043,56045,56046,56065,56067,56125,56151"

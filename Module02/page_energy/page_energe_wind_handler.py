@@ -147,7 +147,7 @@ def energy_wind_power(data_json):
         refer_result_z=refer_result
     else:
         refer_result['年'] = refer_result['年'].astype(str)
-        refer_result_z=data_deal(refer_result)
+        refer_result_z=data_deal(refer_result.copy())
         
 
     # 加一个 站点站名字典
@@ -231,7 +231,7 @@ def energy_wind_power(data_json):
         for i in insti:
             pre_data_result[i]=dict()
             for j in scene:
-                pre_data_result[i][j]=data_deal_2(pre_data[i][j],result,1)
+                pre_data_result[i][j]=data_deal_2(pre_data[i][j],refer_result,1)
     
     #%% 结果保存   
         result_df=dict()
@@ -242,11 +242,11 @@ def energy_wind_power(data_json):
             result_df['表格']['预估'][scene_a]=dict()
             for insti_a in insti:
                 result_df['表格']['预估'][scene_a][insti_a]=dict()
-                result_df['表格']['预估'][scene_a][insti_a]=data_deal_2(pre_data[insti_a][scene_a],result,1).to_dict(orient='records')
+                result_df['表格']['预估'][scene_a][insti_a]=data_deal_2(pre_data[insti_a][scene_a],refer_result,1).to_dict(orient='records')
 
         result_df['时序图']=dict()
         result_df['时序图']['集合_多模式' ]=dict()
-        result_df['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'none',result)
+        result_df['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'none',refer_result)
         
         result_df['时序图']['单模式' ]=pre_data_result.copy()
         result_df['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()

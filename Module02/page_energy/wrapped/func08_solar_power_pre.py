@@ -71,7 +71,7 @@ def solar_power_pre(element,data_dir,time_scale,insti,scene,var,stats_times,time
     elif element=='TR':
         
         df = df*24 * 3600 / 1e6
-        result=df.resample('Y').sum()
+        result=df.resample('Y').sum().round(1)
 
         result.index = result.index.strftime('%Y')
         result.reset_index(inplace=True)
