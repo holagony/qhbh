@@ -410,7 +410,7 @@ def extreme_climate_features(data_json):
 
 if __name__ == '__main__':
     data_json = dict()
-    data_json['element'] ='GaWIN'
+    data_json['element'] ='TR'
     data_json['l_data'] =10
     data_json['refer_years'] = '1991,2020'
     data_json['nearly_years'] = '1994,2023'

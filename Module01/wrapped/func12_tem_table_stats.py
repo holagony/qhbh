@@ -310,19 +310,19 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
         nearly_df.index = nearly_df.index.strftime('%Y')
         last_df.index = last_df.index.strftime('%Y')
         
-    elif ele == 'TNn' or ele == 'TXn' :
+    # elif ele == 'TNn' or ele == 'TXn' :
         
-        # if time_freq in ['Y','Q']:
+    #     # if time_freq in ['Y','Q']:
             
-        data_df = data_df.resample('Y').min().astype(float).round(1)
-        refer_df = refer_df.resample('Y').min().astype(float).round(1)
-        nearly_df = nearly_df.resample('Y').min().astype(float).round(1)
-        last_df = last_df.resample('Y').min().astype(float).round(1)
+    #     data_df = data_df.resample('Y').min().astype(float).round(1)
+    #     refer_df = refer_df.resample('Y').min().astype(float).round(1)
+    #     nearly_df = nearly_df.resample('Y').min().astype(float).round(1)
+    #     last_df = last_df.resample('Y').min().astype(float).round(1)
     
-        data_df.index = data_df.index.strftime('%Y')
-        refer_df.index = refer_df.index.strftime('%Y')
-        nearly_df.index = nearly_df.index.strftime('%Y')
-        last_df.index = last_df.index.strftime('%Y')
+    #     data_df.index = data_df.index.strftime('%Y')
+    #     refer_df.index = refer_df.index.strftime('%Y')
+    #     nearly_df.index = nearly_df.index.strftime('%Y')
+    #     last_df.index = last_df.index.strftime('%Y')
             
         # elif time_freq in ['M1','M2']:
         #     data_df = data_df.resample('M').min()

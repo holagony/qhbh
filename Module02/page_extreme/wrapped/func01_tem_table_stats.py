@@ -151,11 +151,11 @@ def tem_table_stats(data_df, time_freq, ele,l_data=None,n_data=None):
         data_df = data_df.resample('Y').min().astype(float).round(1)   
         data_df.index = data_df.index.strftime('%Y')
         
-    elif ele == 'TNn' or ele == 'TXn' :
+    # elif ele == 'TNn' or ele == 'TXn' :
         
-        # if time_freq in ['Y','Q']:
+    #     # if time_freq in ['Y','Q']:
             
-        data_df = data_df.resample('Y').min().astype(float).round(1)
+    #     data_df = data_df.resample('Y').min().astype(float).round(1)
     
         data_df.index = data_df.index.strftime('%Y')
         
