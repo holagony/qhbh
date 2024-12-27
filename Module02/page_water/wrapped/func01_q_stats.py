@@ -30,7 +30,7 @@ def stats_q(data_df, refer_df):
     
     # 横向的距平和距平百分率
     df = pd.DataFrame(index=data_df_Q.index)
-    df['距平'] = data_df_Q['Q'] - refer_df['Q'].mean(axis=0)
+    df['距平'] = (data_df_Q['Q'] - refer_df['Q'].mean(axis=0)).round(1)
     df['距平百分率'] = ((df['距平'] / refer_df['Q'].mean(axis=0)) * 100).round(1)
 
     # 创建临时下方统计的df
