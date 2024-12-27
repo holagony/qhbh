@@ -130,7 +130,7 @@ def climate_esti(data_json):
     
     # 如果是SSH和SNOW
     if element in ['SSH', 'SNOW']:
-        assert cmip_model == ['BCM_BCC'], '要素为日照时和雪水当量的时候，模式只能选BCM_BCC'
+        assert cmip_model == ['RCM_BCC'], '要素为日照时和雪水当量的时候，模式只能选BCM_BCC'
     
     # 2.参数处理
     degree = None
