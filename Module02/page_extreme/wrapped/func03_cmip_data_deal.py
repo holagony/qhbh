@@ -118,6 +118,14 @@ def extreme_pre(ele,data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
              data_rolling_min = data_rolling.min().astype(float).round(1)
              data_df.iloc[:,i] = ((data_rolling_min > 5)).astype(int)
     
+    # 高温日数       
+    elif ele == 'high_tem':
+    
+        for i in np.arange(np.size(data_df,1)):
+            
+            data_sta=data_df.iloc[:,i]
+            data_df.iloc[:,i] = ((data_df.iloc[:,i] > n_data)).astype(int)
+            
     #%% 要素计算-降水
     D=dict()
     D['RZD']=0
@@ -250,11 +258,11 @@ def extreme_pre(ele,data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
              
     #%% 数据转换
       
-    if ele in ['TN10p', 'TX10p', 'TN90p', 'TX90p', 'ID', 'FD', 'SU','TR','GSL','RZ','RZD','SDII','R25D','R50D','R10D','R95%D','R95%','R50','R','RD','GaWIN','drought','light_drought','medium_drought','heavy_drought','severe_drought']:
+    if ele in ['high_tem','TN10p', 'TX10p', 'TN90p', 'TX90p', 'ID', 'FD', 'SU','TR','GSL','RZ','RZD','SDII','R25D','R50D','R10D','R95%D','R95%','R50','R','RD','GaWIN','drought','light_drought','medium_drought','heavy_drought','severe_drought']:
        
         # if time_freq in ['Y','Q']:
             
-        data_df = data_df.resample('Y').sum()
+        data_df = data_df.resample('Y').sum().astype(float).round(1)
     
         data_df.index = data_df.index.strftime('%Y')
 
@@ -285,5 +293,6 @@ def extreme_pre(ele,data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
     data_df.reset_index(inplace=True)
     data_df.rename(columns={'Datetime': '年'}, inplace=True)
     data_df['年'] = data_df['年'].astype(int)
+
     
     return data_df

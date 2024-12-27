@@ -34,7 +34,7 @@ def tem_table_stats(data_df, time_freq, ele,l_data=None,n_data=None):
     ele_ment['SU']='TEM_Max'
     ele_ment['TR']='TEM_Min'
     ele_ment['GSL']='TEM_Avg'
-    ele_ment['high_tem']='TEM_Avg'
+    ele_ment['high_tem']='TEM_Max'
 
     
     data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Id_C'], values=ele_ment[ele]) # 统计时段df

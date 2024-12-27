@@ -145,7 +145,7 @@ def extreme_climate_esti(data_json):
     ele_dict['SU']='TEM_Max'
     ele_dict['TR']='TEM_Min'
     ele_dict['GSL']='TEM_Avg'
-    ele_dict['high_tem']='TEM_Avg'
+    ele_dict['high_tem']='TEM_Max'
 
     # 极端降水指数
     ele_dict['CDD']='PRE_Time_2020'
@@ -333,8 +333,8 @@ if __name__ == '__main__':
     data_json['cmip_type'] = 'original' # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None # 分辨率 1/5/10/25/50/100 km
     data_json['cmip_model'] = ['Set']# 模式，列表：['CanESM5','CESM2']等
-    data_json['element'] = 'drought'
-    data_json['GaWIN'] = 18
+    data_json['element'] = 'high_tem'
+    data_json['n_data'] = 30
     data_json['GaWIN_flag'] = 3
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
     data_json['plot'] = 1

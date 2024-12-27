@@ -172,12 +172,12 @@ def pre_table_stats(data_df, time_freq, ele,GaWIN=None,GaWIN_flag=None,R=None,R_
       
     if ele in ['RZ','RZD','SDII','R25D','R50D','R10D','R95%D','R95%','R50','R','RD','GaWIN']:
        
-        data_df = data_df.resample('Y').sum()
+        data_df = data_df.resample('Y').sum().astype(float).round(2)
         data_df.index = data_df.index.strftime('%Y')
 
     elif ele in ['CDD','CWD','Rx1day','Rx5day','Rxxday']:
                     
-        data_df = data_df.resample('Y').max()
+        data_df = data_df.resample('Y').max().astype(float).round(2)
         data_df.index = data_df.index.strftime('%Y')
 
     
