@@ -32,7 +32,8 @@ def frs_processing(element,df):
     if element in ['FRS_START','FRS_END','FRS_TIME']:
 
         df["时间分组"] = df.index.year - (df.index.month < 9)
-        df = df.resample(rule='AS-SEP').max()
+        df=df[df["时间分组"]>df["时间分组"].min()]
+
         grouped = df.groupby(["Station_Id_C", "时间分组"])
         start_times = grouped.apply(lambda x: x[x["frs_state"] == 2].index.min())
         end_times = grouped.apply(lambda x: x[x["frs_state"] == 2].index.max())
@@ -40,11 +41,17 @@ def frs_processing(element,df):
         start_times = start_times.reset_index()
         end_times = end_times.reset_index()
     
-        start_times.columns = ["站名", "年", "开始时间"]
-        end_times.columns = ["站名", "年", "结束时间"]
-    
-        start_df = start_times.pivot(index="年", columns="站名", values="开始时间")
-        end_df = end_times.pivot(index="年", columns="站名", values="结束时间")
+        start_times.columns = ["站名", "Datetime", "开始时间"]
+        end_times.columns = ["站名", "Datetime", "结束时间"]
+        
+        start_times["Datetime"]=start_times["Datetime"].astype(str)
+        end_times["Datetime"]=end_times["Datetime"].astype(str)
+        
+        start_df = start_times.pivot(index="Datetime", columns="站名", values="开始时间")
+        end_df = end_times.pivot(index="Datetime", columns="站名", values="结束时间")
+        start_df.index = start_df.index.astype('object')
+        end_df.index = end_df.index.astype('object')
+
         if element in ['FRS_START']:
             result_start=start_df.copy()
             
@@ -200,7 +207,7 @@ def ice_evaluate_data_deal(element,train_time,sta_ids,time_freq,time_freq_data):
         
         element_str=dict()
         element_str['ICE_AREA']='area'
-        element_str['ICE_RESERVES']='bcid'
+        element_str['ICE_RESERVES']='reserves'
         
         data_df = get_bingchuan_data(sta_ids, element_str[element], train_time)
         data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Id_C'], values=element_str[element])  # 近1年df

@@ -166,14 +166,14 @@ def ice_model_def(data_json):
 if __name__=='__main__':
     
     data_json = dict()
-    data_json['main_element'] ='ICE_AREA'
-    data_json['sta_ids'] = '56043'
+    data_json['main_element'] ='FRS_TIME'
+    data_json['sta_ids'] = "51886,52602,52633,52645,52657,52707,52713"
     data_json['time_freq_main'] = 'Y'
     data_json['time_freq_main_data'] = '0'
     data_json['factor_element'] ='TEM_Avg,PRE_Time_2020,TEM_Avg'
     data_json['factor_time_freq'] = 'Y,Q,M2'
     data_json['factor_time_freq_data'] =['0','3,4,5','1']
-    data_json['train_time'] = '2020,2021'
+    data_json['train_time'] = '1991,2021'
     data_json['verify_time'] = '2020,2023'
 
 
