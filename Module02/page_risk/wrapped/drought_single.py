@@ -72,12 +72,13 @@ def drought_cmip_single(cmip_data_dict, czt_data, yz_data, gdp_data):
                 gdp_risk = gdp_val[i]
                 
                 # 最终风险
-                total_risk = (0.42*mci_risk + 0.21*yz_risk + 0.25*czt_risk + 0.12*gdp_risk).round(3)
+                total_risk = 0.42*mci_risk + 0.21*yz_risk + 0.25*czt_risk + 0.12*gdp_risk
                 result_risk.append(total_risk)
             
             result_risk = pd.concat(result_risk,axis=1)
             result_risk.columns = light_df.columns
             result_risk.index = result_risk.index.strftime('%Y')
+            result_risk = result_risk.round(3)
 
             # 创建临时下方统计的df
             tmp_df = pd.DataFrame(columns=result_risk.columns)
@@ -95,6 +96,10 @@ def drought_cmip_single(cmip_data_dict, czt_data, yz_data, gdp_data):
 
             # concat
             stats_result = pd.concat((stats_result, tmp_df), axis=0)
+
+            for col in stats_result.columns:
+                stats_result[col] = stats_result[col].astype(str).astype(float).round(3)
+
 
             # index处理
             stats_result.insert(loc=0, column='时间', value=stats_result.index)

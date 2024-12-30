@@ -331,10 +331,13 @@ def get_database_data(sta_ids, element_str, table_name, time_freq, stats_times):
         data = cur.fetchall()
 
     # 统计年份数据处理为df
+    # df = pd.DataFrame(data)
+    # df.columns = elements.split(',')
+    
     try:
         df = pd.DataFrame(data)
         df.columns = elements.split(',')
-    except Exception:
+    except:
         raise Exception('数据库选择的时段无数据')
         
     try:
@@ -501,7 +504,7 @@ def get_database_result(sta_ids, elements, table_name, time_freq, stats_times,ty
     try:
         df = pd.DataFrame(data)
         df.columns = elements.split(',')
-    except Exception:
+    except:
         raise Exception('数据库选择的时段无数据')
     
     df.set_index('Datetime', inplace=True)

@@ -259,7 +259,9 @@ def climate_esti(data_json):
         sta_list = df_unique['Station_Id_C'].tolist()
     except:    
         sta_list = sta_ids
-        
+    print('站点')
+    print(len(sta_ids))
+    print(sta_list)
     ######################################################
     ##### 模式数据处理
     # 首先筛选时间

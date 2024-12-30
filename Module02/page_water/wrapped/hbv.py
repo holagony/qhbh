@@ -36,7 +36,7 @@ def hbv_main(n_days, date_time, month, air_temp, prec, evp_monthly, tem_monthly,
     # Tsnow_thresh = 0.0
     # ca = 150000  # 平方米
 
-    for i_day in tqdm(range(1, n_days)):
+    for i_day in range(1, n_days):
 
         #print i_day
         if air_temp[i_day] < Tsnow_thresh:
