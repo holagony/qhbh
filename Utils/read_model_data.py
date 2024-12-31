@@ -245,7 +245,7 @@ def data_time_filter(nc_dict, time_index):
     '''
     根据上一个函数输出的time_index，筛选nc的time
     '''
-    for _, sub_dict1 in nc_dict.items():  # evaluate_cmip[exp][insti]['tmp']
+    for _, sub_dict1 in nc_dict.items():  # evaluate_cmip[exp][insti][var]
         for _, sub_dict2 in sub_dict1.items():
             for key, df_data in sub_dict2.items():
                 selected_data = df_data[df_data.index.isin(time_index)]

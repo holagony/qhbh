@@ -137,7 +137,7 @@ def climate_esti(data_json):
             df = pd.DataFrame(np.where(df>=0.1, 1, 0), index=df.index, columns=df.columns) if element == 'PRE_Days' else df
             df_yearly = df.resample('1A').sum() if var == 'pr' else df.resample('1A').mean()
             base_p = df_yearly.mean(axis=0)
-            refer_cmip[exp][insti][var] = base_p
+            refer_cmip[exp][insti] = base_p
 
             # 根据预估时段读取模式数据
             df = read_model_data(data_dir, time_scale, insti, exp, var, evaluate_times, time_freq, station_id)
@@ -172,7 +172,7 @@ def climate_esti(data_json):
         single_cmip_res[exp] = dict()
         for insti, sub_dict2 in sub_dict1.items():
             eval_df = sub_dict2[var]
-            base_p = refer_cmip[exp][insti][var]
+            base_p = refer_cmip[exp][insti]
             res_table = table_stats_simple_cmip(eval_df, base_p, var)
             single_cmip_res[exp][insti] = res_table#.to_dict(orient='records')
     
@@ -185,7 +185,7 @@ def climate_esti(data_json):
                 single_cmip_res['1.5℃'] = dict()
                 for insti, sub_dict2 in sub_dict1.items():
                     eval_df = sub_dict2[var]
-                    base_p = refer_cmip[exp][insti][var]
+                    base_p = refer_cmip[exp][insti]
                     res_table = table_stats_simple_cmip(eval_df, base_p, var)
                     single_cmip_res['1.5℃'][insti] = res_table#.to_dict(orient='records')
     
@@ -197,7 +197,7 @@ def climate_esti(data_json):
                 single_cmip_res['2.0℃'] = dict()
                 for insti, sub_dict2 in sub_dict1.items():
                     eval_df = sub_dict2[var]
-                    base_p = refer_cmip[exp][insti][var]
+                    base_p = refer_cmip[exp][insti]
                     res_table = table_stats_simple_cmip(eval_df, base_p, var)
                     single_cmip_res['2.0℃'][insti] = res_table#.to_dict(orient='records')
 
