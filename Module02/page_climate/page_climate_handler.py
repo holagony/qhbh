@@ -3,7 +3,6 @@ import uuid
 import copy
 import numpy as np
 import pandas as pd
-import xarray as xr
 from tqdm import tqdm
 from Module02.page_climate.wrapped.func_table_stats_cmip import table_stats_simple_cmip
 from Module02.page_climate.wrapped.func_plot import interp_and_mask, plot_and_save
@@ -177,36 +176,6 @@ def climate_esti(data_json):
             res_table = table_stats_simple_cmip(eval_df, base_p, var)
             single_cmip_res[exp][insti] = res_table#.to_dict(orient='records')
     
-    # 4.时序图-各个情景的集合
-    std_percent = dict()
-    for exp, sub_dict in single_cmip_res.items():
-        std_percent[exp] = dict()
-        array_list = []
-        for insti, res_df in sub_dict.items():
-            res_df = pd.DataFrame(res_df)
-            res_df.set_index('时间', inplace=True)
-            array_list.append(res_df.iloc[:-7, :].values[None])
-            array = np.concatenate(array_list, axis=0)
-            
-        std = np.std(array, ddof=1, axis=0).round(2)
-        per25 = np.percentile(array, 25, axis=0).round(2)
-        per75 = np.percentile(array, 75, axis=0).round(2)
-
-        std = pd.DataFrame(std, index=res_df.index[:-7], columns=res_df.columns)
-        per25 = pd.DataFrame(per25, index=res_df.index[:-7], columns=res_df.columns)
-        per75 = pd.DataFrame(per75, index=res_df.index[:-7], columns=res_df.columns)
-
-        std.reset_index(drop=False, inplace=True)
-        per25.reset_index(drop=False, inplace=True)
-        per75.reset_index(drop=False, inplace=True)
-
-        std_percent[exp]['1倍标准差'] = std#.to_dict(orient='records')
-        std_percent[exp]['百分位数25'] = per25#.to_dict(orient='records')
-        std_percent[exp]['百分位数75'] = per75#.to_dict(orient='records')
-
-    result_dict['时序图'] = std_percent
-    result_dict['时序图']['基准期'] = refer_cmip
-
     # 新增1.5和2.0 degree
     if len(time_index_15deg) != 0:
         degree15 = copy.deepcopy(evaluate_cmip)
@@ -234,9 +203,11 @@ def climate_esti(data_json):
 
     result_dict['表格']['预估单模式'] = single_cmip_res
     
-    # 5.分布图 实时画（后面改为提取提前画好的图）
+    # 5.3 时序图-基准期
+    result_dict['时序图']['基准期'] = refer_cmip
+    
+    # 5.4 分布图 实时画（后面改为提取提前画好的图）
     if plot == 1:
-        # 预估-单模式数据画图
         all_png = dict()
         for exp, sub_dict1 in single_cmip_res.items():
             all_png[exp] = dict()
