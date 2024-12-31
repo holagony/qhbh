@@ -134,7 +134,7 @@ def climate_esti(data_json):
             df = read_model_data(data_dir, time_scale, insti, exp, var, refer_years, time_freq, station_id)
             df = df.astype(float)
             df = (df / 3600).round(1) if element == 'SSH' else df
-            df = np.where(df>=0.1, 1, 0) if element == 'PRE_Days' else df
+            df = pd.DataFrame(np.where(df>=0.1, 1, 0), index=df.index, columns=df.columns) if element == 'PRE_Days' else df
             df_yearly = df.resample('1A').sum() if var == 'pr' else df.resample('1A').mean()
             base_p = df_yearly.mean(axis=0)
             refer_cmip[exp][insti][var] = base_p
@@ -143,7 +143,7 @@ def climate_esti(data_json):
             df = read_model_data(data_dir, time_scale, insti, exp, var, evaluate_times, time_freq, station_id)
             df = df.astype(float)
             df = (df / 3600).round(1) if element == 'SSH' else df
-            df = np.where(df>=0.1, 1, 0) if element == 'PRE_Days' else df
+            df = pd.DataFrame(np.where(df>=0.1, 1, 0), index=df.index, columns=df.columns) if element == 'PRE_Days' else df
             evaluate_cmip[exp][insti][var] = df
     
     # ------------------------------------------------------------------
