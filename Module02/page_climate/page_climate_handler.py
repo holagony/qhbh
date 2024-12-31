@@ -131,7 +131,7 @@ def climate_esti(data_json):
             refer_cmip[exp][insti] = dict()
             evaluate_cmip[exp][insti] = dict()
 
-            # 根据参考时间段读取模式数据，并保存基准期结果
+            # 根据参考时间段读取模式数据，并直接保存基准期结果
             df = read_model_data(data_dir, time_scale, insti, exp, var, refer_years, time_freq, station_id)
             df = df.astype(float)
             df = (df / 3600).round(1) if element == 'SSH' else df
@@ -160,9 +160,12 @@ def climate_esti(data_json):
     result_dict['时序图'] = dict()
     result_dict['分布图'] = dict()
 
-    # 5.1 首先获取站号对应的站名
-    new_station = get_station_info(station_id)
-    result_dict['站号'] = new_station.to_dict(orient='records')
+    # 5.1 首先获取站号对应的站名，以及经纬度
+    station_info = get_station_info(station_id)
+    lon_list = station_info['经度'].tolist()
+    lat_list = station_info['纬度'].tolist()
+    sta_info = station_info[['站号','站名']]
+    result_dict['站号'] = sta_info.to_dict(orient='records')
     
     # 5.2 预估-各个情景的单模式
     single_cmip_res = dict()
@@ -208,27 +211,29 @@ def climate_esti(data_json):
     if len(time_index_15deg) != 0:
         degree15 = copy.deepcopy(evaluate_cmip)
         degree15 = data_time_filter(degree15, time_index_15deg)
-        for exp, sub_dict1 in degree15.items():  # evaluate_cmip[exp][insti][var]
-            single_cmip_res[exp] = dict()
-            for insti, sub_dict2 in sub_dict1.items():
-                eval_df = sub_dict2[var]
-                base_p = refer_cmip[exp][insti][var]
-                res_table = table_stats_simple_cmip(eval_df, base_p, var)
-                single_cmip_res[exp][insti] = res_table#.to_dict(orient='records')
-
+        for exp, sub_dict1 in degree15.items():
+            if exp == 'ssp126':
+                single_cmip_res['1.5℃'] = dict()
+                for insti, sub_dict2 in sub_dict1.items():
+                    eval_df = sub_dict2[var]
+                    base_p = refer_cmip[exp][insti][var]
+                    res_table = table_stats_simple_cmip(eval_df, base_p, var)
+                    single_cmip_res['1.5℃'][insti] = res_table#.to_dict(orient='records')
+    
     if len(time_index_20deg) != 0:
         degree20 = copy.deepcopy(evaluate_cmip)
         degree20 = data_time_filter(degree20, time_index_20deg)
-        for exp, sub_dict1 in degree20.items():  # evaluate_cmip[exp][insti][var]
-            single_cmip_res[exp] = dict()
-            for insti, sub_dict2 in sub_dict1.items():
-                eval_df = sub_dict2[var]
-                base_p = refer_cmip[exp][insti][var]
-                res_table = table_stats_simple_cmip(eval_df, base_p, var)
-                single_cmip_res[exp][insti] = res_table#.to_dict(orient='records')
+        for exp, sub_dict1 in degree20.items():
+            if exp == 'ssp245':
+                single_cmip_res['2.0℃'] = dict()
+                for insti, sub_dict2 in sub_dict1.items():
+                    eval_df = sub_dict2[var]
+                    base_p = refer_cmip[exp][insti][var]
+                    res_table = table_stats_simple_cmip(eval_df, base_p, var)
+                    single_cmip_res['2.0℃'][insti] = res_table#.to_dict(orient='records')
 
     result_dict['表格']['预估单模式'] = single_cmip_res
-
+    
     # 5.分布图 实时画（后面改为提取提前画好的图）
     if plot == 1:
         # 预估-单模式数据画图
@@ -246,7 +251,6 @@ def climate_esti(data_json):
                     # 插值/掩膜/画图/保存
                     mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
                     png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
-
                     # 转url
                     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
                     png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
@@ -256,15 +260,17 @@ def climate_esti(data_json):
         all_png = None
 
     result_dict['分布图']['预估单模式'] = all_png
-
+    
+    # 最后遍历dict，如果是df就to_dict()
     result_dict = convert_nested_df(result_dict)
+    
     return result_dict
 
 
 if __name__ == '__main__':
     data_json = dict()
     data_json['time_freq'] = 'Y'
-    data_json['evaluate_times'] = '2030,2050'  # 预估时段时间条
+    data_json['evaluate_times'] = '2000,2050'  # 预估时段时间条
     data_json['refer_years'] = '1994,2023'  # 参考时段时间条
     data_json['sta_ids'] = '51886,52602,52633,52645,52657,52707,52713'
     data_json['cmip_type'] = 'original'  # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
