@@ -132,9 +132,9 @@ def water_table_def(data_json):
     if os.name == 'nt':
         data_dir=r'D:\Project\qh'
     elif os.name == 'posix':
-        data_dir='/model_data/hydrological_station'
+        data_dir='/model_data/hydrological_station/original'
     else:
-        data_dir='/model_data/hydrological_station'
+        data_dir='/model_data/hydrological_station/original'
 
     if data_cource == 'original':
         res='25'
@@ -145,7 +145,7 @@ def water_table_def(data_json):
     res_d['100']='1.00deg'
    
     if data_cource != 'original':
-        data_dir=os.path.join('/model_data/hydrological_station',res_d[res])
+        data_dir=os.path.join('/model_data/hydrological_station/Delta',res_d[res])
         
     # 模型站点要素名对照表
     model_ele_dict=dict()
