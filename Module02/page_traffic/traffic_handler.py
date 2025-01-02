@@ -6,7 +6,7 @@ import pandas as pd
 from tqdm import tqdm
 from Module02.page_traffic.wrapped.traffic_processing import refer_traffic_processing
 from Module02.page_traffic.wrapped.func_traffic_single import traffic_cmip_single
-from Module02.page_traffic.wrapped.func_plot import interp_and_mask, plot_and_save
+from Module02.page_traffic.wrapped.func03_plot import interp_and_mask, plot_and_save
 from Utils.read_model_data import read_model_data, create_datetimeindex, data_time_filter, get_station_info
 from Utils.config import cfg
 
