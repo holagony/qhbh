@@ -18,7 +18,7 @@ from sklearn.linear_model import LinearRegression
 from Module02.page_ice.wrapped.func01_factor_data_deal import factor_data_deal
 from Module02.page_ice.wrapped.func03_model_factor_data_deal import model_factor_data_deal
 from Module02.page_energy.wrapped.func00_function import percentile_std
-from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
+from Module02.page_climate.wrapped.func_plot import interp_and_mask, plot_and_save
 
 
 from Module02.page_water.wrapped.water_evaluate_data_deal import water_evaluate_data_deal

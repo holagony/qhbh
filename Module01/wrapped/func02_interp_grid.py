@@ -17,7 +17,7 @@ from Module01.wrapped.func01_table_stats import table_stats
 from Utils.data_processing import data_processing
 from Utils.station_to_grid import station_to_grid
 from Utils.config import cfg
-from Module02.page_climate.wrapped.func03_plot import polygon_to_mask
+from Module02.page_climate.wrapped.func_plot import polygon_to_mask
 
 
 def contour_picture(stats_result, data_df, shp_name, method, output_filepath):

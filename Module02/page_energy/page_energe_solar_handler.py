@@ -52,7 +52,7 @@ from Utils.config import cfg
 from Module02.page_energy.wrapped.func00_function import data_deal
 from Module02.page_energy.wrapped.func00_function import data_deal_2
 from Module02.page_energy.wrapped.func00_function import percentile_std
-from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
+from Module02.page_climate.wrapped.func_plot import interp_and_mask, plot_and_save
 
 from Module02.page_energy.wrapped.func05_solar_power_his import energy_solar_his
 from Module02.page_energy.wrapped.func08_solar_power_pre import solar_power_pre

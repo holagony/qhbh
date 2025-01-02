@@ -52,7 +52,7 @@ from Module02.page_energy.wrapped.func00_function import percentile_std
 
 from Module02.page_energy.wrapped.func04_wind_power_his import energy_wind_power_his
 from Module02.page_energy.wrapped.func07_wind_power_pre import wind_power_pre
-from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
+from Module02.page_climate.wrapped.func_plot import interp_and_mask, plot_and_save
 from Utils.data_loader_with_threads import get_database_data
 
 
@@ -178,7 +178,6 @@ def energy_wind_power(data_json):
             pre_data[insti_a][scene_a]=result
     
     
-
     if element in ['WDF','WSF']:
         
         stats_end_year=pd.DataFrame(result[sta_ids2[0]])['年'].iloc[-1]
@@ -204,9 +203,16 @@ def energy_wind_power(data_json):
         
         result_df=dict()
         result_df['站点']=station_dict.to_dict(orient='records')
-
         result_df['表格']=dict()
-        result_df['表格']=pre_data
+        
+        reversed_data = dict()
+        for outer_key, inner_dict in pre_data.items():
+            for inner_key, value in inner_dict.items():
+                if inner_key not in reversed_data:
+                    reversed_data[inner_key] = {}
+                reversed_data[inner_key][outer_key] = value
+        
+        result_df['表格']['预估']=reversed_data
         
         return result_df
     else:

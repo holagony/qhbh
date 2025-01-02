@@ -12,7 +12,7 @@ from psycopg2 import sql
 from datetime import date, datetime, timedelta
 from Module02.page_water.wrapped.rain_source_table_stats import table_stats_simple
 from Module02.page_water.wrapped.rain_source_cmip_stats import table_stats_simple_cmip
-from Module02.page_climate.wrapped.func03_plot import interp_and_mask
+from Module02.page_climate.wrapped.func_plot import interp_and_mask
 from Module03.wrapped.plot_new import plot_and_save
 from Utils.config import cfg
 from Utils.data_processing import data_processing

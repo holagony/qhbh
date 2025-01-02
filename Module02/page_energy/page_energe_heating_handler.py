@@ -51,7 +51,7 @@ from Module02.page_energy.wrapped.func00_function import percentile_std_time
 
 from Module02.page_energy.wrapped.func01_winter_heating_pre import winter_heating_pre
 from Module02.page_energy.wrapped.func02_winter_heating_his import winter_heating_his
-from Module02.page_climate.wrapped.func03_plot import interp_and_mask, plot_and_save
+from Module02.page_climate.wrapped.func_plot import interp_and_mask, plot_and_save
 from Utils.data_loader_with_threads import get_database_data
 
 
