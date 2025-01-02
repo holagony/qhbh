@@ -41,16 +41,10 @@ import pandas as pd
 import uuid
 from Utils.config import cfg
 from Module02.page_energy.wrapped.func00_function import time_choose
-from Module02.page_energy.wrapped.func00_function import data_deal
 from Module02.page_energy.wrapped.func00_function import data_deal_2
-from Module02.page_energy.wrapped.func00_function import percentile_std
 
-from Module02.page_extreme.wrapped.func01_tem_table_stats import tem_table_stats
-from Module02.page_extreme.wrapped.func02_pre_table_stats import pre_table_stats
 from Module02.page_extreme.wrapped.func03_cmip_data_deal import extreme_pre
-from Module02.page_extreme.wrapped.func04_other_table_stats import other_table_stats
 from Module02.page_climate.wrapped.func_plot import interp_and_mask, plot_and_save
-from Utils.data_loader_with_threads import get_database_data
 
 
     
@@ -153,7 +147,7 @@ def extreme_climate_esti(data_json):
     ele_dict['Rx1day']='PRE_Time_2020'
     ele_dict['Rx5day']='PRE_Time_2020'
     ele_dict['R']='PRE_Time_2020'
-    ele_dict['RD']='PRE_Time_2020'
+    ele_dict['RD']='PRE_Time_2020' 
     ele_dict['Rxxday']='PRE_Time_2020'
     
     # 其他气候指数
