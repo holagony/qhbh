@@ -16,7 +16,7 @@ from Module02.page_risk.wrapped.station_processing import drought_change_process
 from Module02.page_risk.wrapped.func01_table_stats import table_stats_rain
 from Module02.page_risk.wrapped.drought_multi import drought_cmip_multi
 from Module02.page_risk.wrapped.drought_single import drought_cmip_single
-from Module02.page_traffic.wrapped.func_plot import interp_and_mask#, plot_and_save
+from Module02.page_traffic.wrapped.func03_plot import interp_and_mask#, plot_and_save
 from Utils.read_model_data import read_model_data
 from Module02.page_risk.wrapped.mci import calc_mci
 from Module03.wrapped.plot_new import plot_and_save
