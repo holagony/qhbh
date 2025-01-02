@@ -205,7 +205,7 @@ def extreme_climate_esti(data_json):
 
             cmip_result=extreme_pre(element,data_dir,time_scale,insti_a,scene_a,nc_dict[ele_dict[element]],refer_times,time_freq,sta_ids2,station_dict,l_data=l_data,n_data=n_data,GaWIN=GaWIN,GaWIN_flag=GaWIN_flag,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
             refer_data[scene_a][insti_a]=cmip_result
-            base_p[scene_a][insti_a]=cmip_result.iloc[:,1::].mean().to_frame().T.reset_index(drop=True).to_dict(orient='records')
+            base_p[scene_a][insti_a]=cmip_result.iloc[:,1::].mean().to_frame().round(1).T.reset_index(drop=True).to_dict(orient='records')
 
     #%% 预估时段
     # 预估数据
