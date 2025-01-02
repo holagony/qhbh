@@ -117,15 +117,6 @@ def extreme_climate_esti(data_json):
         os.chmod(data_out, 0o007 | 0o070 | 0o700)
         
     #%% 要素字典
-    tem_table=['TN10p','TX10p','TN90p','TX90p','ID','FD','TNx','TXx','TNn','TXn',
-               'DTR','WSDI','CSDI','SU','TR','GSL','high_tem']
-    
-    pre_table=['CDD','CWD','RZ','RZD','SDII','R95%','R95%D','R50','R50D','R10D',
-               'R25D','Rx1day','Rx5day','R','RD','Rxxday','GaWIN']
-    
-    other_table=['drought','light_drought','medium_drought','heavy_drought',
-                  'severe_drought']
-    
     ele_dict=dict()
 
     # 极端气温指数
@@ -187,47 +178,43 @@ def extreme_climate_esti(data_json):
     nc_dict['medium_drought']='medium_drought'
     nc_dict['heavy_drought']='heavy_drought'
     nc_dict['severe_drought']='severe_drought'
-    #%% 参考时段
-    elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,'+ele_dict[element]
-    sta_ids1 = tuple(sta_ids.split(','))
     
-    if element in other_table:
-        refer_df = get_database_data(sta_ids1, elements, 'qh_qhbh_calc_elements_day', time_freq, refer_times)
-    else:
-        refer_df = get_database_data(sta_ids1, elements, 'qh_qhbh_cmadaas_day', time_freq, refer_times)
     
-    refer_df.set_index('Datetime', inplace=True)
-    refer_df.index = pd.DatetimeIndex(refer_df.index)
-    refer_df['Station_Id_C'] = refer_df['Station_Id_C'].astype(str)
-
-    if 'Unnamed: 0' in refer_df.columns:
-        refer_df.drop(['Unnamed: 0'], axis=1, inplace=True)       
-        
-    if element in tem_table:
-        refer_result = tem_table_stats(refer_df,time_freq, element,l_data=l_data,n_data=n_data)
-    elif element in pre_table:
-        refer_result= pre_table_stats(refer_df,time_freq, element,GaWIN=GaWIN,GaWIN_flag=GaWIN_flag,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
-    elif element in other_table:
-        refer_result = other_table_stats(refer_df, time_freq,element)
-
-    refer_result_z=data_deal(refer_result)
-
-    # 加一个 站点站名字典
-    station_id=refer_df['Station_Id_C'].unique()
+    #%% 站点站名字典    
+    df_station=pd.read_csv(cfg.FILES.STATION,encoding='gbk')
+    df_station['区站号']=df_station['区站号'].astype(str)
     
-    matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name','Lon','Lat']],on='Station_Id_C')
-    matched_stations_unique = matched_stations.drop_duplicates(subset='Station_Id_C')
+    station_id=sta_ids.split(',')
+    
+    matched_stations = pd.merge(pd.DataFrame({'区站号': station_id}),df_station[['区站号', '站点名','纬度','经度']],on='区站号')
+    matched_stations_unique = matched_stations.drop_duplicates()
 
-    station_name = matched_stations_unique['Station_Name'].values
-    station_id=matched_stations_unique['Station_Id_C'].values
+    station_name = matched_stations_unique['站点名'].values
+    station_id=matched_stations_unique['区站号'].values
     station_dict=pd.DataFrame(columns=['站名','站号'])
     station_dict['站名']=np.array([s[:s.find('国')] if '国' in s else s for s in station_name])
     station_dict['站号']=station_id
-    lon_list=matched_stations_unique['Lon'].values
-    lat_list=matched_stations_unique['Lat'].values
+    lon_list=matched_stations_unique['经度'].values
+    lat_list=matched_stations_unique['纬度'].values 
+    
+    #%% 参考时段 基准期
+    sta_ids2=sta_ids.split(',')
+    
+    refer_data=dict()
+    base_p=dict()
+    for scene_a in scene:
+        refer_data[scene_a]=dict()
+        base_p[scene_a]=dict()
+        for insti_a in insti:
+            refer_data[scene_a][insti_a]=dict()
+            base_p[scene_a][insti_a]=dict()
+
+            cmip_result=extreme_pre(element,data_dir,time_scale,insti_a,scene_a,nc_dict[ele_dict[element]],refer_times,time_freq,sta_ids2,station_dict,l_data=l_data,n_data=n_data,GaWIN=GaWIN,GaWIN_flag=GaWIN_flag,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
+            refer_data[scene_a][insti_a]=cmip_result
+            base_p[scene_a][insti_a]=cmip_result.iloc[:,1::].mean().to_frame().T.reset_index(drop=True).to_dict(orient='records')
+
     #%% 预估时段
     # 预估数据
-    sta_ids2=sta_ids.split(',')
     stats_start_year,stats_end_year=time_choose(time_freq,stats_times)
     
     pre_data=dict()
@@ -241,25 +228,35 @@ def extreme_climate_esti(data_json):
    
     ##%% 增加一下 1.5℃和2.0℃
     if int(stats_end_year) >= 2020:
+        
+        refer_data['1.5℃']=dict()
+        base_p['1.5℃']=dict()
         for insti_b,insti_b_table in pre_data.items():
             pre_data[insti_b]['1.5℃']=pre_data[insti_b]['ssp126'][(pre_data[insti_b]['ssp126']['年']>=2020) & (pre_data[insti_b]['ssp126']['年']<=2039)]
+            
+            refer_data['1.5℃'][insti_b]=refer_data['ssp126'][insti_b]
+            base_p['1.5℃'][insti_b]=base_p['ssp126'][insti_b]
+        
         scene=['ssp126','ssp245','ssp585','1.5℃']
 
     if int(stats_end_year) >= 2040:
+        refer_data['2.0℃']=dict()
+        base_p['2.0℃']=dict()
         for insti_b,insti_b_table in pre_data.items():
             pre_data[insti_b]['2.0℃']=pre_data[insti_b]['ssp245'][(pre_data[insti_b]['ssp245']['年']>=2040) & (pre_data[insti_b]['ssp245']['年']<=2059)]
+            
+            refer_data['2.0℃'][insti_b]=refer_data['ssp245'][insti_b]
+            base_p['2.0℃'][insti_b]=base_p['ssp245'][insti_b]
+            
         scene=['ssp126','ssp245','ssp585','1.5℃','2.0℃']
-     
-    #%% 基准期    
-    base_p=refer_result_z.iloc[0:-4,1::].mean().to_frame().T.reset_index(drop=True)
-    
+         
     #%% 单模式距平和距平百分率
     pre_data_result=dict()
     for i in insti:
         pre_data_result[i]=dict()
         for j in scene:
             pre_data_result[i][j]=dict()
-            pre_data_result[i][j][element]=data_deal_2(pre_data[i][j],refer_result,2).to_dict(orient='records')
+            pre_data_result[i][j][element]=data_deal_2(pre_data[i][j],refer_data[j][i],2).to_dict(orient='records')
 
     #%% 结果保存
    
@@ -273,15 +270,16 @@ def extreme_climate_esti(data_json):
         result_df_dict['表格']['预估'][scene_a]=dict()
         for insti_a in insti:
             result_df_dict['表格']['预估'][scene_a][insti_a]=dict()
-            result_df_dict['表格']['预估'][scene_a][insti_a]=data_deal_2(pre_data[insti_a][scene_a],refer_result,1).to_dict(orient='records')
+            result_df_dict['表格']['预估'][scene_a][insti_a]=data_deal_2(pre_data[insti_a][scene_a],refer_data[scene_a][insti_a],1).to_dict(orient='records')
 
 
     result_df_dict['时序图']=dict()
-    result_df_dict['时序图']['集合_多模式' ]=dict()
-    result_df_dict['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'none',refer_result)
+    # result_df_dict['时序图']['集合_多模式' ]=dict()
+    # result_df_dict['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'none',refer_data)
     
     result_df_dict['时序图']['单模式' ]=pre_data_result
-    result_df_dict['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()
+    #result_df_dict['时序图']['单模式' ]=dict()
+    result_df_dict['时序图']['单模式' ]['基准期']=base_p
     
     #%% 外附：分布图绘制 1：实时绘图
 
@@ -332,9 +330,9 @@ if __name__ == '__main__':
     data_json['sta_ids'] = '51886,52602,52633,52645,52657,52707,52713'
     data_json['cmip_type'] = 'original' # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None # 分辨率 1/5/10/25/50/100 km
-    data_json['cmip_model'] = ['Set']# 模式，列表：['CanESM5','CESM2']等
-    data_json['element'] = 'high_tem'
-    data_json['n_data'] = 30
+    data_json['cmip_model'] = ["NESM3", "MPI-ESM1-2-LR", "RCM_BCC", "Set"]# 模式，列表：['CanESM5','CESM2']等
+    data_json['element'] = "TN10p"
+    data_json['l_data'] = 10
     data_json['GaWIN_flag'] = 3
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
     data_json['plot'] = 1
