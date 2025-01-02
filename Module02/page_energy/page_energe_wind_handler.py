@@ -331,13 +331,13 @@ if __name__ == '__main__':
     #  element: 有效风功率密度：WPD 风向频率： WDF;风速频率：WSF；有效小时数：AH
     
     data_json = dict()
-    data_json['element'] ='WSF'
+    data_json['element'] ='WDF'
     data_json['refer_times'] = '2010,2024'
     data_json['time_freq'] = 'Y'
     data_json['stats_times'] = '2020,2040'
     data_json['sta_ids'] = '51886,52737,52842,52876'
     data_json['data_cource'] = 'original'
-    data_json['insti'] = 'Set'
+    data_json['insti'] =  "NESM3,Set"
     # data_json['res'] ='1'
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
     data_json['plot'] = 1
