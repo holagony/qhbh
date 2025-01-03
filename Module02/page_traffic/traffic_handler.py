@@ -62,6 +62,9 @@ def traffic_esti(data_json):
 
     # ------------------------------------------------------------------
     # 2.参数处理
+    if isinstance(cmip_model, str):
+        cmip_model = cmip_model.split(',')
+    
     if os.name != 'nt':
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
 

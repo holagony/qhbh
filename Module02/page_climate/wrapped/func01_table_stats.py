@@ -20,7 +20,7 @@ def table_stats_simple(data_df, ele):
             train_x = x.iloc[:, -1].values.reshape(-1, 1)
             train_y = x.iloc[:, 0].values.reshape(-1, 1)
             model = LinearRegression(fit_intercept=True).fit(train_x, train_y)
-            weight = model.coef_[0][0].round(3) * 10
+            weight = model.coef_[0][0] * 10
             return weight
         except:
             return np.nan

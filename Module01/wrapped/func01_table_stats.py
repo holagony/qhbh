@@ -54,7 +54,7 @@ def table_stats(data_df, refer_df, nearly_df, ele, last_year):
             train_x = x.iloc[:, -1].values.reshape(-1, 1)
             train_y = x.iloc[:, 0].values.reshape(-1, 1)
             model = LinearRegression(fit_intercept=True).fit(train_x, train_y)
-            weight = model.coef_[0][0].round(3) * 10
+            weight = model.coef_[0][0] * 10
             return weight
         except:
             return np.nan
@@ -62,7 +62,7 @@ def table_stats(data_df, refer_df, nearly_df, ele, last_year):
     # 创建临时下方统计的df
     tmp_df = pd.DataFrame(columns=data_df.columns)
     tmp_df.loc['平均'] = data_df.iloc[:, :].mean(axis=0).round(1)
-    tmp_df.loc['变率'] = data_df.apply(trend_rate, axis=0).round(1)
+    tmp_df.loc['变率'] = data_df.apply(trend_rate, axis=0).round(3)
     tmp_df.loc['最大值'] = data_df.iloc[:, :].max(axis=0)
     tmp_df.loc['最小值'] = data_df.iloc[:, :].min(axis=0)
     tmp_df.loc['与上一年比较值'] = (data_df.iloc[:, :].mean(axis=0) - last_df.iloc[:, :].mean(axis=0)).round(1)
