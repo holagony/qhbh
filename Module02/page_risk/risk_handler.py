@@ -7,7 +7,6 @@ import pandas as pd
 import xarray as xr
 from tqdm import tqdm
 from Module02.page_risk.wrapped.refer_risk_processing import rain_change_processing
-from Module02.page_risk.wrapped.func01_table_stats import table_stats_rain
 from Module02.page_risk.wrapped.func03_rain_single import rain_cmip_single
 from Module02.page_traffic.wrapped.func03_plot import interp_and_mask
 from Module03.wrapped.plot_new import plot_and_save
