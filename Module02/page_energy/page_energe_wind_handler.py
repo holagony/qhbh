@@ -125,50 +125,42 @@ def energy_wind_power(data_json):
         os.makedirs(data_out)
         os.chmod(data_out, 0o007 | 0o070 | 0o700)
 
-    #%% 统计计算模块
-    if element == 'WPD':
-        elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day,Hour,WIN_D_Avg10mi,WIN_S_Avg10mi,TEM,PRS'
-    elif element == 'WDF':
-        elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day,Hour,WIN_D_Avg10mi'
-    elif element == 'WSF':
-        elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day,Hour,WIN_S_Avg10mi'
-    elif element == 'AH':
-        elements = 'Station_Id_C,Station_Name,Lon,Lat,Alti,Datetime,Year,Mon,Day,Hour,WIN_S_Avg10mi'    
+
+    #%% 站点站名字典    
+    df_station=pd.read_csv(cfg.FILES.STATION,encoding='gbk')
+    df_station['区站号']=df_station['区站号'].astype(str)
     
-    # 评估数据
-    sta_ids1 = tuple(sta_ids.split(','))
-
+    station_id=sta_ids.split(',')
     
-    refer_df = get_database_data(sta_ids1, elements, 'qh_climate_cmadaas_hour', time_freq, refer_times)
-
-    refer_result= energy_wind_power_his(element,refer_df)
-        
-    if element in ['WDF','WSF']:
-        refer_result_z=refer_result
-    else:
-        refer_result['年'] = refer_result['年'].astype(str)
-        refer_result_z=data_deal(refer_result.copy())
-        
-
-    # 加一个 站点站名字典
-    station_id=refer_df['Station_Id_C'].unique()
+    matched_stations = pd.merge(pd.DataFrame({'区站号': station_id}),df_station[['区站号', '站点名','纬度','经度']],on='区站号')
+    matched_stations_unique = matched_stations.drop_duplicates()
     
-    matched_stations = pd.merge(pd.DataFrame({'Station_Id_C': station_id}),refer_df[['Station_Id_C', 'Station_Name','Lon','Lat']],on='Station_Id_C')
-    matched_stations_unique = matched_stations.drop_duplicates(subset='Station_Id_C')
-
-    station_name = matched_stations_unique['Station_Name'].values
-    station_id=matched_stations_unique['Station_Id_C'].values
+    station_name = matched_stations_unique['站点名'].values
+    station_id=matched_stations_unique['区站号'].values
     station_dict=pd.DataFrame(columns=['站名','站号'])
     station_dict['站名']=np.array([s[:s.find('国')] if '国' in s else s for s in station_name])
     station_dict['站号']=station_id
-    lon_list=matched_stations_unique['Lon'].values
-    lat_list=matched_stations_unique['Lat'].values
+    lon_list=matched_stations_unique['经度'].values
+    lat_list=matched_stations_unique['纬度'].values 
     
-    
-    # 预估数据
     insti = insti.split(',')
     sta_ids2=sta_ids.split(',')
     
+    #%% 参考时段 基准期
+    refer_data=dict()
+    base_p=dict()
+    for scene_a in scene:
+        base_p[scene_a]=dict()
+        refer_data[scene_a]=dict()
+        for insti_a in insti:
+            base_p[scene_a][insti_a]=dict()
+            refer_data[scene_a][insti_a]=dict()
+            result= wind_power_pre(element,data_dir,time_scale,insti_a,scene_a,var,refer_times,time_freq,sta_ids2,station_dict)
+            refer_data[scene_a][insti_a]=result
+            if element not in ['WDF','WSF']:
+                base_p[scene_a][insti_a]=result.iloc[:,1::].mean().to_frame().round(1).T.reset_index(drop=True).to_dict(orient='records')
+
+    #%% 预估数据
     pre_data=dict()
     for insti_a in insti:
         pre_data[insti_a]=dict()
@@ -182,7 +174,7 @@ def energy_wind_power(data_json):
         
         stats_end_year=pd.DataFrame(result[sta_ids2[0]])['年'].iloc[-1]
 
-        ##%% 增加一下 1.5℃和2.0℃
+        #%% 增加一下 1.5℃和2.0℃
         if int(stats_end_year) >= 2020:
             for insti_b,insti_b_table in pre_data.items():
                 pre_data[insti_b]['1.5℃']=dict()
@@ -220,24 +212,33 @@ def energy_wind_power(data_json):
         stats_end_year=result['年'].iloc[-1]
         ##%% 增加一下 1.5℃和2.0℃
         if int(stats_end_year) >= 2020:
+            
+            refer_data['1.5℃']=dict()
+            base_p['1.5℃']=dict()
             for insti_b,insti_b_table in pre_data.items():
                 pre_data[insti_b]['1.5℃']=pre_data[insti_b]['ssp126'][(pre_data[insti_b]['ssp126']['年'].astype(int)>=2020) & (pre_data[insti_b]['ssp126']['年'].astype(int)<=2039)]
+                
+                refer_data['1.5℃'][insti_b]=refer_data['ssp126'][insti_b]
+                base_p['1.5℃'][insti_b]=base_p['ssp126'][insti_b]
             scene=['ssp126','ssp245','ssp585','1.5℃']
 
         if int(stats_end_year) >= 2040:
+            refer_data['2.0℃']=dict()
+            base_p['2.0℃']=dict()
             for insti_b,insti_b_table in pre_data.items():
                 pre_data[insti_b]['2.0℃']=pre_data[insti_b]['ssp245'][(pre_data[insti_b]['ssp245']['年'].astype(int)>=2040) & (pre_data[insti_b]['ssp245']['年'].astype(int)<=2059)]
+                refer_data['2.0℃'][insti_b]=refer_data['ssp245'][insti_b]
+                base_p['2.0℃'][insti_b]=base_p['ssp245'][insti_b]
             scene=['ssp126','ssp245','ssp585','1.5℃','2.0℃']
             
-    #%% 基准期    
-        base_p=refer_result_z.iloc[0:-4,1::].mean().to_frame().T.reset_index(drop=True)
+
 
     #%% 单模式距平和距平百分率
         pre_data_result=dict()
         for i in insti:
             pre_data_result[i]=dict()
             for j in scene:
-                pre_data_result[i][j]=data_deal_2(pre_data[i][j],refer_result,1)
+                pre_data_result[i][j]=data_deal_2(pre_data[i][j],refer_data[j][i],1)
     
     #%% 结果保存   
         result_df=dict()
@@ -248,14 +249,14 @@ def energy_wind_power(data_json):
             result_df['表格']['预估'][scene_a]=dict()
             for insti_a in insti:
                 result_df['表格']['预估'][scene_a][insti_a]=dict()
-                result_df['表格']['预估'][scene_a][insti_a]=data_deal_2(pre_data[insti_a][scene_a],refer_result,1).to_dict(orient='records')
+                result_df['表格']['预估'][scene_a][insti_a]=data_deal_2(pre_data[insti_a][scene_a],refer_data[scene_a][insti_a],1).to_dict(orient='records')
 
         result_df['时序图']=dict()
-        result_df['时序图']['集合_多模式' ]=dict()
-        result_df['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'none',refer_result)
+        # result_df['时序图']['集合_多模式' ]=dict()
+        # result_df['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],insti,pre_data,'none',refer_result)
         
         result_df['时序图']['单模式' ]=pre_data_result.copy()
-        result_df['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()
+        result_df['时序图']['单模式' ]['基准期']=base_p
     
        
         def convert_dataframes_to_dicts(multi_dict):
@@ -331,13 +332,13 @@ if __name__ == '__main__':
     #  element: 有效风功率密度：WPD 风向频率： WDF;风速频率：WSF；有效小时数：AH
     
     data_json = dict()
-    data_json['element'] ='WDF'
+    data_json['element'] ='WPD'
     data_json['refer_times'] = '2010,2024'
     data_json['time_freq'] = 'Y'
     data_json['stats_times'] = '2020,2040'
     data_json['sta_ids'] = '51886,52737,52842,52876'
     data_json['data_cource'] = 'original'
-    data_json['insti'] =  "NESM3,Set"
+    data_json['insti'] =  "Set"
     # data_json['res'] ='1'
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\08-省州界\州界.shp'
     data_json['plot'] = 1

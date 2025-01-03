@@ -184,206 +184,76 @@ def water_table_def(data_json):
     if not os.path.exists(data_out):
         os.makedirs(data_out)
         os.chmod(data_out, 0o007 | 0o070 | 0o700)
-    #%% 验证期 因子数据 评估数据
-    verify_station,verify_data=factor_data_deal(factor_element,verify_time,sta_ids,factor_time_freq,factor_time_freq_data,time_freq_main,processing_methods)
-    verify_data=verify_data.reset_index()
-    verify_data = verify_data.rename(columns={'年份': 'Datetime'})
-    verify_data = verify_data.set_index(verify_data['Datetime'].astype(str))
-    
-    verify_evaluate,verify_evaluate_station=water_evaluate_data_deal(verify_time,hydro_ids,time_freq_main,time_freq_main_data)
-
-    verify_evaluate_station = verify_evaluate_station[verify_evaluate_station.index.isin(verify_data.index)]
-    
     #%% 站点字典表
     df_station=pd.read_csv(cfg.FILES.STATION,encoding='gbk')
     df_station['区站号']=df_station['区站号'].astype(str)
     
-    station_id=verify_evaluate_station.columns
+    station_id=sta_ids.split(',')
     
-    matched_stations = pd.merge(pd.DataFrame({'区站号': station_id}),df_station[['区站号', '站点名']],on='区站号')
+    matched_stations = pd.merge(pd.DataFrame({'区站号': station_id}),df_station[['区站号', '站点名','纬度','经度']],on='区站号')
     matched_stations_unique = matched_stations.drop_duplicates()
-
+    
     station_name = matched_stations_unique['站点名'].values
     station_id=matched_stations_unique['区站号'].values
     station_dict=pd.DataFrame(columns=['站名','站号'])
     station_dict['站名']=np.array([s[:s.find('国')] if '国' in s else s for s in station_name])
     station_dict['站号']=station_id
+    lon_list=matched_stations_unique['经度'].values
+    lat_list=matched_stations_unique['纬度'].values 
     
+    station_id_c=station_id
     #%% 表格数据
     # 参考时段
-    refer_evaluate,refer_evaluate_station=water_evaluate_data_deal(refer_times,hydro_ids,time_freq_main,time_freq_main_data)
-    refer_start_time = pd.to_datetime(refer_times.split(',')[0])
-    refer_end_time = pd.to_datetime(refer_times.split(',')[1])
-    refer_evaluate_station = refer_evaluate_station[(pd.to_datetime(refer_evaluate_station.index, format='%Y') >= refer_start_time) 
-                                                      & (pd.to_datetime(refer_evaluate_station.index, format='%Y') <= refer_end_time)]    
-    refer_evaluate_station.reset_index(inplace=True,drop=True)
-    # refer_mean=pd.DataFrame(refer_evaluate_station.mean().round(2)).T
-    
-    # 观测
-    result_0=verify_evaluate_station.reset_index()
-    result_0.columns.values[0] = '年'
-    result_0_1=data_deal_2(result_0,refer_evaluate_station,1)
-    
-    # 模拟观测
-    station_id_c=verify_station['Station_Id_C'].unique()
-    result_1=pd.DataFrame(index=np.arange(len(verify_data)),columns=station_id_c)
-    for i in station_id_c:
-        station_i=verify_station[verify_station['Station_Id_C']==i]
-        station_i = station_i[factor_name].astype(float).reset_index(drop=True)
-        result_1[i] =(data_json['intercept'] + np.sum(station_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
-            
-    datetime_column = verify_data.reset_index(drop=True)['Datetime']
-    result_1.insert(0, '年', datetime_column)
-    result_1[result_1<0]=0
-    verify_data_i=verify_data[factor_name].astype(float).reset_index(drop=True)
-    result_1['区域均值']=(data_json['intercept'] + np.sum(verify_data_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
-    result_1_1=data_deal_2(result_1,refer_evaluate_station,2)
-
-
-    result_df_dict=dict()
-    result_df_dict['站点']=station_dict.to_dict(orient='records')
-    result_df_dict['表格']=dict()
-
-    result_df_dict['表格']['历史']=dict()
-    result_df_dict['表格']['历史']['观测']=result_0_1.to_dict(orient='records')
-    result_df_dict['表格']['历史']['模拟观测']=result_1_1.to_dict(orient='records')
-    
-    #%% 基准期    
-    base_p=result_1_1.iloc[0:-7,1::].mean().to_frame().T.reset_index(drop=True)
-        
-    #%% 分布图
-    # 获取经纬度数据
-    
     all_png=dict()
-    all_png['历史']=dict()
     
-    conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
-    cur = conn.cursor()
-    sta_id_lonat = tuple(sta_ids.split(','))
-
-    query = sql.SQL("""
-                    SELECT station_id, station_name, lon, lat
-                    FROM public.qh_climate_station_info
-                    WHERE
-                        station_id IN %s
-                    """)
-    
-    # 执行查询并获取结果
-    cur.execute(query, (sta_id_lonat,))
-    station_lon_lat = cur.fetchall()
-    station_lon_lat=pd.DataFrame(station_lon_lat)
-    station_lon_lat.columns=['station_id', 'station_name', 'lon', 'lat']
-    
-    station_id=result_0_1.columns[1:-5:]
-    matched_stations = pd.merge(pd.DataFrame({'station_id': sta_id_lonat}),station_lon_lat,on='station_id')
-
-    lon_list=matched_stations['lon'].values
-    lat_list=matched_stations['lat'].values
-    
-    '''
-      
-        all_png['历史']['观测']=dict()
-        data_pic=pd.DataFrame(result_df_dict['表格']['历史']['观测']).iloc[:,:-5:]
-        for i in np.arange(len(data_pic)):
-            mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, data_pic.iloc[i,1::], method)
-            png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, '历史', '观测', str(data_pic.iloc[i,0]), data_out)
-                    
-            png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-            png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-            all_png['历史']['观测'][str(data_pic.iloc[i,0])] = png_path
-        
-        
-        all_png['历史']['模拟观测']=dict()
-        data_pic=pd.DataFrame(result_df_dict['表格']['历史']['模拟观测']).iloc[:,:-5:]
-        for i in np.arange(len(data_pic)):
-            mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, data_pic.iloc[i,1::], method)
-            png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, '历史', '模拟观测', str(data_pic.iloc[i,0]), data_out)
-                    
-            png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-            png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-            all_png['历史']['模拟观测'][str(data_pic.iloc[i,0])] = png_path
-    '''
     # 模拟模式
     var_factor_time_freq=factor_time_freq.split(',')
     instis=insti.split(',')
     sta_ids2=sta_ids.split(',')
-    '''
-    pre_data_2=dict()
+    
+    stats_start_year=refer_times.split(',')[0]
+    stats_end_year=refer_times.split(',')[1]
+    years_len=np.arange(int(stats_start_year),int(stats_end_year)+1)
+        
+    # 单模式单情景
+    refer_data_1=dict()
+    base_p=dict()
     for scene_a in scene:
-        pre_data_2[scene_a]=dict()
-        a=pd.DataFrame()
-        
-        for index,var_a in enumerate(independent_columns):
-            
+        refer_data_1[scene_a]=dict()
+        base_p[scene_a]=dict()
+        for insti_a in instis:
+    
+            refer_data_1[scene_a][insti_a]=dict()
+            base_p[scene_a][insti_a]=dict()
+
             data_station_dataframes = []
-            for insti_a in instis:
-                data_station=model_factor_data_deal(data_dir, time_scale,insti_a,scene_a,sta_ids2,model_ele_dict[var_a],var_a,var_factor_time_freq[index],factor_time_freq_data[index],time_freq_main,verify_time,processing_methods)
+            for index,var_a in enumerate(independent_columns):
+                data_station=model_factor_data_deal(data_dir, time_scale,insti_a,scene_a,sta_ids2,model_ele_dict[var_a],var_a,var_factor_time_freq[index],factor_time_freq_data[index],time_freq_main,stats_times,processing_methods)
                 data_station = data_station.sort_values(by=['Station_Id_C', '年'], ascending=[True, True])
+                data_station=data_station.rename(columns={var_a:factor_name[index]})
                 data_station_dataframes.append(data_station)
-                
             b=pd.concat(data_station_dataframes, axis=1)
-            a[var_a]=b[var_a].to_frame().mean(axis=1).reset_index(drop=True) 
-            a=a.rename(columns={var_a:factor_name[index]})
+            b = b.loc[:, ~b.columns.duplicated()]
+            
+            grouped = b.groupby('年')
+            group_averages = grouped[factor_name].mean()
+            
+            result_4=pd.DataFrame(index=np.arange(len(years_len)),columns=station_id_c)
+            for i in station_id_c:
+                station_i=b[b['Station_Id_C']==i]
+                station_i = station_i[factor_name].astype(float).reset_index(drop=True)
+                result_4[i] =(data_json['intercept'] + np.sum(station_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
+            result_4.insert(0, '年', years_len)
+            result_4[result_4<0]=0  
+            refer_data_1[scene_a][insti_a]=result_4.copy()
+            base_p[scene_a][insti_a]=result_4.iloc[:,1::].mean().to_frame().round(1).T.reset_index(drop=True).to_dict(orient='records')
 
-        a['年']=data_station['年']
-        grouped = a.groupby('年')
-        group_averages = grouped.mean()
-        a['Station_Id_C']=data_station['Station_Id_C']
-        
-        result_2=pd.DataFrame(index=np.arange(len(verify_data)),columns=station_id_c)
-        for i in station_id_c:
-            station_i=a[a['Station_Id_C']==i]
-            station_i = station_i[factor_name].astype(float).reset_index(drop=True)
-            result_2[i] =(data_json['intercept'] + np.sum(station_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
-        result_2.insert(0, '年', datetime_column)
-        result_2[result_2<0]=0  
-        
-        group_averages_i=group_averages[factor_name].astype(float).reset_index(drop=True)
-        result_2['区域均值']=(data_json['intercept'] + np.sum(group_averages_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
-        result_2_1=data_deal_2(result_2,refer_evaluate_station,2)
-
-        pre_data_2[scene_a]=result_2_1.to_dict(orient='records')
-    '''
     
     #%% 评估数据
     stats_start_year=stats_times.split(',')[0]
     stats_end_year=stats_times.split(',')[1]
     years_len=np.arange(int(stats_start_year),int(stats_end_year)+1)
-    
-    # 集合
-    # pre_data_3=dict()
-    # for scene_a in scene:
-    #     pre_data_3[scene_a]=dict()
-    #     a=pd.DataFrame()
-    #     for index,var_a in enumerate(independent_columns):
-    #         data_station_dataframes = []
-    #         for insti_a in instis:
-    #             data_station=model_factor_data_deal(data_dir, time_scale,insti_a,scene_a,sta_ids2,model_ele_dict[var_a],var_a,var_factor_time_freq[index],factor_time_freq_data[index],time_freq_main,verify_time,processing_methods)
-    #             data_station = data_station.sort_values(by=['Station_Id_C', '年'], ascending=[True, True])
-    #             data_station_dataframes.append(data_station)
-                
-    #         b=pd.concat(data_station_dataframes, axis=1)
-    #         a[var_a]=b[var_a].to_frame().mean(axis=1).reset_index(drop=True) 
-    #         a=a.rename(columns={var_a:factor_name[index]})
-
-    #     a['年']=data_station['年']
-    #     grouped = a.groupby('年')
-    #     group_averages = grouped.mean()
-    #     a['Station_Id_C']=data_station['Station_Id_C']
         
-    #     result_3=pd.DataFrame(index=np.arange(len(years_len)),columns=station_id_c)
-    #     for i in station_id_c:
-    #         station_i=a[a['Station_Id_C']==i]
-    #         station_i = station_i[factor_name].astype(float).reset_index(drop=True)
-    #         result_3[i] =(data_json['intercept'] + np.sum(station_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
-    #     result_3.insert(0, '年', years_len)
-    #     result_3[result_3<0]=0  
-        
-    #     group_averages_i=group_averages[factor_name].astype(float).reset_index(drop=True)
-    #     result_3['区域均值']=(data_json['intercept'] + np.sum(group_averages_i * pd.Series(data_json)[factor_name],axis=1)).astype(float).round(2)
-    #     result_3_1=data_deal_2(result_3,refer_evaluate_station,2)
-    #     pre_data_3[scene_a]=result_3_1.to_dict(orient='records')
-    
     # 单模式单情景
     pre_data_4=dict()
     pre_data_5=dict()
@@ -420,40 +290,52 @@ def water_table_def(data_json):
             pre_data_5[insti_a][scene_a][main_element]=dict()
             pre_data_5[insti_a][scene_a][main_element]=result_4.copy()
             
-            result_4_1=data_deal_2(result_4,refer_evaluate_station,2)
+            result_4_1=data_deal_2(result_4,refer_data_1[scene_a][insti_a],2)
             pre_data_4[insti_a][scene_a]=result_4_1.to_dict(orient='records')
    
     ##%% 增加一下 1.5℃和2.0℃
     if int(stats_end_year) >= 2020:
+        
+        refer_data_1['1.5℃']=dict()
+        base_p['1.5℃']=dict()
         for insti_b,insti_b_table in pre_data_5.items():
+            refer_data_1['1.5℃'][insti_b]=refer_data_1['ssp126'][insti_b]
+            base_p['1.5℃'][insti_b]=base_p['ssp126'][insti_b]
             
             pre_data_5[insti_b]['1.5℃']=dict()
             pre_data_5[insti_b]['1.5℃'][main_element]=dict()
             pre_data_5[insti_b]['1.5℃'][main_element]=insti_b_table['ssp126'][main_element][(insti_b_table['ssp126'][main_element]['年']>=2020) & (insti_b_table['ssp126'][main_element]['年']<=2039)]
-            result_4_1=data_deal_2(pre_data_5[insti_b]['1.5℃'][main_element].copy(),refer_evaluate_station,2)
+            result_4_1=data_deal_2(pre_data_5[insti_b]['1.5℃'][main_element].copy(),refer_data_1['1.5℃'][insti_b],2)
             pre_data_4[insti_b]['1.5℃']=result_4_1.to_dict(orient='records')
+              
         scene=['ssp126','ssp245','ssp585','1.5℃']
 
     if int(stats_end_year) >= 2040:
+        
+        refer_data_1['2.0℃']=dict()
+        base_p['2.0℃']=dict()
         for insti_b,insti_b_table in pre_data_5.items():
+            refer_data_1['2.0℃'][insti_b]=refer_data_1['ssp245'][insti_b]
+            base_p['2.0℃'][insti_b]=base_p['ssp245'][insti_b]  
+            
             pre_data_5[insti_b]['2.0℃']=dict()
             pre_data_5[insti_b]['2.0℃'][main_element]=dict()
             pre_data_5[insti_b]['2.0℃'][main_element]=insti_b_table['ssp245'][main_element][(insti_b_table['ssp245'][main_element]['年']>=2040) & (insti_b_table['ssp245'][main_element]['年']<=2059)]
-            result_4_1=data_deal_2(pre_data_5[insti_b]['2.0℃'][main_element].copy(),refer_evaluate_station,2)
+            result_4_1=data_deal_2(pre_data_5[insti_b]['2.0℃'][main_element].copy(),refer_data_1['2.0℃'][insti_b],2)
             pre_data_4[insti_b]['2.0℃']=result_4_1.to_dict(orient='records')
+          
         scene=['ssp126','ssp245','ssp585','1.5℃','2.0℃']    
-    #%% 时序图
-    
+    #%% 时序图  
     pre_data_6=dict()
     for i in instis:
         pre_data_6[i]=dict()
         for j in scene:
-            pre_data_6[i][j]=data_deal_2(pre_data_5[i][j][main_element],refer_evaluate_station,3).to_dict(orient='records')
+            pre_data_6[i][j]=data_deal_2(pre_data_5[i][j][main_element],refer_data_1[j][i],3).to_dict(orient='records')
     
                 
     #%% 保存
-    #result_df_dict['表格']['历史']['模拟模式']=pre_data_2
-
+    result_df_dict=dict()
+    result_df_dict['表格']=dict()
     result_df_dict['表格']['预估']=dict()
 
     for exp, sub_dict1 in pre_data_4.items():
@@ -462,16 +344,9 @@ def water_table_def(data_json):
                 result_df_dict['表格']['预估'][insti]=dict()
             result_df_dict['表格']['预估'][insti][exp]=stats_table
             
-    # for insti,stats_table in pre_data_3.items():
-    #     result_df_dict['表格']['预估'][insti]['集合']=stats_table        
-    
-
-    result_df_dict['时序图']=dict()
-    result_df_dict['时序图']['集合_多模式' ]=dict()
-    result_df_dict['时序图']['集合_多模式' ]=percentile_std(['ssp126','ssp245','ssp585'],instis,pre_data_5,main_element,refer_evaluate_station)
-    
+    result_df_dict['时序图']=dict()    
     result_df_dict['时序图']['单模式' ]=pre_data_6
-    result_df_dict['时序图']['单模式' ]['基准期']=base_p.to_dict(orient='records').copy()
+    result_df_dict['时序图']['单模式' ]['基准期']=base_p
 
     
     if plot==1:
@@ -517,11 +392,12 @@ if __name__ == '__main__':
     
     
     data_json = dict()
-    data_json['main_element']='ICE_AREA'  # 评估要素
-    data_json['sta_ids']='56043' # 站点信息
+    data_json['main_element']='Q'  # 评估要素
+    data_json['hydro_ids']='40100350”' # 站点信息
+    data_json['sta_ids']='52943,56021,56045,56065' # 站点信息
     data_json['time_freq_main']='Y' # 评估要素时间尺度
     data_json['time_freq_main_data']='0'
-    data_json['refer_times'] = '2020,2022' # 参考时段
+    data_json['refer_times'] = '2020,2024' # 参考时段
     data_json['stats_times'] = '2020,2040' # 评估时段
     data_json['data_cource'] = 'original' # 模式信息
     data_json['insti']= 'Set'
@@ -529,7 +405,7 @@ if __name__ == '__main__':
     data_json['factor_element']='TEM_Avg,PRE_Time_2020,TEM_Avg'     # 关键因子
     data_json['factor_time_freq']='Y,Q,M2' # 关键因子时间尺度
     data_json['factor_time_freq_data']=['0','3,4,5','1']
-    data_json['verify_time']='2020,2021' # 验证日期
+    data_json['verify_time']='2020,2024' # 验证日期
 
     # 要素变量
     data_json['intercept']=1
