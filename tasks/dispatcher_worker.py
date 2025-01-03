@@ -76,6 +76,8 @@ def celery_task_status(task_id):
         if result is None:
             response = {'code': 500, 'msg': '计算失败', 'data': result}
         else:
+            if isinstance(result, str):
+                result = json.loads(result)
             response = {'code': 200, 'msg': '计算成功', 'data': result}
         return jsonify(response)
         # result.forget()  # 将结果删除
