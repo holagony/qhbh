@@ -139,7 +139,7 @@ def traffic_esti(data_json):
     lon_list = station_info['经度'].tolist()
     lat_list = station_info['纬度'].tolist()
     sta_info = station_info[['站号','站名']]
-    result_dict['站号'] = sta_info.to_dict(orient='records')
+    result_dict['站号'] = sta_info
 
     # 5.2 预估-各个情景的单模式
     single_cmip_res = dict()
