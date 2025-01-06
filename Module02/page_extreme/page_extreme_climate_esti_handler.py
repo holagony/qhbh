@@ -203,7 +203,7 @@ def extreme_climate_esti(data_json):
             refer_data[scene_a][insti_a]=dict()
             base_p[scene_a][insti_a]=dict()
 
-            cmip_result=extreme_pre(element,data_dir,time_scale,insti_a,scene_a,nc_dict[ele_dict[element]],refer_times,time_freq,sta_ids2,station_dict,l_data=l_data,n_data=n_data,GaWIN=GaWIN,GaWIN_flag=GaWIN_flag,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
+            cmip_result=extreme_pre(element,data_dir,time_scale,insti_a,scene_a,nc_dict[ele_dict[element]],refer_times,refer_times,time_freq,sta_ids2,station_dict,l_data=l_data,n_data=n_data,GaWIN=GaWIN,GaWIN_flag=GaWIN_flag,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
             refer_data[scene_a][insti_a]=cmip_result
             base_p[scene_a][insti_a]=cmip_result.iloc[:,1::].mean().to_frame().round(1).T.reset_index(drop=True).to_dict(orient='records')
 
@@ -217,7 +217,7 @@ def extreme_climate_esti(data_json):
         for scene_a in scene:
             pre_data[insti_a][scene_a]=dict()
             
-            cmip_result=extreme_pre(element,data_dir,time_scale,insti_a,scene_a,nc_dict[ele_dict[element]],stats_times,time_freq,sta_ids2,station_dict,l_data=l_data,n_data=n_data,GaWIN=GaWIN,GaWIN_flag=GaWIN_flag,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
+            cmip_result=extreme_pre(element,data_dir,time_scale,insti_a,scene_a,nc_dict[ele_dict[element]],refer_times,stats_times,time_freq,sta_ids2,station_dict,l_data=l_data,n_data=n_data,GaWIN=GaWIN,GaWIN_flag=GaWIN_flag,R=R,R_flag=R_flag,RD=RD,RD_flag=RD_flag,Rxxday=Rxxday)
             pre_data[insti_a][scene_a]=cmip_result
    
     ##%% 增加一下 1.5℃和2.0℃

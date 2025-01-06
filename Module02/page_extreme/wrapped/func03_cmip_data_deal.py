@@ -31,16 +31,22 @@ def persistent_time(df,time_freq):
     return df
 
 
-def extreme_pre(ele,data_dir,time_scale,insti,scene,var,stats_times,time_freq,station_ids,station_dict,l_data=None,n_data=None,GaWIN=None,GaWIN_flag=None,R=None,R_flag=None,RD=None,RD_flag=None,Rxxday=None):
+def extreme_pre(ele,data_dir,time_scale,insti,scene,var,refer_times,stats_times,time_freq,station_ids,station_dict,l_data=None,n_data=None,GaWIN=None,GaWIN_flag=None,R=None,R_flag=None,RD=None,RD_flag=None,Rxxday=None):
     
     if ele == 'DTR':
         data_a=read_model_data(data_dir,time_scale,insti,scene,'tasmax',stats_times,time_freq,station_ids)
         data_b=read_model_data(data_dir,time_scale,insti,scene,'tasmin',stats_times,time_freq,station_ids)
         data_df=data_a-data_b
+        
+        refer_a=read_model_data(data_dir,time_scale,insti,scene,'tasmax',refer_times,time_freq,station_ids)
+        refer_b=read_model_data(data_dir,time_scale,insti,scene,'tasmin',refer_times,time_freq,station_ids)
+        refer_df=refer_a-refer_b
 
     else:
         data_df=read_model_data(data_dir,time_scale,insti,scene,var,stats_times,time_freq,station_ids)
     
+        refer_df=read_model_data(data_dir,time_scale,insti,scene,var,refer_times,time_freq,station_ids)
+
     #%% 要素计算-气温
     # 冷夜日数 TN10p or 冷昼日数 TX10p
     if ele == 'TN10p' or ele == 'TX10p':
@@ -49,7 +55,9 @@ def extreme_pre(ele,data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
             if i==0:
                 l_data=l_data/100            
             data_sta=data_df.iloc[:,i]
-            data_percentile_10 = data_sta.quantile(l_data)    
+            refer_sta=refer_df.iloc[:,i]
+
+            data_percentile_10 = refer_sta.quantile(l_data)    
             data_df.iloc[:,i] = ((data_df.iloc[:,i] < data_percentile_10)).astype(int)
             
     # 暖夜日数 TN90p or 暖昼日数 TX90p
@@ -59,7 +67,9 @@ def extreme_pre(ele,data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
             if i==0:
                 n_data=n_data/100
             data_sta=data_df.iloc[:,i]
-            data_percentile_90 = data_sta.quantile(n_data)    
+            refer_sta=refer_df.iloc[:,i]
+
+            data_percentile_90 = refer_sta.quantile(n_data)    
             data_df.iloc[:,i] = ((data_df.iloc[:,i] > data_percentile_90)).astype(int)
             
     # 结冰日数 ID or 霜冻日数 FD
@@ -76,7 +86,9 @@ def extreme_pre(ele,data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
          for i in np.arange(np.size(data_df,1)):
              
              data_sta=data_df.iloc[:,i]
-             data_percentile_10 = data_sta.quantile(0.9)  
+             refer_sta=refer_df.iloc[:,i]
+
+             data_percentile_10 = refer_sta.quantile(0.9)  
              data_rolling = data_sta.rolling(window=6)
              data_rolling_min = data_rolling.min().astype(float).round(1)
              data_df.iloc[:,i] = ((data_rolling_min > data_percentile_10)).astype(int)
@@ -87,7 +99,9 @@ def extreme_pre(ele,data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
          for i in np.arange(np.size(data_df,1)):
              
              data_sta=data_df.iloc[:,i]
-             data_percentile_10 = data_sta.quantile(0.1)  
+             refer_sta=refer_df.iloc[:,i]
+
+             data_percentile_10 = refer_sta.quantile(0.1)  
              data_rolling = data_sta.rolling(window=6)
              data_rolling_min = data_rolling.min().astype(float).round(1)
              data_df.iloc[:,i] = ((data_rolling_min < data_percentile_10)).astype(int)
@@ -169,7 +183,9 @@ def extreme_pre(ele,data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
     
         for i in np.arange(np.size(data_df,1)):
             data_sta=data_df.iloc[:,i]
-            data_percentile_90 = data_sta.quantile(0.95) 
+            refer_sta=refer_df.iloc[:,i]
+
+            data_percentile_90 = refer_sta.quantile(0.95) 
             data_df.iloc[((data_df.iloc[:,i] < data_percentile_90)),i] = 0
 
     # 强降水
@@ -184,7 +200,9 @@ def extreme_pre(ele,data_dir,time_scale,insti,scene,var,stats_times,time_freq,st
         for i in np.arange(np.size(data_df,1)):
             
             data_sta=data_df.iloc[:,i]
-            data_percentile_90 = data_sta.quantile(0.95)    
+            refer_sta=refer_df.iloc[:,i]
+
+            data_percentile_90 = refer_sta.quantile(0.95)    
             data_df.iloc[:,i] = ((data_df.iloc[:,i] >= data_percentile_90)).astype(int)
     # 5日最大降水 Rx5day:
     elif ele == 'Rx5day':
