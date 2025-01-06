@@ -231,13 +231,12 @@ def ice_table_def(data_json):
 
             data_station_dataframes = []
             for index,var_a in enumerate(independent_columns):
-                data_station=model_factor_data_deal(data_dir, time_scale,insti_a,scene_a,sta_ids2,model_ele_dict[var_a],var_a,var_factor_time_freq[index],factor_time_freq_data[index],time_freq_main,stats_times,processing_methods)
+                data_station=model_factor_data_deal(data_dir, time_scale,insti_a,scene_a,sta_ids2,model_ele_dict[var_a],var_a,var_factor_time_freq[index],factor_time_freq_data[index],time_freq_main,refer_times,processing_methods)
                 data_station = data_station.sort_values(by=['Station_Id_C', '年'], ascending=[True, True])
                 data_station=data_station.rename(columns={var_a:factor_name[index]})
                 data_station_dataframes.append(data_station)
             b=pd.concat(data_station_dataframes, axis=1)
             b = b.loc[:, ~b.columns.duplicated()]
-            
             grouped = b.groupby('年')
             group_averages = grouped[factor_name].mean()
             
@@ -401,7 +400,7 @@ if __name__ == '__main__':
     data_json['sta_ids']='56043' # 站点信息
     data_json['time_freq_main']='Y' # 评估要素时间尺度
     data_json['time_freq_main_data']='0'
-    data_json['refer_times'] = '2020,2022' # 参考时段
+    data_json['refer_times'] = '1995,2014' # 参考时段
     data_json['stats_times'] = '2020,2040' # 评估时段
     data_json['data_cource'] = 'original' # 模式信息
     data_json['insti']= 'Set'
