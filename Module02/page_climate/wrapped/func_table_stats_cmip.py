@@ -7,7 +7,11 @@ def table_stats_simple_cmip(data_df, base_p, var):
 
     assert (data_df.columns == base_p.index).all(), '站号没有对齐'
     data_df = data_df.resample('1A').sum() if var == 'pr' else data_df.resample('1A').mean()
-    data_df.index = data_df.index.year
+    
+    try:
+        data_df.index = data_df.index.year
+    except:
+        pass
     
     def trend_rate(x):
         '''

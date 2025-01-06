@@ -130,5 +130,39 @@ def stats_result_3(dict_in, refer_df):
     
     return dict_in
 
-if __name__ == '__main__':
-    pass
+
+def stats_result_4(single_cmip_res, base_p, hydro_name, hydro_id):
+    '''
+    hbv改
+    '''
+    for exp, sub_dict in single_cmip_res.items():
+        for insti, df_in in sub_dict.items():
+            
+            df_in.index = df_in.index.strftime('%Y')
+            
+            # 横向的距平和距平百分率
+            df = pd.DataFrame(index=df_in.index)
+            df['距平'] = (df_in['Q'] - base_p).round(1)
+            df['距平百分率'] = ((df['距平'] / base_p) * 100).round(1)
+        
+            # 创建临时下方统计的df
+            tmp_df = pd.DataFrame(columns=df_in.columns)
+            tmp_df.loc['平均'] = df_in.iloc[:, :].mean(axis=0).round(1)
+            tmp_df.loc['变率'] = df_in.apply(trend_rate, axis=0).round(1)
+            tmp_df.loc['最大值'] = df_in.iloc[:, :].max(axis=0)
+            tmp_df.loc['最小值'] = df_in.iloc[:, :].min(axis=0)
+            tmp_df.loc['距平'] = (tmp_df.loc['平均'] - base_p).round(1)
+            tmp_df.loc['距平百分率'] = ((tmp_df.loc['距平'] / base_p) * 100).round(1)
+            tmp_df.loc['参考时段'] = base_p
+    
+            result = pd.concat([df_in,tmp_df],axis=0)
+            result = pd.concat([result,df],axis=1)
+            
+            result['站名'] = hydro_name
+            result['站号'] = hydro_id
+            result = result[['站名','站号','Q','距平','距平百分率']]
+            result.reset_index(drop=False,inplace=True)
+            sub_dict[insti] = result
+    
+    return single_cmip_res
+

@@ -1,26 +1,29 @@
 import os
 import uuid
-import time
-import glob
+import copy
 import numpy as np
 import pandas as pd
 import xarray as xr
-import psycopg2
 from tqdm import tqdm
-from io import StringIO
-from psycopg2 import sql
-from datetime import date, datetime, timedelta
-from Module02.page_water.wrapped.rain_source_table_stats import table_stats_simple
+from Module02.page_water.wrapped.refer_rain_source import table_stats_simple
 from Module02.page_water.wrapped.rain_source_cmip_stats import table_stats_simple_cmip
 from Module02.page_climate.wrapped.func_plot import interp_and_mask
 from Module03.wrapped.plot_new import plot_and_save
+from Utils.read_model_data import read_model_data, create_datetimeindex, data_time_filter, get_station_info
 from Utils.config import cfg
-from Utils.data_processing import data_processing
-from Utils.data_loader_with_threads import get_database_data
-from Utils.read_model_data import read_model_data
 
 
-# 降水资源量接口
+def convert_nested_df(data):
+    if isinstance(data, dict):
+        return {k: convert_nested_df(v) for k, v in data.items()}
+    elif isinstance(data, pd.DataFrame):
+        return data.to_dict(orient='records')
+    elif isinstance(data, pd.Series):
+        return data.to_frame().T.round(1).to_dict(orient='records')
+    else:
+        return data
+
+
 def rain_source_esti(data_json):
     '''
     获取天擎数据，参数说明
@@ -63,258 +66,123 @@ def rain_source_esti(data_json):
         method = 'idw'
     else:
         method = 'kri'
-        
+
+    # ------------------------------------------------------------------
     # 2.参数处理
-    degree = None
     uuid4 = uuid.uuid4().hex
     data_out = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
     if not os.path.exists(data_out):
         os.makedirs(data_out)
         os.chmod(data_out, 0o007 | 0o070 | 0o700)
-    
+
+    if isinstance(cmip_model, str):
+        cmip_model = cmip_model.split(',')
+
     if '集合' in cmip_model:
         cmip_model.remove('集合')
         cmip_model.append('Set')
-        
-    ######################################################
-    table_name = 'qh_climate_cmadaas_day' # 固定用日数据表
-    element_str = 'PRE_Time_2020'
-    sta_ids = tuple(sta_ids.split(','))
-    refer_df = get_database_data(sta_ids, element_str, table_name, time_freq, refer_years)
- 
-    ######################################################
-    # 确定年份
-    # if time_freq == 'Y':  # '%Y,%Y'
-    #     start_year = int(evaluate_times.split(',')[0])
-    #     end_year = int(evaluate_times.split(',')[1])
 
-    # elif time_freq in ['Q', 'M2', 'D2']:  # ['%Y,%Y','3,4,5']
-    #     years = evaluate_times[0]
-    #     start_year = int(years.split(',')[0])
-    #     end_year = int(years.split(',')[1])
+    # ------------------------------------------------------------------
+    # 3.从csv文件里面获取模式数据
+    station_id = sta_ids.split(',')
+    time_scale = 'daily'
 
-    # elif time_freq in ['M1', 'D1']:  # '%Y%m,%Y%m'
-    #     start_year = int(evaluate_times.split(',')[0][:4])
-    #     end_year = int(evaluate_times.split(',')[1][:4])
-
-    # 读取数据
-    # 原来的读取nc
-    # inpath = '/cmip_data'
-    # inpath = r'C:\Users\MJY\Desktop\qhbh\zipdata\cmip6'
-
-    # evaluate_cmip = dict()
-    # for exp in ['ssp126', 'ssp245']:
-    #     evaluate_cmip[exp] = dict()
-    #     for insti in cmip_model:
-    #         evaluate_cmip[exp][insti] = dict()
-    #         tmp_lst = []
-    #         for year in range(start_year, end_year + 1):
-    #             tem_file_path = choose_mod_path(inpath=inpath, data_source=cmip_type, insti=insti, var=var, time_scale='daily', yr=year, expri_i=exp, res=cmip_res)
-
-    #             ds_tmp = xr.open_dataset(tem_file_path)
-    #             tmp_lst.append(ds_tmp)
-
-    #         tmp_all = xr.concat(tmp_lst, dim='time')
-    #         try:
-    #             tmp_all['time'] = tmp_all.indexes['time'].to_datetimeindex().normalize()
-    #         except:
-    #             tmp_all['time'] = tmp_all.indexes['time'].normalize()
-    #         evaluate_cmip[exp][insti][var] = tmp_all
-    
-    # 直接读取excel
-    res_d = dict()
-    res_d['25'] = '0.25deg'
-    res_d['50'] = '0.52deg'
-    res_d['100'] = '1.00deg'
-    
     if os.name == 'nt':
         data_dir = r'C:\Users\MJY\Desktop\qhbh\zipdata\station_data\csv'  # 本地
     else:
         if cmip_type == 'original':
-            data_dir = '/model_data/station_data/csv' # 容器内
+            data_dir = '/model_data/station_data/csv'  # 容器内
         elif cmip_type == 'delta':
-            data_dir = '/model_data/station_data_delta/csv' # 容器内
+            res_d = dict()
+            res_d['25'] = '0.25deg'
+            res_d['50'] = '0.52deg'
+            res_d['100'] = '1.00deg'
+            data_dir = '/model_data/station_data_delta/csv'  # 容器内
             data_dir = os.path.join(data_dir, res_d[cmip_res])
-    
-    var = 'pr'
-    time_scale= 'daily'
+
+    # 循环读取
+    refer_cmip = dict()
     evaluate_cmip = dict()
-    station_id = list(sta_ids)
     for exp in ['ssp126', 'ssp245', 'ssp585']:
-    # for exp in ['ssp245']:
+        refer_cmip[exp] = dict()
         evaluate_cmip[exp] = dict()
+
         for insti in cmip_model:
+            refer_cmip[exp][insti] = dict()
             evaluate_cmip[exp][insti] = dict()
-            excel_data = read_model_data(data_dir,time_scale,insti,exp,var,evaluate_times,time_freq,station_id)
-            # 转nc
-            time_tmp = excel_data.index
-            location_tmp = excel_data.columns.tolist()
-            da = xr.DataArray(excel_data.values, coords=[time_tmp, location_tmp], dims=['time', 'location'])
-            ds_excel = xr.Dataset({var: da.astype('float32')})
-            evaluate_cmip[exp][insti][var] = ds_excel
-    
-    ######################################################
-    ##### 站点数据处理
-    try:
-        refer_df = data_processing(refer_df, element_str, degree)
-        df_unique = refer_df.drop_duplicates(subset='Station_Id_C')  # 删除重复行
-        lon_list = df_unique['Lon'].tolist()
-        lat_list = df_unique['Lat'].tolist()
-        sta_list = df_unique['Station_Id_C'].tolist()
-    except:    
-        sta_list = sta_ids
-    
-    ######################################################
-    ##### 模式数据处理
-    # 首先筛选时间
-    if time_freq == 'Y':
-        s = evaluate_times.split(',')[0]
-        e = evaluate_times.split(',')[1]
-        e = str(int(e)+1)
-        time_index = pd.date_range(start=s, end=e, freq='D')[:-1]  # 'Y'
 
-    elif time_freq in ['Q', 'M2']:
-        s = evaluate_times[0].split(',')[0]
-        e = evaluate_times[0].split(',')[1]
-        mon_list = [int(val) for val in evaluate_times[1].split(',')]
-        time_index = pd.date_range(start=s, end=e, freq='D')[:-1]  # 'Q' or 'M2'
-        time_index = time_index[time_index.month.isin(mon_list)]
+            for var in ['pr']:
+                # 根据参考时间段读取模式数据
+                df = read_model_data(data_dir, time_scale, insti, exp, var, refer_years, time_freq, station_id)
+                df = df.astype(float)
+                refer_cmip[exp][insti][var] = df
 
-    elif time_freq == 'M1':
-        s = evaluate_times.split(',')[0]
-        e = evaluate_times.split(',')[1]
-        s = pd.to_datetime(s, format='%Y%m')
-        e = pd.to_datetime(e, format='%Y%m') + pd.DateOffset(months=1)
-        time_index = pd.date_range(start=s, end=e, freq='D')[:-1]  # M1
+                # 根据预估时段读取模式数据
+                df = read_model_data(data_dir, time_scale, insti, exp, var, evaluate_times, time_freq, station_id)
+                df = df.astype(float)
+                evaluate_cmip[exp][insti][var] = df
 
-    elif time_freq == 'D1':
-        s = evaluate_times.split(',')[0]
-        e = evaluate_times.split(',')[1]
-        time_index = pd.date_range(start=s, end=e, freq='D')  # D1
+    # 把参考时段的数据处理为降水资源量，保存为基准期
+    refer_cmip = table_stats_simple(refer_cmip)
 
-    elif time_freq == 'D2':  # ['%Y,%Y','%m%d,%m%d']
-        s = evaluate_times[0].split(',')[0]
-        e = evaluate_times[1].split(',')[1]
-        s_mon = evaluate_times[1].split(',')[0][:2]
-        e_mon = evaluate_times[1].split(',')[1][:2]
-        s_day = evaluate_times[1].split(',')[0][2:]
-        e_day = evaluate_times[1].split(',')[1][2:]
-        dates = pd.date_range(start=s, end=e, freq='D')
-        time_index = dates[((dates.month == s_mon) & (dates.day >= s_day)) | ((dates.month > s_mon) & (dates.month < e_mon)) | ((dates.month == e_mon) & (dates.day <= e_day))]
+    # ------------------------------------------------------------------
+    # 4.根据预估时段，获取datetimeindex，然后进行filter
+    time_index_e, time_index_15deg, time_index_20deg = create_datetimeindex(time_freq, evaluate_times)
+    evaluate_cmip = data_time_filter(evaluate_cmip, time_index_e)  # 所有的数据
 
-    time_index = time_index[~((time_index.month == 2) & (time_index.day == 29))]  # 由于数据原因，删除2月29号
-
-    # 插值到多个站点
-    # interp_lon = xr.DataArray(lon_list, dims="location", coords={"location": sta_list,})
-    # interp_lat = xr.DataArray(lat_list, dims="location", coords={"location": sta_list,})
-
-    for _, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
-        for _, sub_dict2 in sub_dict1.items():
-            for key, ds_data in sub_dict2.items():
-                
-                # 由于现在是直接读取excel数据，所以不用插值了，但是还是要循环去除2月29号
-                try:
-                    selected_data = ds_data.sel(time=time_index)
-                except:
-                    selected_data = ds_data
-                # selected_data = selected_data.interp(lat=interp_lat, lon=interp_lon, method='nearest')
-                sub_dict2[key] = selected_data
-    
-    ######################################################
-    # 开始计算
+    # ------------------------------------------------------------------
+    # 5.开始计算
     result_dict = dict()
     result_dict['uuid'] = uuid4
     result_dict['表格'] = dict()
     result_dict['时序图'] = dict()
     result_dict['分布图'] = dict()
 
-    # 首先获取站号对应的站名
-    station_df = pd.DataFrame()
-    station_df['站号'] = [51886, 51991, 52602, 52633, 52645, 52657, 52707, 52713, 52737, 52745, 52754, 52765, 52818, 52825, 52833, 52836, 52842, 52851, 52853, 52855, 52856, 52859, 52862, 52863, 52866, 52868, 52869, 52874, 52875, 52876, 52877, 52908, 52942, 52943,
-        52955, 52957, 52963, 52968, 52972, 52974, 56004, 56015, 56016, 56018, 56021, 56029, 56033, 56034, 56043, 56045, 56046, 56065, 56067, 56125, 56151]
-    station_df['站名'] = ['茫崖', '那陵格勒', '冷湖', '托勒', '野牛沟', '祁连', '小灶火', '大柴旦', '德令哈', '天峻', '刚察', '门源', '格尔木', '诺木洪', '乌兰', '都兰', '茶卡', '江西沟', '海晏', '湟源', '共和', '瓦里关', '大通', '互助', '西宁', '贵德', '湟中', '乐都', '平安', '民和', '化隆', '五道梁', '河卡', '兴海', '贵南', '同德', '尖扎', '泽库',
-        '循化', '同仁', '沱沱河', '曲麻河', '治多', '杂多', '曲麻莱', '玉树', '玛多', '清水河', '玛沁', '甘德', '达日', '河南', '久治', '囊谦', '班玛']
-    station_df['站号'] = station_df['站号'].map(str)
-    new_station = station_df[station_df['站号'].isin(sta_ids)]
-    result_dict['站号'] = new_station.to_dict(orient='records')
+    # 5.1 首先获取站号对应的站名，以及经纬度
+    station_info = get_station_info(station_id)
+    lon_list = station_info['经度'].tolist()
+    lat_list = station_info['纬度'].tolist()
+    sta_info = station_info[['站号', '站名']]
+    result_dict['站号'] = sta_info.to_dict(orient='records')
 
-    # 1.表格-历史
-    stats_result_his, _, _ = table_stats_simple(refer_df, element_str)
-    base_p = stats_result_his.iloc[0:-4,1::].mean().round(1).to_frame().T.reset_index(drop=True) # 基准期
-    result_dict['表格']['历史'] = stats_result_his.to_dict(orient='records')
-
-    # 2.表格-预估-各个情景的集合
-    # evaluate_cmip_res = dict()
-    # for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tas']
-    #     ds_list = []
-    #     for insti, sub_dict2 in sub_dict1.items():
-    #         ds = sub_dict2[var]
-    #         ds_list.append(ds)
-        
-    #     ds_daily = xr.concat(ds_list, 'new_dim')
-    #     ds_daily = ds_daily.mean(dim='new_dim')
-        
-    #     try:
-    #         ds_yearly = ds_daily.resample(time='YE').sum()
-    #     except:
-    #         ds_yearly = ds_daily.resample(time='Y').sum()
-            
-    #     res_table = table_stats_simple_cmip(ds_yearly, stats_result_his, var, sta_list)  # 调用生成表格
-    #     evaluate_cmip_res[exp] = res_table.to_dict(orient='records')
-
-    # result_dict['表格']['预估集合'] = evaluate_cmip_res
-    
-    # 3.表格-预估-各个情景的单模式
+    # 5.2 预估-各个情景的单模式
     single_cmip_res = dict()
-    for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
+    for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti][var]
         single_cmip_res[exp] = dict()
-        for insti, sub_dict2 in sub_dict1.items():
-            ds_daily = sub_dict2[var]
-            try:
-                ds_yearly = ds_daily.resample(time='YE').sum()
-            except:
-                ds_yearly = ds_daily.resample(time='Y').sum()
-            
-            res_table = table_stats_simple_cmip(ds_yearly, stats_result_his, var, sta_list)
-            single_cmip_res[exp][insti] = res_table.to_dict(orient='records')
-    
+        for insti, data in sub_dict1.items():
+            base_p = refer_cmip[exp][insti]
+            res_table = table_stats_simple_cmip(data, base_p)
+            single_cmip_res[exp][insti] = res_table
+
+    # 新增1.5和2.0 degree
+    if len(time_index_15deg) != 0:
+        degree15 = copy.deepcopy(evaluate_cmip)
+        degree15 = data_time_filter(degree15, time_index_15deg)
+        for exp, sub_dict1 in degree15.items():
+            if exp == 'ssp126':
+                single_cmip_res['1.5℃'] = dict()
+                for insti, data in sub_dict1.items():
+                    base_p = refer_cmip[exp][insti]
+                    res_table = table_stats_simple_cmip(data, base_p)
+                    single_cmip_res['1.5℃'][insti] = res_table
+
+    if len(time_index_20deg) != 0:
+        degree20 = copy.deepcopy(evaluate_cmip)
+        degree20 = data_time_filter(degree20, time_index_20deg)
+        for exp, sub_dict1 in degree20.items():
+            if exp == 'ssp245':
+                single_cmip_res['2.0℃'] = dict()
+                for insti, data in sub_dict1.items():
+                    base_p = refer_cmip[exp][insti]
+                    res_table = table_stats_simple_cmip(data, base_p)
+                    single_cmip_res['2.0℃'][insti] = res_table
+
     result_dict['表格']['预估单模式'] = single_cmip_res
 
-    # 4.时序图-各个情景的集合
-    std_percent = dict()
-    for exp, sub_dict in single_cmip_res.items():
-        std_percent[exp] = dict()
-        array_list = []
-        for insti, res_df in sub_dict.items():
-            res_df = pd.DataFrame(res_df)
-            res_df.set_index('时间', inplace=True)
-            
-            array_list.append(res_df.iloc[:-7, :].values[None])
-            array = np.concatenate(array_list, axis=0)
-        std = np.std(array, ddof=1, axis=0).round(2)
-        per25 = np.percentile(array, 25, axis=0).round(2)
-        per75 = np.percentile(array, 75, axis=0).round(2)
+    # 5.3 时序图-基准期
+    result_dict['时序图']['基准期'] = refer_cmip
 
-        std = pd.DataFrame(std, index=res_df.index[:-7], columns=res_df.columns)
-        per25 = pd.DataFrame(per25, index=res_df.index[:-7], columns=res_df.columns)
-        per75 = pd.DataFrame(per75, index=res_df.index[:-7], columns=res_df.columns)
-
-        std.reset_index(drop=False, inplace=True)
-        per25.reset_index(drop=False, inplace=True)
-        per75.reset_index(drop=False, inplace=True)
-
-        std_percent[exp]['1倍标准差'] = std.to_dict(orient='records')
-        std_percent[exp]['百分位数25'] = per25.to_dict(orient='records')
-        std_percent[exp]['百分位数75'] = per75.to_dict(orient='records')
-
-    result_dict['时序图'] = std_percent
-    
-    if base_p is not None:
-        result_dict['时序图']['基准期'] = base_p.to_dict(orient='records').copy()
-    else:
-        result_dict['时序图']['基准期'] = None
-    
-    # 5.分布图 实时画（后面改为提取提前画好的图）
+    # 6 分布图 实时画（后面改为提取提前画好的图）
     if plot == 1:
         # 预估-单模式数据画图
         all_png = dict()
@@ -322,67 +190,30 @@ def rain_source_esti(data_json):
             all_png[exp] = dict()
             for insti, stats_table in sub_dict1.items():
                 all_png[exp][insti] = dict()
-                stats_table = pd.DataFrame(stats_table)
                 for i in tqdm(range(len(stats_table))):
-                # for i in tqdm(range(77,78)):
+                    # for i in tqdm(range(77,78)):
                     value_list = stats_table.iloc[i, 1:-5].tolist()
                     year_name = stats_table.iloc[i, 0]
                     exp_name = exp
                     insti_name = insti
-                    bar_name = str(stats_table.iloc[i,0])
+                    bar_name = str(stats_table.iloc[i, 0])
                     # 插值/掩膜/画图/保存
                     mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out,'降水资源量'+bar_name+'(万立方公里/10a)')
+                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out, '降水资源量' + bar_name + '(万立方公里/10a)')
 
                     # 转url
                     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
                     png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
                     all_png[exp][insti][year_name] = png_path
-
-        # 预估-集合数据画图
-        # all_png1 = dict()
-        # for exp, stats_table1 in evaluate_cmip_res.items():
-        #     all_png1[exp] = dict()
-        #     stats_table1 = pd.DataFrame(stats_table1)
-        #     for i in tqdm(range(len(stats_table1))):
-        #         value_list = stats_table1.iloc[i, 1:-5].tolist()
-        #         year_name = stats_table1.iloc[i, 0]
-        #         exp_name = exp
-        #         insti_name = '集合'
-        #         # 插值/掩膜/画图/保存
-        #         mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-        #         png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out)
-
-        #         # 转url
-        #         png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-        #         png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-        #         all_png1[exp][year_name] = png_path
-
-        # 历史-观测画图
-        # all_png2 = dict()
-        # stats_result_his = pd.DataFrame(stats_result_his)
-        # for i in tqdm(range(len(stats_result_his))):
-        #     value_list = stats_result_his.iloc[i,1:-3].tolist()
-        #     year_name = stats_result_his.iloc[i,0]
-        #     exp_name = ''
-        #     insti_name = ''
-        #     # 插值/掩膜/画图/保存
-        #     mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-        #     png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
-
-        #     # 转url
-        #     png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-        #     png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-        #     all_png2[year_name] = png_path
-
-    else:  # 直接获取现成的，目前没做，所有图片路径都是None
-        all_png = dict()
+    else:
+        all_png = None
         # all_png1 = dict()
         # all_png2 = dict()
 
     result_dict['分布图']['预估单模式'] = all_png
-    # result_dict['分布图']['预估集合'] = all_png1
-    # result_dict['分布图']['历史'] = all_png2
+
+    # 最后遍历dict，如果是df就to_dict()
+    result_dict = convert_nested_df(result_dict)
 
     return result_dict
 
@@ -395,8 +226,7 @@ if __name__ == '__main__':
     data_json['sta_ids'] = '51886,52602,52633,52645,52657,52707,52713,52737,52745,52754,52765,52818,52825,52833,52836,52842,52853,52855,52856,52862,52863,52866,52868,52869,52874,52876,52877,52908,52943,52955,52957,52963,52968,52972,52974,56004,56016,56018,56021,56029,56033,56034,56043,56045,56046,56065,56067,56125,56151'
     data_json['cmip_type'] = 'original'  # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None  # 分辨率 1/5/10/25/50/100 km
-    data_json['cmip_model'] = ['KIOST-ESM']  # 模式，列表：['CanESM5','CESM2']/
-    data_json['plot'] = 1
+    data_json['cmip_model'] = ['Set','KIOST-ESM']  # 模式，列表：['CanESM5','CESM2']/
+    data_json['plot'] = 0
     data_json['shp_path'] = r'C:/Users/MJY/Desktop/qhbh/zipdata/shp/qh/qh.shp'
     result_dict = rain_source_esti(data_json)
-    

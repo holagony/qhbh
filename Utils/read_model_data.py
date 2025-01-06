@@ -271,8 +271,8 @@ def get_station_info(sta_ids):
     path = cfg.FILES.STATION
     station_df = pd.read_csv(path, encoding='gbk')
     station_df.dropna(inplace=True)
-    station_df = station_df[['区站号','站点名','经度','纬度']]
-    station_df.columns = ['站号','站名','经度','纬度']
+    station_df.columns = ['站名','站号','纬度','经度','海拔']
+    station_df['站号'] = station_df['站号'].map(str)
     new_station = station_df[station_df['站号'].isin(sta_ids)]
     
     return new_station
