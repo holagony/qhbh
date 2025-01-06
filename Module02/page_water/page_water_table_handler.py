@@ -130,7 +130,7 @@ def water_table_def(data_json):
         
     #%% 固定字典表
     if os.name == 'nt':
-        data_dir=r'D:\Project\qh'
+        data_dir=r'D:\Project\qh\hydrological_station\original'
     elif os.name == 'posix':
         data_dir='/model_data/hydrological_station/original'
     else:
@@ -185,10 +185,15 @@ def water_table_def(data_json):
         os.makedirs(data_out)
         os.chmod(data_out, 0o007 | 0o070 | 0o700)
     #%% 站点字典表
-    df_station=pd.read_csv(cfg.FILES.STATION,encoding='gbk')
-    df_station['区站号']=df_station['区站号'].astype(str)
+    station_path=os.path.join(data_dir,time_scale,'Set/historical/tas.csv')
+    df_station=pd.read_csv(station_path)
+    df_station=df_station.iloc[0:3:,:].T.reset_index()
+    df_station.columns = ['站点名','区站号', '纬度','经度']
+    df_station = df_station.drop(0)
     
-    station_id=sta_ids.split(',')
+    df_station['区站号']=df_station['区站号'].astype(int).astype(str)
+    
+    station_id=hydro_ids.split(',')
     
     matched_stations = pd.merge(pd.DataFrame({'区站号': station_id}),df_station[['区站号', '站点名','纬度','经度']],on='区站号')
     matched_stations_unique = matched_stations.drop_duplicates()
@@ -201,7 +206,7 @@ def water_table_def(data_json):
     lon_list=matched_stations_unique['经度'].values
     lat_list=matched_stations_unique['纬度'].values 
     
-    station_id_c=station_id
+    station_id_c=hydro_ids.split(',')
     #%% 表格数据
     # 参考时段
     all_png=dict()
@@ -209,7 +214,7 @@ def water_table_def(data_json):
     # 模拟模式
     var_factor_time_freq=factor_time_freq.split(',')
     instis=insti.split(',')
-    sta_ids2=sta_ids.split(',')
+    sta_ids2=hydro_ids.split(',')
     
     stats_start_year=refer_times.split(',')[0]
     stats_end_year=refer_times.split(',')[1]
@@ -228,7 +233,7 @@ def water_table_def(data_json):
 
             data_station_dataframes = []
             for index,var_a in enumerate(independent_columns):
-                data_station=model_factor_data_deal(data_dir, time_scale,insti_a,scene_a,sta_ids2,model_ele_dict[var_a],var_a,var_factor_time_freq[index],factor_time_freq_data[index],time_freq_main,stats_times,processing_methods)
+                data_station=model_factor_data_deal(data_dir, time_scale,insti_a,scene_a,sta_ids2,model_ele_dict[var_a],var_a,var_factor_time_freq[index],factor_time_freq_data[index],time_freq_main,refer_times,processing_methods)
                 data_station = data_station.sort_values(by=['Station_Id_C', '年'], ascending=[True, True])
                 data_station=data_station.rename(columns={var_a:factor_name[index]})
                 data_station_dataframes.append(data_station)
@@ -342,11 +347,26 @@ def water_table_def(data_json):
         for insti,stats_table in sub_dict1.items():
             if insti not in result_df_dict['表格']['预估']:
                 result_df_dict['表格']['预估'][insti]=dict()
-            result_df_dict['表格']['预估'][insti][exp]=stats_table
+            
+            if main_element=='Q':
+                stats_table_result=pd.DataFrame()
+                stats_table=pd.DataFrame(stats_table)
+                stats_table_result['时间']=stats_table['时间']
+                stats_table_result['站名']=station_dict['站名'].values[0]
+                stats_table_result['站号']=station_dict['站号'].values[0]
+                stats_table_result['Q']=stats_table[station_dict['站号']]
+                stats_table_result['距平']=stats_table['区域距平']
+                stats_table_result['距平百分率']=stats_table['区域距平百分率']
+                stats_table_result=stats_table_result.iloc[:-7:,:]
+                result_df_dict['表格']['预估'][insti][exp]=stats_table_result.to_dict(orient='records')
+            else:
+                result_df_dict['表格']['预估'][insti][exp]=stats_table
+
             
     result_df_dict['时序图']=dict()    
     result_df_dict['时序图']['单模式' ]=pre_data_6
     result_df_dict['时序图']['单模式' ]['基准期']=base_p
+    result_df_dict['站点']=station_dict.to_dict(orient='records')
 
     
     if plot==1:
@@ -393,7 +413,7 @@ if __name__ == '__main__':
     
     data_json = dict()
     data_json['main_element']='Q'  # 评估要素
-    data_json['hydro_ids']='40100350”' # 站点信息
+    data_json['hydro_ids']='40100350' # 站点信息
     data_json['sta_ids']='52943,56021,56045,56065' # 站点信息
     data_json['time_freq_main']='Y' # 评估要素时间尺度
     data_json['time_freq_main_data']='0'
