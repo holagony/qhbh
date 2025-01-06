@@ -35,8 +35,6 @@ def persistent_time(df,time_freq):
 
 def pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=None,R_flag=None,RD=None,RD_flag=None,Rxxday=None):
 
-    print(RD)
-    print(R)
     last_df = nearly_df[nearly_df.index.year==last_year]
     last_df = last_df.pivot_table(index=last_df.index, columns=['Station_Id_C'], values='PRE_Time_2020') # 近1年df
     data_df = data_df.pivot_table(index=data_df.index, columns=['Station_Id_C'], values='PRE_Time_2020') # 统计时段df
@@ -129,21 +127,22 @@ def pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=No
     elif ele =='R50':
     
         for i in np.arange(np.size(data_df,1)):
-            last_sta=last_df.iloc[:,i]
-            last_percentile_90 = last_sta.quantile(0.95) 
-            last_df.iloc[((last_df.iloc[:,i] < last_percentile_90)),i] = 0
-            
-            data_sta=data_df.iloc[:,i]
-            data_percentile_90 = data_sta.quantile(0.95) 
-            data_df.iloc[((data_df.iloc[:,i] < data_percentile_90)),i] = 0
             
             refer_sta=refer_df.iloc[:,i]
             refer_percentile_90 = refer_sta.quantile(0.95) 
             refer_df.iloc[((refer_df.iloc[:,i] < refer_percentile_90)),i] = 0
             
+            last_sta=last_df.iloc[:,i]
+            # last_percentile_90 = last_sta.quantile(0.95) 
+            last_df.iloc[((last_df.iloc[:,i] < refer_percentile_90)),i] = 0
+            
+            data_sta=data_df.iloc[:,i]
+            # data_percentile_90 = data_sta.quantile(0.95) 
+            data_df.iloc[((data_df.iloc[:,i] < refer_percentile_90)),i] = 0
+                        
             nearly_sta=nearly_df.iloc[:,i]
-            nearly_percentile_90 = nearly_sta.quantile(0.95) 
-            nearly_df.iloc[((nearly_df.iloc[:,i] < nearly_percentile_90)),i] = 0
+            # nearly_percentile_90 = nearly_sta.quantile(0.95) 
+            nearly_df.iloc[((nearly_df.iloc[:,i] < refer_percentile_90)),i] = 0
 
     # 强降水
     elif ele =='R95%':
@@ -159,21 +158,22 @@ def pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=No
     elif ele == 'R95%D':
         for i in np.arange(np.size(data_df,1)):
             
-            last_sta=last_df.iloc[:,i]
-            last_percentile_90 = last_sta.quantile(0.95)    
-            last_df.iloc[:,i] = ((last_df.iloc[:,i] >= last_percentile_90)).astype(int)
-        
-            data_sta=data_df.iloc[:,i]
-            data_percentile_90 = data_sta.quantile(0.95)    
-            data_df.iloc[:,i] = ((data_df.iloc[:,i] >= data_percentile_90)).astype(int)
-            
+                        
             refer_sta=refer_df.iloc[:,i]
             refer_percentile_90 = refer_sta.quantile(0.95)    
             refer_df.iloc[:,i] = ((refer_df.iloc[:,i] >= refer_percentile_90)).astype(int)
             
+            last_sta=last_df.iloc[:,i]
+            # last_percentile_90 = last_sta.quantile(0.95)    
+            last_df.iloc[:,i] = ((last_df.iloc[:,i] >= refer_percentile_90)).astype(int)
+        
+            data_sta=data_df.iloc[:,i]
+            # data_percentile_90 = data_sta.quantile(0.95)    
+            data_df.iloc[:,i] = ((data_df.iloc[:,i] >= refer_percentile_90)).astype(int)
+            
             nearly_sta=nearly_df.iloc[:,i]
-            nearly_percentile_90 = nearly_sta.quantile(0.95)    
-            nearly_df.iloc[:,i] = ((nearly_df.iloc[:,i] >= nearly_percentile_90)).astype(int)
+            # nearly_percentile_90 = nearly_sta.quantile(0.95)    
+            nearly_df.iloc[:,i] = ((nearly_df.iloc[:,i] >= refer_percentile_90)).astype(int)
 
     # 5日最大降水 Rx5day:
     elif ele == 'Rx5day':

@@ -54,21 +54,21 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
             if i==0:
                 l_data=l_data/100
             
-            last_sta=last_df.iloc[:,i]
-            last_percentile_10 = last_sta.quantile(l_data)    
-            last_df.iloc[:,i] = ((last_df.iloc[:,i] < last_percentile_10)).astype(int)
-        
-            data_sta=data_df.iloc[:,i]
-            data_percentile_10 = data_sta.quantile(l_data)    
-            data_df.iloc[:,i] = ((data_df.iloc[:,i] < data_percentile_10)).astype(int)
-            
             refer_sta=refer_df.iloc[:,i]
             refer_percentile_10 = refer_sta.quantile(l_data)    
             refer_df.iloc[:,i] = ((refer_df.iloc[:,i] < refer_percentile_10)).astype(int)
             
+            last_sta=last_df.iloc[:,i]
+            # last_percentile_10 = last_sta.quantile(l_data)    
+            last_df.iloc[:,i] = ((last_df.iloc[:,i] < refer_percentile_10)).astype(int)
+        
+            data_sta=data_df.iloc[:,i]
+            # data_percentile_10 = data_sta.quantile(l_data)    
+            data_df.iloc[:,i] = ((data_df.iloc[:,i] < refer_percentile_10)).astype(int)
+            
             nearly_sta=nearly_df.iloc[:,i]
-            nearly_percentile_10 = nearly_sta.quantile(l_data)    
-            nearly_df.iloc[:,i] = ((nearly_df.iloc[:,i] < nearly_percentile_10)).astype(int)
+            # nearly_percentile_10 = nearly_sta.quantile(l_data)    
+            nearly_df.iloc[:,i] = ((nearly_df.iloc[:,i] < refer_percentile_10)).astype(int)
         
     # 暖夜日数 TN90p or 暖昼日数 TX90p
     elif ele == 'TN90p' or ele == 'TX90p':
@@ -76,21 +76,22 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
             if i==0:
                 n_data=n_data/100
 
-            last_sta=last_df.iloc[:,i]
-            last_percentile_90 = last_sta.quantile(n_data)    
-            last_df.iloc[:,i] = ((last_df.iloc[:,i] > last_percentile_90)).astype(int)
-        
-            data_sta=data_df.iloc[:,i]
-            data_percentile_90 = data_sta.quantile(n_data)    
-            data_df.iloc[:,i] = ((data_df.iloc[:,i] > data_percentile_90)).astype(int)
             
             refer_sta=refer_df.iloc[:,i]
             refer_percentile_90 = refer_sta.quantile(n_data)    
             refer_df.iloc[:,i] = ((refer_df.iloc[:,i] > refer_percentile_90)).astype(int)
             
+            last_sta=last_df.iloc[:,i]
+            # last_percentile_90 = last_sta.quantile(n_data)    
+            last_df.iloc[:,i] = ((last_df.iloc[:,i] > refer_percentile_90)).astype(int)
+        
+            data_sta=data_df.iloc[:,i]
+            # data_percentile_90 = data_sta.quantile(n_data)    
+            data_df.iloc[:,i] = ((data_df.iloc[:,i] > refer_percentile_90)).astype(int)
+            
             nearly_sta=nearly_df.iloc[:,i]
-            nearly_percentile_90 = nearly_sta.quantile(n_data)    
-            nearly_df.iloc[:,i] = ((nearly_df.iloc[:,i] > nearly_percentile_90)).astype(int)
+            # nearly_percentile_90 = nearly_sta.quantile(n_data)    
+            nearly_df.iloc[:,i] = ((nearly_df.iloc[:,i] > refer_percentile_90)).astype(int)
         
     # 结冰日数 ID or 霜冻日数 FD
     elif ele == 'ID' or ele == 'FD':
@@ -114,46 +115,34 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
         
          for i in np.arange(np.size(data_df,1)):
              
-             last_sta=last_df.iloc[:,i]
-             last_percentile_90 = last_sta.quantile(0.9) 
-             last_rolling = last_sta.rolling(window=6)
-             last_rolling_min =  last_rolling.min()
-             last_df.iloc[:,i] = ((last_rolling_min > last_percentile_90)).astype(int)
-         
-             data_sta=data_df.iloc[:,i]
-             data_percentile_10 = data_sta.quantile(0.9)  
-             data_rolling = data_sta.rolling(window=6)
-             data_rolling_min = data_rolling.min()
-             data_df.iloc[:,i] = ((data_rolling_min > data_percentile_10)).astype(int)
-             
              refer_sta=refer_df.iloc[:,i]
              refer_percentile_10 = refer_sta.quantile(0.9) 
              refer_rolling = refer_sta.rolling(window=6)
              refer_rolling_min = refer_rolling.min()
              refer_df.iloc[:,i] = ((refer_rolling_min > refer_percentile_10)).astype(int)
              
+             last_sta=last_df.iloc[:,i]
+             # last_percentile_90 = last_sta.quantile(0.9) 
+             last_rolling = last_sta.rolling(window=6)
+             last_rolling_min =  last_rolling.min()
+             last_df.iloc[:,i] = ((last_rolling_min > refer_percentile_10)).astype(int)
+         
+             data_sta=data_df.iloc[:,i]
+             # data_percentile_10 = data_sta.quantile(0.9)  
+             data_rolling = data_sta.rolling(window=6)
+             data_rolling_min = data_rolling.min()
+             data_df.iloc[:,i] = ((data_rolling_min > refer_percentile_10)).astype(int)
+                          
              nearly_sta=nearly_df.iloc[:,i]
-             nearly_percentile_10 = nearly_sta.quantile(0.9)  
+             # nearly_percentile_10 = nearly_sta.quantile(0.9)  
              nearly_rolling = nearly_sta.rolling(window=6)
              nearly_rolling_min = nearly_rolling.min()
-             nearly_df.iloc[:,i] = ((nearly_rolling_min > nearly_percentile_10)).astype(int)
+             nearly_df.iloc[:,i] = ((nearly_rolling_min > refer_percentile_10)).astype(int)
              
     # 冷持续指数 CSDI:
     elif ele == 'CSDI':
         
          for i in np.arange(np.size(data_df,1)):
-             
-             last_sta=last_df.iloc[:,i]
-             last_percentile_90 = last_sta.quantile(0.1) 
-             last_rolling = last_sta.rolling(window=6)
-             last_rolling_min =  last_rolling.min()
-             last_df.iloc[:,i] = ((last_rolling_min < last_percentile_90)).astype(int)
-         
-             data_sta=data_df.iloc[:,i]
-             data_percentile_10 = data_sta.quantile(0.1)  
-             data_rolling = data_sta.rolling(window=6)
-             data_rolling_min = data_rolling.min()
-             data_df.iloc[:,i] = ((data_rolling_min < data_percentile_10)).astype(int)
              
              refer_sta=refer_df.iloc[:,i]
              refer_percentile_10 = refer_sta.quantile(0.1) 
@@ -161,11 +150,23 @@ def tem_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,l_da
              refer_rolling_min = refer_rolling.min()
              refer_df.iloc[:,i] = ((refer_rolling_min < refer_percentile_10)).astype(int)
              
+             last_sta=last_df.iloc[:,i]
+             # last_percentile_90 = last_sta.quantile(0.1) 
+             last_rolling = last_sta.rolling(window=6)
+             last_rolling_min =  last_rolling.min()
+             last_df.iloc[:,i] = ((last_rolling_min < refer_percentile_10)).astype(int)
+         
+             data_sta=data_df.iloc[:,i]
+             # data_percentile_10 = data_sta.quantile(0.1)  
+             data_rolling = data_sta.rolling(window=6)
+             data_rolling_min = data_rolling.min()
+             data_df.iloc[:,i] = ((data_rolling_min < refer_percentile_10)).astype(int)
+                          
              nearly_sta=nearly_df.iloc[:,i]
-             nearly_percentile_10 = nearly_sta.quantile(0.1)  
+             # nearly_percentile_10 = nearly_sta.quantile(0.1)  
              nearly_rolling = nearly_sta.rolling(window=6)
              nearly_rolling_min = nearly_rolling.min()
-             nearly_df.iloc[:,i] = ((nearly_rolling_min < nearly_percentile_10)).astype(int)
+             nearly_df.iloc[:,i] = ((nearly_rolling_min < refer_percentile_10)).astype(int)
     
     # 夏季日数 SU
     elif ele == 'SU':
