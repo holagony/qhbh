@@ -171,8 +171,8 @@ def hbv_single_calc(data_json):
             temp = tem_daily.values  # 气温 单位：度
             precip = pre_daily.values # 单位：mm
             q_sim = hbv_main(len(temp), date_time, month, temp, precip, evp_monthly, tem_monthly, d, fc, beta, c, k0, k1, k2, kp, l, pwp, Tsnow_thresh, ca)
-            base_p = q_sim.mean(axis=0)
-            refer_result[exp][insti] = base_p.round(1)
+            base_p = q_sim.mean(axis=0).round(1)
+            refer_result[exp][insti] = base_p
 
     # 5.预估-单情景-单模式
     single_cmip_res = dict()
@@ -264,7 +264,7 @@ def hbv_single_calc(data_json):
     result_dict['表格历史']['模拟观测'] = None
     result_dict['表格历史']['模拟模式'] = None
     result_dict['表格预估']['单模式'] = single_cmip_res
-    result_dict['时序图']['基准期'] = refer_cmip
+    result_dict['时序图']['基准期'] = refer_result
 
     # 最后遍历dict，如果是df就to_dict()
     result_dict = convert_nested_df(result_dict)
