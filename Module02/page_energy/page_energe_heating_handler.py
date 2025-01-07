@@ -65,7 +65,11 @@ def energy_winter_heating(data_json):
     shp_path=data_json['shp_path']
     method='idw'
     #%% 固定信息
-    
+    if time_freq=='Y':
+        refer_times = f'{refer_times.split(",")[0]},{int(refer_times.split(",")[1]) + 1}'
+        stats_times = f'{stats_times.split(",")[0]},{int(stats_times.split(",")[1]) + 1}'
+
+
     # data_dir='/zipdata'
     if shp_path is not None:
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
