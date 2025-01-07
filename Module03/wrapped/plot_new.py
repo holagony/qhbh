@@ -258,7 +258,10 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     mesh = ax.contourf(lon_grid, lat_grid, mask_grid, transform=ccrs.PlateCarree(), alpha=0.8, cmap='jet', extend='both')
 
     # 画边界
-    shp = gpd.read_file(shp_path,encoding='utf-8')
+    try:
+        shp = gpd.read_file(shp_path,encoding='utf-8')
+    except:
+        shp = gpd.read_file(shp_path,encoding='gbk')
     shp_feature = cfeat.ShapelyFeature(shp['geometry'], ccrs.PlateCarree(), edgecolor='k', facecolor='none')
     ax.add_feature(shp_feature, linewidth=0.7, alpha=0.4)
     

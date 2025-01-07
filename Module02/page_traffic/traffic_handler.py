@@ -182,23 +182,24 @@ def traffic_esti(data_json):
     if plot == 1:
         all_png = dict()
         for exp, sub_dict1 in single_cmip_res.items():
-            all_png[exp] = dict()
-            for insti,stats_table in sub_dict1.items():
-                all_png[exp][insti] = dict()
-                stats_table = pd.DataFrame(stats_table)
-                for i in tqdm(range(len(stats_table))):
-                    value_list = stats_table.iloc[i,1:-5].tolist()
-                    year_name = stats_table.iloc[i,0]
-                    exp_name = exp
-                    insti_name = insti
-                    # 插值/掩膜/画图/保存
-                    mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
-                    
-                    # 转url
-                    png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-                    png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-                    all_png[exp][insti][year_name] = png_path      
+            if exp in ['ssp126', 'ssp245', 'ssp585']:
+                all_png[exp] = dict()
+                for insti,stats_table in sub_dict1.items():
+                    all_png[exp][insti] = dict()
+                    stats_table = pd.DataFrame(stats_table)
+                    for i in tqdm(range(len(stats_table))):
+                        value_list = stats_table.iloc[i,1:-5].tolist()
+                        year_name = stats_table.iloc[i,0]
+                        exp_name = exp
+                        insti_name = insti
+                        # 插值/掩膜/画图/保存
+                        mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+                        png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_dir)
+                        
+                        # 转url
+                        png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+                        png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+                        all_png[exp][insti][year_name] = png_path      
     else:
         all_png = None
 

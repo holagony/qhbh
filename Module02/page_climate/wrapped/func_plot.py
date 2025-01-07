@@ -277,13 +277,13 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     glaciers_gdf.plot(ax=ax, color='#73ffdf', label='冰川')
 
     # 添加网格线/经纬度
-    grid = ax.gridlines(draw_labels=True, linestyle='--', linewidth=0.6, alpha=0.7, x_inline=False, y_inline=False, color='grey')
-    grid.top_labels = False
-    grid.right_labels = False
-    grid.xformatter = LONGITUDE_FORMATTER
-    grid.yformatter = LATITUDE_FORMATTER
-    grid.xlabel_style = {'size': 13}
-    grid.ylabel_style = {'size': 13}
+    # grid = ax.gridlines(draw_labels=True, linestyle='--', linewidth=0.6, alpha=0.7, x_inline=False, y_inline=False, color='grey')
+    # grid.top_labels = False
+    # grid.right_labels = False
+    # grid.xformatter = LONGITUDE_FORMATTER
+    # grid.yformatter = LATITUDE_FORMATTER
+    # grid.xlabel_style = {'size': 13}
+    # grid.ylabel_style = {'size': 13}
     ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
 
     # ax.text(0.5, 0.96, f'青海省{year_name}要素分布图', transform=ax.transAxes, fontdict={'size':'15','color':'black'}, horizontalalignment='center')
@@ -291,7 +291,7 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
 
     # 画指南针和比例尺
     add_north(ax)
-    add_scalebar(ax, 0.8, 0.05, np.int((lon_max - lon_min) * 100 / 8), size=0.014)
+    add_scalebar(ax, 0.8, 0.05, np.int32((lon_max - lon_min) * 100 / 8), size=0.014)
 
     lakes_handle = mpatches.Rectangle((0, 0), 1, 1, facecolor='blue', label='湖泊')
     glaciers_handle = mpatches.Rectangle((0, 0), 1, 1, facecolor='#73ffdf', label='冰川')

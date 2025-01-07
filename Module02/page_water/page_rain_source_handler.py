@@ -104,6 +104,7 @@ def rain_source_esti(data_json):
     refer_cmip = dict()
     evaluate_cmip = dict()
     for exp in ['ssp126', 'ssp245', 'ssp585']:
+    # for exp in ['ssp245']:
         refer_cmip[exp] = dict()
         evaluate_cmip[exp] = dict()
 
@@ -187,24 +188,25 @@ def rain_source_esti(data_json):
         # 预估-单模式数据画图
         all_png = dict()
         for exp, sub_dict1 in single_cmip_res.items():
-            all_png[exp] = dict()
-            for insti, stats_table in sub_dict1.items():
-                all_png[exp][insti] = dict()
-                for i in tqdm(range(len(stats_table))):
+            if exp in ['ssp126', 'ssp245', 'ssp585']:
+                all_png[exp] = dict()
+                for insti, stats_table in sub_dict1.items():
+                    all_png[exp][insti] = dict()
+                    for i in tqdm(range(len(stats_table))):
                     # for i in tqdm(range(77,78)):
-                    value_list = stats_table.iloc[i, 1:-5].tolist()
-                    year_name = stats_table.iloc[i, 0]
-                    exp_name = exp
-                    insti_name = insti
-                    bar_name = str(stats_table.iloc[i, 0])
-                    # 插值/掩膜/画图/保存
-                    mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-                    png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out, '降水资源量' + bar_name + '(万立方公里/10a)')
-
-                    # 转url
-                    png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
-                    png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
-                    all_png[exp][insti][year_name] = png_path
+                        value_list = stats_table.iloc[i, 1:-5].tolist()
+                        year_name = stats_table.iloc[i, 0]
+                        exp_name = exp
+                        insti_name = insti
+                        bar_name = str(stats_table.iloc[i, 0])
+                        # 插值/掩膜/画图/保存
+                        mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
+                        png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out, '降水资源量' + bar_name + '(万立方公里/10a)')
+    
+                        # 转url
+                        png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
+                        png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+                        all_png[exp][insti][year_name] = png_path
     else:
         all_png = None
         # all_png1 = dict()
@@ -222,11 +224,14 @@ if __name__ == '__main__':
     data_json = dict()
     data_json['time_freq'] = 'Y'
     data_json['evaluate_times'] = '2025,2100'  # 预估时段时间条
-    data_json['refer_years'] = '2000,2014'  # 参考时段时间条
+    data_json['refer_years'] = '1995,2014'  # 参考时段时间条
     data_json['sta_ids'] = '51886,52602,52633,52645,52657,52707,52713,52737,52745,52754,52765,52818,52825,52833,52836,52842,52853,52855,52856,52862,52863,52866,52868,52869,52874,52876,52877,52908,52943,52955,52957,52963,52968,52972,52974,56004,56016,56018,56021,56029,56033,56034,56043,56045,56046,56065,56067,56125,56151'
     data_json['cmip_type'] = 'original'  # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None  # 分辨率 1/5/10/25/50/100 km
-    data_json['cmip_model'] = ['Set','KIOST-ESM']  # 模式，列表：['CanESM5','CESM2']/
+    data_json['cmip_model'] = ['RCM_BCC']  # 模式，列表：['CanESM5','CESM2']/
     data_json['plot'] = 0
     data_json['shp_path'] = r'C:/Users/MJY/Desktop/qhbh/zipdata/shp/qh/qh.shp'
     result_dict = rain_source_esti(data_json)
+
+
+
