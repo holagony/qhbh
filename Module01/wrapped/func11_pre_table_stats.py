@@ -107,7 +107,7 @@ def pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=No
             nearly_df.iloc[:,i] =nearly_sta_2['result'].astype(float).round(1)       
 
     # 降雨日数 降水强度 大雨日数 中雨日数 特强降水日数
-    elif ele in ['RZD','SDII','R25D','R50D','R10D']:
+    elif ele in ['RZD','R25D','R50D','R10D']:
     
         for i in np.arange(np.size(data_df,1)):
             
@@ -122,6 +122,15 @@ def pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=No
             
             nearly_sta=nearly_df.iloc[:,i]
             nearly_df.iloc[:,i] = ((nearly_df.iloc[:,i] >= D[ele])).astype(int)
+    
+    # 降水强度 
+    elif ele in ['SDII']:
+        
+        data_df_1=data_df.copy()
+        for i in np.arange(np.size(data_df,1)):
+                  
+            data_sta=data_df.iloc[:,i]
+            data_df.iloc[:,i] = ((data_df.iloc[:,i] > D[ele])).astype(int)
             
     # 特强降水
     elif ele =='R50':
@@ -308,8 +317,13 @@ def pre_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year,R=No
              nearly_rolling_sum = nearly_rolling.sum()
              nearly_df.iloc[:,i] = nearly_rolling_sum.astype(float).round(1)
     #%% 数据转换
-      
-    if ele in ['RZ','RZD','SDII','R25D','R50D','R10D','R95%D','R95%','R50','R','RD']:
+    if ele in ['SDII']:
+        data_df = data_df.resample('Y').sum().astype(float).round(1)
+        data_df_1 = data_df_1.resample('Y').sum().astype(float).round(1)
+        data_df=(data_df_1/data_df).round(1)
+        data_df.index = data_df.index.strftime('%Y')
+        
+    if ele in ['RZ','RZD','R25D','R50D','R10D','R95%D','R95%','R50','R','RD']:
        
         # if time_freq in ['Y','Q']:
             
