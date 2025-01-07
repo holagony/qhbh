@@ -170,14 +170,22 @@ def extreme_pre(ele,data_dir,time_scale,insti,scene,var,refer_times,stats_times,
             data_sta_2=persistent_time(data_sta_1,time_freq)
             data_df.iloc[:,i] =data_sta_2['result'].astype(float).round(1)
 
-    # 降雨日数 降水强度 大雨日数 中雨日数 特强降水日数
-    elif ele in ['RZD','SDII','R25D','R50D','R10D']:
+    # 降雨日数 大雨日数 中雨日数 特强降水日数
+    elif ele in ['RZD','R25D','R50D','R10D']:
     
         for i in np.arange(np.size(data_df,1)):
                   
             data_sta=data_df.iloc[:,i]
             data_df.iloc[:,i] = ((data_df.iloc[:,i] > D[ele])).astype(int)
-            
+    # 降水强度 
+    elif ele in ['SDII']:
+        
+        data_df_1=data_df.copy()
+        for i in np.arange(np.size(data_df,1)):
+                  
+            data_sta=data_df.iloc[:,i]
+            data_df.iloc[:,i] = ((data_df.iloc[:,i] > D[ele])).astype(int)
+                    
     # 特强降水
     elif ele =='R50':
     
@@ -275,8 +283,13 @@ def extreme_pre(ele,data_dir,time_scale,insti,scene,var,refer_times,stats_times,
              
              
     #%% 数据转换
-      
-    if ele in ['high_tem','TN10p', 'TX10p', 'TN90p', 'TX90p', 'ID', 'FD', 'SU','TR','GSL','RZ','RZD','SDII','R25D','R50D','R10D','R95%D','R95%','R50','R','RD','GaWIN','drought','light_drought','medium_drought','heavy_drought','severe_drought']:
+    if ele in ['SDII']:
+        data_df = data_df.resample('Y').sum().astype(float).round(1)
+        data_df_1 = data_df_1.resample('Y').sum().astype(float).round(1)
+        data_df=(data_df_1/data_df).round(1)
+        data_df.index = data_df.index.strftime('%Y')
+
+    if ele in ['high_tem','TN10p', 'TX10p', 'TN90p', 'TX90p', 'ID', 'FD', 'SU','TR','GSL','RZ','RZD','R25D','R50D','R10D','R95%D','R95%','R50','R','RD','GaWIN','drought','light_drought','medium_drought','heavy_drought','severe_drought']:
        
         # if time_freq in ['Y','Q']:
             

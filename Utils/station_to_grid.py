@@ -175,7 +175,7 @@ def station_to_grid(lon_sta, lat_sta, value_sta, gridx, gridy, method, name):
         grid_points = np.column_stack([lon.ravel(), lat.ravel()])
 
         # 使用cubic方法进行插值
-        result = griddata(data_points, data_values, grid_points, method='cubic')
+        result = griddata(data_points, data_values, grid_points, method='linear')
         data = result.reshape(lon.shape)
 
     #%% 画图看结果自测使用
