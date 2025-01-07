@@ -20,6 +20,10 @@ from Utils.station_to_grid import station_to_grid
 from shapely.geometry import Polygon
 from cartopy.mpl.patch import geos_to_path
 from Utils.config import cfg
+import matplotlib.colors as mcolors
+
+
+
 
 mpl.rcParams['font.sans-serif'] = ['SimHei']  # 中文字体可修改
 mpl.rcParams['axes.unicode_minus'] = False
@@ -242,8 +246,20 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
 
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
-
+    
     # 画结果网格
+    # 降水
+    # colorlevel=[-5,-2,0,2,4,6,8,10,12,14]
+    # colordict=['#d62f27','#e86646','#f59869','#fccb92','#a2b4bd','#7393ba','#4575b5','#375e91','#29466d']
+    
+    # 气温
+    # colorlevel=[0.17,0.18,0.19,0.20,0.21,0.22,0.23,0.24,0.25]
+    # colordict=['#4575b5','#7393ba','#a2b4bd','#fdd5a8','#fccb92','#f59869','#e86646','#d62f27']
+    # rain_map=mcolors.ListedColormap(colordict)#产生颜色映射
+    # norm=mcolors.BoundaryNorm(colorlevel,rain_map.N)#生成索引
+
+    # mesh = ax.contourf(lon_grid, lat_grid, mask_grid, levels=colorlevel,cmap=rain_map,norm=norm, transform=ccrs.PlateCarree(),alpha=1,extend='both')
+
     mesh = ax.contourf(lon_grid, lat_grid, mask_grid, levels=np.linspace(np.nanmin(np.nanmin(mask_grid)), np.nanmax(np.nanmax(mask_grid)) + 0.0001, 100), transform=ccrs.PlateCarree(), alpha=0.8, cmap='jet', extend='both')
 
     # 画边界
@@ -322,36 +338,3 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     gc.collect()
 
     return save_path1
-
-
-# 读取数据
-# from Module02.page_climate.page_climate_handler import climate_forcast
-# data_json = dict()
-# data_json['time_freq'] = 'Y'
-# data_json['evaluate_times'] = '1950,1980' # 预估时段时间条
-# data_json['refer_years'] = '2000,2024'# 参考时段时间条
-# data_json['sta_ids'] = '51886,51991,52602,52633,52645,52657,52707,52713,52737,52745,52754,52765,52818,52825,52833,52836,52842,52851,52853,52855,52856,52859,52862,52863,52866,52868,52869,52874,52875,52876,52877,52908,52942,52943,52955,52957,52963,52968,52972,52974,56004,56015,56016,56018,56021,56029,56033,56034,56043,56045,56046,56065,56067,56125,56151'
-# data_json['cmip_type'] = 'original' # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
-# data_json['cmip_res'] = None # 分辨率 1/5/10/25/50/100 km
-# data_json['cmip_model'] = ['BCC-CSM2-MR', 'CanESM5']# 模式，列表：['CanESM5','CESM2']等
-# data_json['element'] = 'TEM_Avg'
-# single_cmip_res, lon_list, lat_list = climate_forcast(data_json)
-
-# save_path = r'C:/Users/MJY/Desktop/result'
-# shp_path = r'C:/Users/MJY/Desktop/青海省.json'
-# method = 'idw'
-
-# all_png = dict()
-# for exp, sub_dict1 in single_cmip_res.items():
-#     all_png[exp] = dict()
-#     for insti,stats_table in sub_dict1.items():
-#         all_png[exp][insti] = dict()
-#         for i in tqdm(range(len(stats_table))):
-#             value_list = stats_table.iloc[i,1:-3].tolist()
-#             year_name = stats_table.iloc[i,0]
-#             exp_name = exp
-#             insti_name = insti
-#             # 插值 掩膜 画图 保存
-#             mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
-#             png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, save_path)
-#             all_png[exp][insti][year_name] = png_path
