@@ -265,18 +265,19 @@ def data_deal_num_2(data_df,refer_df,flag):
     
         stats_result = pd.concat((stats_result, tmp_df), axis=0)
         stats_result.insert(loc=0, column='时间', value=stats_result.index)
+        stats_result['时间'].iloc[1:-7:]=stats_result['时间'].iloc[1:-7:].astype(int)
         stats_result.reset_index(drop=True, inplace=True)
         
-        stats_result.at[0,'区域均值1'] = '开始日期'
-        stats_result.at[0,'区域均值2'] = '结束日期'
-        stats_result.at[0,'区域最大值1'] = '开始日期'
-        stats_result.at[0,'区域最大值2'] = '结束日期'
-        stats_result.at[0,'区域最小值1'] = '开始日期'
-        stats_result.at[0,'区域最小值2'] = '结束日期'
-        stats_result.at[0,'区域距平1'] = '开始日期'
-        stats_result.at[0,'区域距平2'] = '结束日期'
-        stats_result.at[0,'区域距平百分率1'] = '开始日期'
-        stats_result.at[0,'区域距平百分率2'] = '结束日期'
+        stats_result.at[0,'区域均值1'] = '开始时间'
+        stats_result.at[0,'区域均值2'] = '结束时间'
+        stats_result.at[0,'区域最大值1'] = '开始时间'
+        stats_result.at[0,'区域最大值2'] = '结束时间'
+        stats_result.at[0,'区域最小值1'] = '开始时间'
+        stats_result.at[0,'区域最小值2'] = '结束时间'
+        stats_result.at[0,'区域距平1'] = '开始时间'
+        stats_result.at[0,'区域距平2'] = '结束时间'
+        stats_result.at[0,'区域距平百分率1'] = '开始时间'
+        stats_result.at[0,'区域距平百分率2'] = '结束时间'
         
     else:
         tmp_df = pd.DataFrame(columns=data_df.columns)
