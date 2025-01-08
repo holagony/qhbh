@@ -32,7 +32,7 @@ def table_stats_simple_cmip(data_df, base_p, var):
     # 创建临时下方统计的df
     tmp_df = pd.DataFrame(columns=data_df.columns)
     tmp_df.loc['平均'] = data_df.iloc[:, :].mean(axis=0).astype(float).round(1)
-    tmp_df.loc['变率'] = data_df.apply(trend_rate, axis=0).astype(float).round(3)
+    tmp_df.loc['变率'] = data_df.apply(trend_rate, axis=0).astype(float).round(5)
     tmp_df.loc['最大值'] = data_df.iloc[:, :].max(axis=0).astype(float).round(1)
     tmp_df.loc['最小值'] = data_df.iloc[:, :].min(axis=0).astype(float).round(1)
     tmp_df.loc['参考时段均值'] = base_p.round(1)

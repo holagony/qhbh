@@ -127,8 +127,8 @@ def climate_esti(data_json):
     # 循环读取
     refer_cmip = dict()
     evaluate_cmip = dict()
-    # for exp in ['ssp126', 'ssp245', 'ssp585']:
-    for exp in ['ssp245']:
+    for exp in ['ssp126', 'ssp245', 'ssp585']:
+    # for exp in ['ssp245']:
         refer_cmip[exp] = dict()
         evaluate_cmip[exp] = dict()
 
@@ -222,8 +222,8 @@ def climate_esti(data_json):
                 for insti, stats_table in sub_dict1.items():
                     all_png[exp][insti] = dict()
                     stats_table = pd.DataFrame(stats_table)
-                    # for i in tqdm(range(len(stats_table))):
-                    for i in tqdm(range(77,78)):
+                    for i in tqdm(range(len(stats_table))):
+                    # for i in tqdm(range(76,77)):
                         value_list = stats_table.iloc[i, 1:-5].tolist()
                         year_name = stats_table.iloc[i, 0]
                         exp_name = exp
@@ -250,13 +250,13 @@ def climate_esti(data_json):
 if __name__ == '__main__':
     data_json = dict()
     data_json['time_freq'] = 'Y'
-    data_json['evaluate_times'] = '2025,2100'  # 预估时段时间条
+    data_json['evaluate_times'] = '2025,2099'  # 预估时段时间条
     data_json['refer_years'] = '1995,2014'  # 参考时段时间条
     data_json['sta_ids'] = '51886,52602,52633,52645,52657,52707,52713,52737,52745,52754,52765,52818,52825,52833,52836,52842,52853,52855,52856,52862,52863,52866,52868,52869,52874,52876,52877,52908,52943,52955,52957,52963,52968,52972,52974,56004,56016,56018,56021,56029,56033,56034,56043,56045,56046,56065,56067,56125,56151'
     data_json['cmip_type'] = 'original'  # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None  # 分辨率 1/5/10/25/50/100 km
     data_json['cmip_model'] = ['RCM_BCC']  # 模式，列表：['CanESM5','CESM2']/
-    data_json['element'] = 'PRE_Time_2020'
+    data_json['element'] = 'TEM_Avg'
     data_json['plot'] = 1
     data_json['shp_path'] = r'C:/Users/MJY/Desktop/qhbh/zipdata/shp/qh/qh.shp'
     result = climate_esti(data_json)
