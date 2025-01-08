@@ -15,7 +15,8 @@ def rain_cmip_single(data, base_p, disaster, station_info):
         '''
         try:
             x = x.to_frame()
-            x['num'] = np.arange(len(x))
+            x['num'] = x.index.tolist()
+            x['num'] = x['num'].map(int)
             x.dropna(how='any', inplace=True)
             train_x = x.iloc[:, -1].values.reshape(-1, 1)
             train_y = x.iloc[:, 0].values.reshape(-1, 1)
