@@ -191,6 +191,12 @@ def energy_winter_heating(data_json):
             pre_data[insti_b]['1.5℃']['HD']=pre_data[insti_b]['ssp126']['HD'][(pre_data[insti_b]['ssp126']['HD']['年']>=2020) & (pre_data[insti_b]['ssp126']['HD']['年']<=2039)]
             pre_data[insti_b]['1.5℃']['HDTIME']=pre_data[insti_b]['ssp126']['HDTIME'][(pre_data[insti_b]['ssp126']['HDTIME']['年']>=2020) & (pre_data[insti_b]['ssp126']['HDTIME']['年']<=2039)]
             pre_data[insti_b]['1.5℃']['HDTIME_NUM']=pre_data[insti_b]['ssp126']['HDTIME_NUM'][(pre_data[insti_b]['ssp126']['HDTIME_NUM']['年']>=2020) & (pre_data[insti_b]['ssp126']['HDTIME_NUM']['年']<=2039)]
+           
+            pre_data[insti_b]['1.5℃']['HDTIME'] = pd.DataFrame(np.insert(pre_data[insti_b]['1.5℃']['HDTIME'].values, 0, values=pre_data[insti_b]['ssp126']['HDTIME'].loc[0], axis=0))
+            pre_data[insti_b]['1.5℃']['HDTIME_NUM'] = pd.DataFrame(np.insert(pre_data[insti_b]['1.5℃']['HDTIME_NUM'].values, 0, values=pre_data[insti_b]['ssp126']['HDTIME_NUM'].loc[0], axis=0))
+            pre_data[insti_b]['1.5℃']['HDTIME'].columns=pre_data[insti_b]['ssp126']['HDTIME'].columns
+            pre_data[insti_b]['1.5℃']['HDTIME_NUM'].columns=pre_data[insti_b]['ssp126']['HDTIME_NUM'].columns
+
             
             refer_data['1.5℃'][insti_b]=dict()
             base_p['1.5℃'][insti_b]=dict()
@@ -214,6 +220,12 @@ def energy_winter_heating(data_json):
             pre_data[insti_b]['2.0℃']['HD']=pre_data[insti_b]['ssp245']['HD'][(pre_data[insti_b]['ssp245']['HD']['年']>=2040) & (pre_data[insti_b]['ssp245']['HD']['年']<=2059)]
             pre_data[insti_b]['2.0℃']['HDTIME']=pre_data[insti_b]['ssp245']['HDTIME'][(pre_data[insti_b]['ssp245']['HDTIME']['年']>=2040) & (pre_data[insti_b]['ssp245']['HDTIME']['年']<=2059)]
             pre_data[insti_b]['2.0℃']['HDTIME_NUM']=pre_data[insti_b]['ssp245']['HDTIME_NUM'][(pre_data[insti_b]['ssp245']['HDTIME_NUM']['年']>=2040) & (pre_data[insti_b]['ssp245']['HDTIME_NUM']['年']<=2059)]
+
+
+            pre_data[insti_b]['2.0℃']['HDTIME'] = pd.DataFrame(np.insert(pre_data[insti_b]['2.0℃']['HDTIME'].values, 0, values=pre_data[insti_b]['ssp245']['HDTIME'].loc[0], axis=0))
+            pre_data[insti_b]['2.0℃']['HDTIME_NUM'] = pd.DataFrame(np.insert(pre_data[insti_b]['2.0℃']['HDTIME_NUM'].values, 0, values=pre_data[insti_b]['ssp245']['HDTIME_NUM'].loc[0], axis=0))
+            pre_data[insti_b]['2.0℃']['HDTIME'].columns=pre_data[insti_b]['ssp245']['HDTIME'].columns
+            pre_data[insti_b]['2.0℃']['HDTIME_NUM'].columns=pre_data[insti_b]['ssp245']['HDTIME_NUM'].columns
 
             refer_data['2.0℃'][insti_b]=dict()
             base_p['2.0℃'][insti_b]=dict()
