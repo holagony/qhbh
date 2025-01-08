@@ -42,8 +42,8 @@ def table_stats_simple(data_df, ele):
     def lr(x):
         try:
             x = x.to_frame()
-            x['num'] = x.index.tolist()
-            x['num'] = x['num'].map(int)
+            x['num'] = np.arange(len(x))+1
+
             x.dropna(how='any', inplace=True)
             train_x = x.iloc[:, -1].values.reshape(-1, 1)
             train_y = x.iloc[:, 0].values.reshape(-1, 1)
