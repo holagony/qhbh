@@ -204,7 +204,7 @@ def energy_winter_heating(data_json):
             refer_data['1.5℃'][insti_b]['HD']=refer_data['ssp126'][insti_b]['HD']
             refer_data['1.5℃'][insti_b]['HDTIME_NUM']=refer_data['ssp126'][insti_b]['HDTIME_NUM']
 
-            base_p['1.5℃'][insti_b]['采暖度日']=base_p['ssp126'][insti_b]
+            base_p['1.5℃'][insti_b]['采暖度日']=base_p['ssp126'][insti_b]['采暖度日']
             base_p['1.5℃'][insti_b]['采暖日']=base_p['ssp126'][insti_b]['采暖日']
             base_p['1.5℃'][insti_b]['采暖起始日_日序_开始']=base_p['ssp126'][insti_b]['采暖起始日_日序_开始']
             base_p['1.5℃'][insti_b]['采暖起始日_日序_结束']=base_p['ssp126'][insti_b]['采暖起始日_日序_结束']
@@ -233,7 +233,7 @@ def energy_winter_heating(data_json):
             refer_data['2.0℃'][insti_b]['HD']=refer_data['ssp245'][insti_b]['HD']
             refer_data['2.0℃'][insti_b]['HDTIME_NUM']=refer_data['ssp245'][insti_b]['HDTIME_NUM']
 
-            base_p['2.0℃'][insti_b]['采暖度日']=base_p['ssp245'][insti_b]
+            base_p['2.0℃'][insti_b]['采暖度日']=base_p['ssp245'][insti_b]['采暖度日']
             base_p['2.0℃'][insti_b]['采暖日']=base_p['ssp245'][insti_b]['采暖日']
             base_p['2.0℃'][insti_b]['采暖起始日_日序_开始']=base_p['ssp245'][insti_b]['采暖起始日_日序_开始']
             base_p['2.0℃'][insti_b]['采暖起始日_日序_结束']=base_p['ssp245'][insti_b]['采暖起始日_日序_结束']

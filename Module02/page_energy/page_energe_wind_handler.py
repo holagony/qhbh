@@ -43,17 +43,11 @@ import os
 import numpy as np
 import pandas as pd
 import uuid
-import psycopg2
-from psycopg2 import sql
 from Utils.config import cfg
-from Module02.page_energy.wrapped.func00_function import data_deal
 from Module02.page_energy.wrapped.func00_function import data_deal_2
-from Module02.page_energy.wrapped.func00_function import percentile_std
 
-from Module02.page_energy.wrapped.func04_wind_power_his import energy_wind_power_his
 from Module02.page_energy.wrapped.func07_wind_power_pre import wind_power_pre
 from Module02.page_climate.wrapped.func_plot import interp_and_mask, plot_and_save
-from Utils.data_loader_with_threads import get_database_data
 
 
 #%% main
@@ -158,7 +152,7 @@ def energy_wind_power(data_json):
             result= wind_power_pre(element,data_dir,time_scale,insti_a,scene_a,var,refer_times,time_freq,sta_ids2,station_dict)
             refer_data[scene_a][insti_a]=result
             if element not in ['WDF','WSF']:
-                base_p[scene_a][insti_a]=result.iloc[:,1::].mean().to_frame().round(1).T.reset_index(drop=True).to_dict(orient='records')
+                base_p[scene_a][insti_a][elem_dict[element]]=result.iloc[:,1::].mean().to_frame().round(1).T.reset_index(drop=True).to_dict(orient='records')
 
     #%% 预估数据
     pre_data=dict()
@@ -238,7 +232,8 @@ def energy_wind_power(data_json):
         for i in insti:
             pre_data_result[i]=dict()
             for j in scene:
-                pre_data_result[i][j]=data_deal_2(pre_data[i][j],refer_data[j][i],1)
+                pre_data_result[i][j]=dict()
+                pre_data_result[i][j][elem_dict[element]]=data_deal_2(pre_data[i][j],refer_data[j][i],1)
     
     #%% 结果保存   
         result_df=dict()
@@ -249,7 +244,7 @@ def energy_wind_power(data_json):
             result_df['表格']['预估'][scene_a]=dict()
             for insti_a in insti:
                 result_df['表格']['预估'][scene_a][insti_a]=dict()
-                result_df['表格']['预估'][scene_a][insti_a]=data_deal_2(pre_data[insti_a][scene_a],refer_data[scene_a][insti_a],1).to_dict(orient='records')
+                result_df['表格']['预估'][scene_a][insti_a][elem_dict[element]]=data_deal_2(pre_data[insti_a][scene_a],refer_data[scene_a][insti_a],1).to_dict(orient='records')
 
         result_df['时序图']=dict()
         # result_df['时序图']['集合_多模式' ]=dict()

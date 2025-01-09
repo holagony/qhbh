@@ -150,10 +150,11 @@ def energy_solar_power(data_json):
         for insti_a in insti:
                 refer_data[scene_a][insti_a]=dict()
                 base_p[scene_a][insti_a]=dict()
-
+                base_p[scene_a][insti_a][elem_dict[element]]=dict()
+                
                 result= solar_power_pre(element,data_dir,time_scale,insti_a,scene_a,var,refer_times,time_freq,sta_ids2,station_dict)
                 refer_data[scene_a][insti_a]=result
-                base_p[scene_a][insti_a]=result.iloc[:,1::].mean().to_frame().round(1).T.reset_index(drop=True).to_dict(orient='records')
+                base_p[scene_a][insti_a][elem_dict[element]]=result.iloc[:,1::].mean().to_frame().round(1).T.reset_index(drop=True).to_dict(orient='records')
 
     
     #%% 预估数据
@@ -197,7 +198,8 @@ def energy_solar_power(data_json):
     for i in insti:
         pre_data_result[i]=dict()
         for j in scene:
-            pre_data_result[i][j]=data_deal_2(pre_data[i][j],refer_data[j][i],1)
+            pre_data_result[i][j]=dict()
+            pre_data_result[i][j][elem_dict[element]]=data_deal_2(pre_data[i][j],refer_data[j][i],1)
     
     #%% 结果保存   
     result_df=dict()
@@ -208,7 +210,7 @@ def energy_solar_power(data_json):
         result_df['表格']['预估'][scene_a]=dict()
         for insti_a in insti:
             result_df['表格']['预估'][scene_a][insti_a]=dict()
-            result_df['表格']['预估'][scene_a][insti_a]=data_deal_2(pre_data[insti_a][scene_a],refer_data[scene_a][insti_a],1).to_dict(orient='records')
+            result_df['表格']['预估'][scene_a][insti_a][elem_dict[element]]=data_deal_2(pre_data[insti_a][scene_a],refer_data[scene_a][insti_a],1).to_dict(orient='records')
 
     result_df['时序图']=dict()
     # result_df['时序图']['集合_多模式' ]=dict()
