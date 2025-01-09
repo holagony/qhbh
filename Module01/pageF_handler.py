@@ -83,12 +83,17 @@ def agriculture_features(data_json):
         
 
     elif element in ['reproductive_period']:
-        stats_result=agriculture_features_stats(data_json)
+        stats_result,stats_result2=agriculture_features_stats(data_json)
         stats_result.reset_index(inplace=True)
         stats_result.rename(columns={'Datetime': '年'}, inplace=True)
 
-        result_dict['表格'] = stats_result.to_dict(orient='records')
+        stats_result2.reset_index(inplace=True)
+        stats_result2.rename(columns={'Datetime': '年'}, inplace=True)
         
+        result_dict['表格'] =dict()
+        result_dict['表格']['日期'] = stats_result.to_dict(orient='records')
+        result_dict['表格']['日序'] = stats_result2.to_dict(orient='records')
+
     elif element in ['reproductive_day','crop_acreage','yield']:
         station_df,stats_result,post_data_df,post_refer_df,reg_params=agriculture_features_stats(data_json)
 
@@ -179,7 +184,7 @@ def agriculture_features(data_json):
 if __name__ == '__main__':
     t1 = time.time()
     data_json = dict()
-    data_json['element'] = 'sowin_date' #sowin_date
+    data_json['element'] = 'reproductive_period' #sowin_date
     data_json['crop'] = 'spring_maizet'
     data_json['refer_years'] = '2002,2024'
     data_json['nearly_years'] = '2004,2024'

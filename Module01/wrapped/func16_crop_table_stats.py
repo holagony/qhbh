@@ -373,25 +373,42 @@ def agriculture_features_stats(data_json):
     elif element in ['reproductive_period']:
         
         result=pd.DataFrame()
+        result2=pd.DataFrame()
         for station_id in data_df_1['Station_Name'].unique():
+            
             data_df_2=data_df_1[data_df_1['Station_Name']==station_id]
             data_df_3=data_df_2.pivot_table(index=data_df_2.index, columns=['groper_name_ten'], values='date',aggfunc='first')
             data_df_4= data_df_3.resample('A').first()
-
             data_df_4.index = data_df_4.index.strftime('%Y')
-            data_df_5=pd.DataFrame(index=data_df_4.index,columns=element_dict[element].split(','))   
             
+            data_df_42=pd.DataFrame(index=data_df_4.index,columns=data_df_4.columns)   
+            for col in data_df_4.columns:
+                date_strings = data_df_4.index.astype(str) + '年' + data_df_4[col].astype(str)
+                dates = pd.to_datetime(date_strings, format='%Y年%m月%d日', errors='coerce')
+
+                day_of_year = dates.dt.dayofyear
+                data_df_42[col] = day_of_year
+            data_df_42 = data_df_42.replace({np.nan: None})
+            
+            data_df_5=pd.DataFrame(index=data_df_4.index,columns=element_dict[element].split(','))   
+            data_df_6=pd.DataFrame(index=data_df_4.index,columns=element_dict[element].split(','))   
+
             for columns_id in data_df_5.columns:
                 try:
                     data_df_5[columns_id]=data_df_4[columns_id]
+                    data_df_6[columns_id]=data_df_42[columns_id]
+                    
                 except:
                     continue
         
             data_df_5.columns=crop_name_dict[element].split(',')
-            data_df_5.insert(0, '站名', station_id)
+            data_df_6.columns=crop_name_dict[element].split(',')
+            station_name = station_id[:station_id.find('国')] if '国' in station_id else station_id
+            data_df_5.insert(0, '站名', station_name)
+            data_df_6.insert(0, '站名', station_name)
             result=pd.concat([result,data_df_5])
-        
-        return result
+            result2=pd.concat([result2,data_df_6])
+        return result,result2
    
     # 生育期天数
     elif element in ['reproductive_day']:
