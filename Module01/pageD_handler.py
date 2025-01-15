@@ -95,7 +95,11 @@ def water_features_stats(data_json):
         print(shp_path)
         logging.info(shp_path)
 
-    last_year = int(nearly_years[0].split(',')[-1])  # 上一年的年份
+    try:
+        last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
+    except:
+        last_year = int(nearly_years[0].split(',')[-1])
+    
     uuid4 = uuid.uuid4().hex
     data_dir = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
     if not os.path.exists(data_dir):
