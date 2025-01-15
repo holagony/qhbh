@@ -144,10 +144,10 @@ def extreme_climate_features(data_json):
     degree = data_json.get('degree')
 
     # 2.参数处理
-    try:
-        last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
-    except:
-        last_year = int(nearly_years[0].split(',')[-1])    
+    # try:
+    #     last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
+    # except:
+    #     last_year = int(nearly_years[0].split(',')[-1])    
         
     uuid4 = uuid.uuid4().hex
 
@@ -236,7 +236,7 @@ def extreme_climate_features(data_json):
     
     sql_dict=dict()
     sql_dict['day']='qh_qhbh_cmadaas_day'
-    sql_dict['day_cal']='qh _qhbh_calc_elements_day'
+    sql_dict['day_cal']='qh_qhbh_calc_elements_day'
     sql_dict['mon']='qh_qhbh_cmadaas_month'
     sql_dict['mon_cal']='qh_qhbh_calc_elements_month'
     sql_dict['year']='qh_qhbh_cmadaas_year'
@@ -287,6 +287,7 @@ def extreme_climate_features(data_json):
     refer_df = get_database_data(sta_ids, ele_dict[element], sql_choose, time_freq, refer_years)
     nearly_df = get_database_data(sta_ids, ele_dict[element], sql_choose, time_freq, nearly_years)
 
+    
     if element in other_table:
         data_df = data_processing(data_df, ele_dict[element],degree)
     else:
@@ -317,6 +318,7 @@ def extreme_climate_features(data_json):
 
         if 'Unnamed: 0' in nearly_df.columns:
             nearly_df.drop(['Unnamed: 0'], axis=1, inplace=True)
+    last_year = int(nearly_df.index.year[-1]) 
 
     #################################################
     # 开始计算
@@ -414,7 +416,7 @@ def extreme_climate_features(data_json):
 
 if __name__ == '__main__':
     data_json = dict()
-    data_json['element'] ='TR'
+    data_json['element'] ='light_snow'
     data_json['l_data'] =10
     data_json['refer_years'] = '1991,2020'
     data_json['nearly_years'] = '1994,2023'
@@ -427,4 +429,19 @@ if __name__ == '__main__':
     result = extreme_climate_features(data_json)
     return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result['表格']}, ensure_ascii=False, ignore_nan=True)
 
-
+data_json = {
+  "showEleName": "轻度雪灾日数",
+  "element": "light_snow",
+  "time_freq": "D1",
+  "showTimeScale": "日",
+  "refer_years": "19910101,20201231",
+  "stats_times": "20110101,20201231",
+  "时间": "2011年01月01日—2020年12月31日",
+  "zone_id": "10100",
+  "区域": "青海省",
+  "sta_ids": "51886,52602,52633,52645,52657,52707,52713",
+  "interp_method": "idw",
+  "nearly_years": "20020101,20221231",
+  "is_async": 1,
+  "ci": ""
+}

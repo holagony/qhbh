@@ -97,11 +97,11 @@ def other_table_stats(data_df, refer_df, nearly_df, time_freq, ele, last_year):
 
     # 合并所有结果
     stats_result = data_df.copy()
-    stats_result['区域均值'] = stats_result.iloc[:,:].mean(axis=1).round(1)
-    stats_result['区域距平'] = (stats_result.iloc[:,:].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).round(1)
+    stats_result['区域均值'] = data_df.iloc[:,:].mean(axis=1).round(1)
+    stats_result['区域距平'] = (data_df.iloc[:,:].mean(axis=1) - tmp_df.loc['参考时段均值'].mean()).round(1)
     stats_result['区域距平百分率'] = (stats_result['区域距平']/refer_df.iloc[:, :].mean().mean()).round(1)
-    stats_result['区域最大值'] = stats_result.iloc[:,:].max(axis=1)
-    stats_result['区域最小值'] = stats_result.iloc[:,:].min(axis=1)
+    stats_result['区域最大值'] = data_df.iloc[:,:].max(axis=1)
+    stats_result['区域最小值'] = data_df.iloc[:,:].min(axis=1)
 
     # 在concat前增加回归方程
     def lr(x):
