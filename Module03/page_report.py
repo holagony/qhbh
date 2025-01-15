@@ -63,11 +63,14 @@ def page_report(data_json):
     shp_path = data_json['shp_path']
     method = 'idw'
 
-    print(refer_years)   
-    print(evaluate_years)
-    print(shp_path)
-    print(sta_ids)
+    #print(refer_years)   
+    #print(evaluate_years)
+    #print(shp_path)
+    #print(sta_ids)
 
+    if isinstance(cmip_model, str):
+        cmip_model = cmip_model.split(',')
+        
     if shp_path is not None:
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  
     
@@ -490,3 +493,4 @@ if __name__ == '__main__':
     data_json['sta_ids'] = '52745,52754,52853,52856'
     data_json['shp_path'] = r'D:\Project\3_项目\11_生态监测评估体系建设-气候服务系统\材料\03-边界矢量\03-边界矢量\03-泛共和盆地\泛共和盆地.shp'
     
+    result_dict= page_report(data_json)

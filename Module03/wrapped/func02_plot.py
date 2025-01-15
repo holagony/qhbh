@@ -320,7 +320,7 @@ def plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name,
     
     # 画指南针和比例尺
     add_north(ax)
-    add_scalebar(ax,0.8, 0.05,np.int((lon_max-lon_min)*100/8),size=0.014)
+    add_scalebar(ax,0.8, 0.05,np.int64((lon_max-lon_min)*100/8),size=0.014)
 
     # lakes_handle = mpatches.Rectangle((0, 0), 1, 1, facecolor='blue', label='湖泊')
     # glaciers_handle = mpatches.Rectangle((0, 0), 1, 1, facecolor='#73ffdf', label='冰川')

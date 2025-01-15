@@ -95,7 +95,7 @@ def water_table_def(data_json):
 
     main_element=data_json['main_element']
     hydro_ids = data_json['hydro_ids']
-    sta_ids=data_json['sta_ids']
+    #sta_ids=data_json['sta_ids']
     time_freq_main=data_json['time_freq_main']
     time_freq_main_data=data_json['time_freq_main_data']
     refer_times=data_json['refer_times']
