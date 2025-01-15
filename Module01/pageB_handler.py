@@ -144,7 +144,11 @@ def extreme_climate_features(data_json):
     degree = data_json.get('degree')
 
     # 2.参数处理
-    last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
+    try:
+        last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
+    except:
+        last_year = int(nearly_years[0].split(',')[-1])    
+        
     uuid4 = uuid.uuid4().hex
 
     data_dir = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)

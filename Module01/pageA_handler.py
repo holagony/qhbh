@@ -118,7 +118,11 @@ def climate_features_stats(data_json):
     if shp_path is not None:
         shp_path = shp_path.replace(cfg.INFO.OUT_UPLOAD_FILE, cfg.INFO.IN_UPLOAD_FILE)  # inupt_path要转换为容器内的路径
 
-    last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
+    try:
+        last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
+    except:
+        last_year = int(nearly_years[0].split(',')[-1])
+        
     uuid4 = uuid.uuid4().hex
     data_dir = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
     if not os.path.exists(data_dir):
