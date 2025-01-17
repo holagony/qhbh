@@ -182,7 +182,7 @@ def traffic_esti(data_json):
     # 直接读取excel
     res_d = dict()
     res_d['25'] = '0.25deg'
-    res_d['50'] = '0.52deg'
+    res_d['50'] = '0.50deg'
     res_d['100'] = '1deg'
     
     if os.name == 'nt':

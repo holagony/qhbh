@@ -91,7 +91,7 @@ def traffic_esti(data_json):
         elif cmip_type == 'delta':
             res_d = dict()
             res_d['25'] = '0.25deg'
-            res_d['50'] = '0.52deg'
+            res_d['50'] = '0.50deg'
             res_d['100'] = '1.00deg'
             data_dir = '/model_data/station_data_delta/csv'
             data_dir = os.path.join(data_dir, res_d[cmip_res])

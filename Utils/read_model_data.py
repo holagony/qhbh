@@ -236,10 +236,11 @@ def create_datetimeindex(time_freq, time_info):
     elif time_freq == 'D2':  # ['%Y,%Y','%m%d,%m%d']
         s = time_info[0].split(',')[0]
         e = time_info[0].split(',')[1]
-        s_mon = time_info[1].split(',')[0][:2]
-        e_mon = time_info[1].split(',')[1][:2]
-        s_day = time_info[1].split(',')[0][2:]
-        e_day = time_info[1].split(',')[1][2:]
+        e = str(int(e) + 1)
+        s_mon = int(time_info[1].split(',')[0][:2])
+        e_mon = int(time_info[1].split(',')[1][:2])
+        s_day = int(time_info[1].split(',')[0][2:])
+        e_day = int(time_info[1].split(',')[1][2:])
         dates = pd.date_range(start=s, end=e, freq='D')
         time_index = dates[((dates.month == s_mon) & (dates.day >= s_day)) | ((dates.month > s_mon) & (dates.month < e_mon)) | ((dates.month == e_mon) & (dates.day <= e_day))]
 
