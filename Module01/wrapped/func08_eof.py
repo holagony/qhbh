@@ -58,8 +58,7 @@ def eof(ds, shp_name, output_filepath):
     comps = eof.components()  # EOFs (spatial patterns)
     scores = eof.scores()  # PCs (temporal patterns)
 
-    fig = plt.figure(figsize=(15, 10))
-    fig.subplots_adjust(hspace=0.4, wspace=0.3)
+    fig = plt.figure(figsize=(12, 6))
     EOFs = ['EOF1', 'EOF2', 'EOF3', 'EOF4']
     PCs = ['PC1', 'PC2', 'PC3', 'PC4']
     lon, lat = np.meshgrid(ds.longitude, ds.latitude)
@@ -70,18 +69,21 @@ def eof(ds, shp_name, output_filepath):
     path = Path.make_compound_path(*geos_to_path(geo_list))
 
     for i, EOF1 in enumerate(EOFs):
-        # print(i, EOF1)
-        ax1 = fig.add_subplot(4, 2, 2 * i + 1, projection=ccrs.PlateCarree())  # 第一个子图带投影
-        ax2 = fig.add_subplot(4, 2, 2 * i + 2)
-        plot_eof_and_pc(lon, lat, comps[i], scores[i, :], ax1, ax2, EOFs[i], PCs[i], year[0], year[-1], path)  # 第二个子图不带投影
+        row = i // 2
+        col = i % 2
+        ax1 = fig.add_subplot(2, 4, 2*col + 1 + 4*row, projection=ccrs.PlateCarree())
+        ax2 = fig.add_subplot(2, 4, 2*col + 2 + 4*row)
+        plot_eof_and_pc(lon, lat, comps[i], scores[i, :], ax1, ax2, EOFs[i], PCs[i], year[0], year[-1], path)
+
+    fig.subplots_adjust(hspace=0.4, wspace=0.4)
 
     result_picture = os.path.join(output_filepath, 'EOF.png')
     fig.savefig(result_picture, dpi=200, bbox_inches='tight')
     plt.clf()
     plt.close()
 
-    result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
-    result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+    result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)
+    result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)
 
     return result_picture
 
@@ -99,8 +101,7 @@ def reof(ds, shp_name, output_filepath):
     comps = components[0]
     scores = scores[0]
 
-    fig = plt.figure(figsize=(15, 10))
-    fig.subplots_adjust(hspace=0.4, wspace=0.3)
+    fig = plt.figure(figsize=(12, 6))
     EOFs = ['EOF1', 'EOF2', 'EOF3', 'EOF4']
     PCs = ['PC1', 'PC2', 'PC3', 'PC4']
     lon, lat = np.meshgrid(ds.longitude, ds.latitude)
@@ -111,18 +112,21 @@ def reof(ds, shp_name, output_filepath):
     path = Path.make_compound_path(*geos_to_path(geo_list))
 
     for i, EOF1 in enumerate(EOFs):
-        # print(i, EOF1)
-        ax1 = fig.add_subplot(4, 2, 2 * i + 1, projection=ccrs.PlateCarree())  # 第一个子图带投影
-        ax2 = fig.add_subplot(4, 2, 2 * i + 2)
-        plot_eof_and_pc(lon, lat, comps[i], scores[i, :], ax1, ax2, EOFs[i], PCs[i], year[0], year[-1], path)  # 第二个子图不带投影
+        row = i // 2
+        col = i % 2
+        ax1 = fig.add_subplot(2, 4, 2*col + 1 + 4*row, projection=ccrs.PlateCarree())
+        ax2 = fig.add_subplot(2, 4, 2*col + 2 + 4*row)
+        plot_eof_and_pc(lon, lat, comps[i], scores[i, :], ax1, ax2, EOFs[i], PCs[i], year[0], year[-1], path)
+
+    fig.subplots_adjust(hspace=0.4, wspace=0.4)
 
     result_picture = os.path.join(output_filepath, 'REOF.png')
     fig.savefig(result_picture, dpi=200, bbox_inches='tight')
     plt.clf()
     plt.close()
 
-    result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 容器内转容器外路径
-    result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
+    result_picture = result_picture.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)
+    result_picture = result_picture.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)
 
     return result_picture
 
