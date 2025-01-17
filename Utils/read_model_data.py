@@ -42,6 +42,7 @@ def read_xlsx_data(file, station_id):
 def read_model_data(data_dir, time_scale, insti, scene, var, stats_times, time_freq, station_id):
     '''
     批量读取模式数据
+    更新
     '''
     # 通过时间尺度，取出时间年月日：
     if time_freq == 'Y':
