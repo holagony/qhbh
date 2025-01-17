@@ -343,15 +343,15 @@ def wavelet_main(df, output_filepath):
             #------------------------------------------------------ Plotting
     
             #--- Plot time series
-            fig = plt.figure(figsize=(12, 6))
-            gs = GridSpec(3, 4, hspace=0.4, wspace=0.75)
+            fig = plt.figure(figsize=(15, 10))  # 增大整体图形尺寸
+            gs = GridSpec(3, 4, height_ratios=[1, 1.5, 1], hspace=0.5, wspace=0.3)  # 调整行高比例和间距
             plt.subplots_adjust(left=0.1, bottom=0.05, right=0.9, top=0.95, wspace=0, hspace=0)
             plt.subplot(gs[0, 0:3])
             plt.plot(time, sst, 'k')
             plt.xlim(xlim[:])
-            plt.xlabel('Time (year)')
-            plt.ylabel('variance')
-            plt.title('a) Time Series')
+            plt.xlabel('Time (year)', fontsize=10)
+            plt.ylabel('Variance', fontsize=10)
+            plt.title('a) Time Series', fontsize=12, pad=10)  # 增加标题和轴标签间距
     
             #--- Contour plot wavelet power spectrum
             # plt3 = plt.subplot(3, 1, 2)
@@ -359,9 +359,9 @@ def wavelet_main(df, output_filepath):
             levels = [0, 0.5, 1, 2, 4, 999]
             CS = plt.contourf(time, period, power, len(levels))  #*** or use 'contour'
             im = plt.contourf(CS, levels=levels, colors=['white', 'bisque', 'orange', 'orangered', 'darkred'])
-            plt.xlabel('Time (year)')
-            plt.ylabel('Period (years)')
-            plt.title('b) Wavelet Power Spectrum')
+            plt.xlabel('Time (year)', fontsize=10)
+            plt.ylabel('Period (years)', fontsize=10)
+            plt.title('b) Wavelet Power Spectrum', fontsize=12, pad=10)
             plt.xlim(xlim[:])
             # 95# significance contour, levels at -99 (fake) and 1 (95# signif)
             plt.contour(time, period, sig95, [-99, 1], colors='k')
@@ -384,8 +384,8 @@ def wavelet_main(df, output_filepath):
             plt4 = plt.subplot(gs[1, -1])
             plt.plot(global_ws, period)
             plt.plot(global_signif, period, '--')
-            plt.xlabel('Power (\u00B0C$^2$)')
-            plt.title('c) Global Wavelet Spectrum')
+            plt.xlabel('Power (°C$^2$)', fontsize=10)
+            plt.title('c) Global Wavelet Spectrum', fontsize=12, pad=10)
             plt.xlim([0, 1.25 * np.max(global_ws)])
             # format y-scale
             plt4.set_yscale('log', base=2, subs=None)
@@ -399,13 +399,13 @@ def wavelet_main(df, output_filepath):
             plt.subplot(gs[2, 0:3])
             plt.plot(time, scale_avg, 'k')
             plt.xlim(xlim[:])
-            plt.xlabel('Time (year)')
-            plt.ylabel('Avg variance')
-            plt.title('d) 2-8 yr Scale-average Time Series')
+            plt.xlabel('Time (year)', fontsize=10)
+            plt.ylabel('Avg variance', fontsize=10)
+            plt.title('d) 2-8 yr Scale-average Time Series', fontsize=12, pad=10)
             plt.plot(xlim, scaleavg_signif + [0, 0], '--')
     
             result_picture = os.path.join(output_filepath, name+'_小波.png')
-            fig.savefig(result_picture, dpi=200, bbox_inches='tight')
+            fig.savefig(result_picture, dpi=200, bbox_inches='tight', pad_inches=0.2)
             plt.clf()
             plt.close()
     
