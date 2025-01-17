@@ -216,6 +216,7 @@ def create_datetimeindex(time_freq, time_info):
     elif time_freq in ['Q', 'M2']:
         s = time_info[0].split(',')[0]
         e = time_info[0].split(',')[1]
+        e = str(int(e) + 1)
         mon_list = [int(val) for val in time_info[1].split(',')]
         time_index = pd.date_range(start=s, end=e, freq='D')[:-1]  # 'Q' or 'M2'
         time_index = time_index[time_index.month.isin(mon_list)]
@@ -228,13 +229,13 @@ def create_datetimeindex(time_freq, time_info):
         time_index = pd.date_range(start=s, end=e, freq='D')[:-1]  # M1
 
     elif time_freq == 'D1':
-        s = time_info.split(',')[0]
+        s = time_info.split(',')[0] # '%Y%m%d'
         e = time_info.split(',')[1]
         time_index = pd.date_range(start=s, end=e, freq='D')  # D1
 
     elif time_freq == 'D2':  # ['%Y,%Y','%m%d,%m%d']
         s = time_info[0].split(',')[0]
-        e = time_info[1].split(',')[1]
+        e = time_info[0].split(',')[1]
         s_mon = time_info[1].split(',')[0][:2]
         e_mon = time_info[1].split(',')[1][:2]
         s_day = time_info[1].split(',')[0][2:]
