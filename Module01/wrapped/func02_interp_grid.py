@@ -58,7 +58,7 @@ def contour_picture(stats_result, data_df, shp_name, method, output_filepath):
 
     # 插值
     # 网格参数设置
-    resolution = 0.8
+    resolution = 0.1
     bounds = gdf['geometry'].total_bounds
     start_lon = bounds[0] - resolution
     start_lat = bounds[1] - resolution

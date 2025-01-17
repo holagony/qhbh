@@ -56,7 +56,7 @@ def eof(ds, shp_name, output_filepath):
     comps = eof.components()  # EOFs (spatial patterns)
     scores = eof.scores()  # PCs (temporal patterns)
 
-    fig = plt.figure(figsize=(14, 14))
+    fig = plt.figure(figsize=(12, 6))
     EOFs = ['EOF1', 'EOF2', 'EOF3', 'EOF4']
     PCs = ['PC1', 'PC2', 'PC3', 'PC4']
     lon, lat = np.meshgrid(ds.longitude, ds.latitude)
@@ -96,7 +96,7 @@ def reof(ds, shp_name, output_filepath):
     comps = components[0]
     scores = scores[0]
 
-    fig = plt.figure(figsize=(14, 14))
+    fig = plt.figure(figsize=(12, 6))
     EOFs = ['EOF1', 'EOF2', 'EOF3', 'EOF4']
     PCs = ['PC1', 'PC2', 'PC3', 'PC4']
     lon, lat = np.meshgrid(ds.longitude, ds.latitude)

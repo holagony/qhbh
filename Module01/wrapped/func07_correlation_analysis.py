@@ -48,7 +48,7 @@ def correlation_analysis(df, output_filepath):
             table = pd.DataFrame(data, columns=['Lag', "AC", "Q", "Prob(>Q)"])
             all_result[name]['自相关'] = table.to_dict(orient='records')
 
-            fig = plt.figure(figsize=(8, 6))
+            fig = plt.figure(figsize=(12, 6))
             ax1 = fig.add_subplot(111)
             fig = sm.graphics.tsa.plot_acf(new_df[columns1], lags=num, ax=ax1)
             plt.xlabel('滞后阶数')
@@ -70,7 +70,7 @@ def correlation_analysis(df, output_filepath):
             table.columns = ['Lags','偏相关系数']
             all_result[name]['偏自相关'] = table.to_dict(orient='records')
 
-            fig = plt.figure(figsize=(8, 6))
+            fig = plt.figure(figsize=(12, 6))
             ax1 = fig.add_subplot(111)
             fig = sm.graphics.tsa.plot_pacf(new_df[columns1], lags=num, ax=ax1)
             plt.xlabel('滞后阶数')

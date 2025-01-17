@@ -343,7 +343,7 @@ def wavelet_main(df, output_filepath):
             #------------------------------------------------------ Plotting
     
             #--- Plot time series
-            fig = plt.figure(figsize=(9, 10))
+            fig = plt.figure(figsize=(12, 6))
             gs = GridSpec(3, 4, hspace=0.4, wspace=0.75)
             plt.subplots_adjust(left=0.1, bottom=0.05, right=0.9, top=0.95, wspace=0, hspace=0)
             plt.subplot(gs[0, 0:3])

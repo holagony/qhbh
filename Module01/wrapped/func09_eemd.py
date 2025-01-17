@@ -68,7 +68,7 @@ def eemd(df, output_filepath):
             nIMFs = eIMFs.shape[0]
 
             # Plot results
-            fig = plt.figure(figsize=(8, 6))
+            fig = plt.figure(figsize=(12, 6))
             plt.subplot(nIMFs + 1, 1, 1)
             plt.plot(t, dat_norm, 'r')
             plt.title(columns[i])
