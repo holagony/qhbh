@@ -152,15 +152,22 @@ def read_model_data(data_dir, time_scale, insti, scene, var, stats_times, time_f
         if int(start_year) < 2015:
             file_1 = os.path.join(data_dir, time_scale, insti, 'historical', var + '.csv')
             data_1 = read_xlsx_data(file_1, station_id)
-            data_m1 = data_1.loc[start_time[:4:] + '-' + start_time[4:6:] + '-' + start_time[6::]:'2014']
+            # 修复日期格式
+            start_date = f"{start_time[:4]}-{start_time[4:6]}-{start_time[6:]}"
+            data_m1 = data_1.loc[start_date:'2014']
             file_2 = os.path.join(data_dir, time_scale, insti, scene, var + '.csv')
             data_2 = read_xlsx_data(file_2, station_id)
-            data_m2 = data_2.loc['2015':end_time[:4:] + '-' + end_time[4:6:] + '-' + end_time[6::]]
+            # 修复日期格式
+            end_date = f"{end_time[:4]}-{end_time[4:6]}-{end_time[6:]}"
+            data_m2 = data_2.loc['2015':end_date]
             data_m3 = pd.concat([data_m1, data_m2], axis=0)
         else:
             file_2 = os.path.join(data_dir, time_scale, insti, scene, var + '.csv')
             data_2 = read_xlsx_data(file_2, station_id)
-            data_m3 = data_2.loc[start_time[:4:] + '-' + start_time[4:6:] + '-' + start_time[6::]:end_time[:4:] + '-' + end_time[4::] + '-' + end_time[6::]]
+            # 修复日期格式
+            start_date = f"{start_time[:4]}-{start_time[4:6]}-{start_time[6:]}"
+            end_date = f"{end_time[:4]}-{end_time[4:6]}-{end_time[6:]}"
+            data_m3 = data_2.loc[start_date:end_date]
 
     elif time_freq == 'D2':
 
