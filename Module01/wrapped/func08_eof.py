@@ -26,28 +26,30 @@ plt.rcParams['axes.unicode_minus'] = False
 def plot_eof_and_pc(lons, lats, eof, pc, ax1, ax2, EOF, PC, time_min, time_max, path):
 
     mesh = ax1.contourf(lons, lats, eof.squeeze(), cmap=plt.cm.RdBu_r, transform=ccrs.PlateCarree())
-    cb = plt.colorbar(mesh, ax=ax1, extend='both', shrink=0.8)
-    cb.set_label('correlation coefficient', fontsize=12)
-    ax1.set_title(f'{EOF}  ', fontsize=16, loc='left')
-    gl = ax1.gridlines(draw_labels=True, x_inline=False, y_inline=False, linestyle='dashed')
+    cb = plt.colorbar(mesh, ax=ax1, extend='both', shrink=0.9, pad=0.02)
+    cb.set_label('correlation coefficient', fontsize=10)
+    cb.ax.tick_params(labelsize=9)
+    ax1.set_title(f'{EOF}', fontsize=12, loc='left', pad=10)
+    gl = ax1.gridlines(draw_labels=True, x_inline=False, y_inline=False, linestyle='dashed', alpha=0.5)
     gl.top_labels = False
     gl.right_labels = False
     gl.rotate_labels = False
-    gl.xlocator = ctk.LongitudeLocator(20)
-    gl.ylocator = ctk.LatitudeLocator(8)
-    gl.xformatter = ctk.LongitudeFormatter(zero_direction_label=True)
-    gl.yformatter = ctk.LatitudeFormatter()
+    gl.xlocator = ctk.LongitudeLocator(10)
+    gl.ylocator = ctk.LatitudeLocator(6)
+    gl.xlabel_style = {'size': 8}
+    gl.ylabel_style = {'size': 8}
     for col in mesh.collections:
         col.set_clip_path(path, ccrs.PlateCarree()._as_mpl_transform(ax1))
 
     years = range(int(time_min), int(time_max) + 1)
-    ax2.plot(years, pc, color='b', linewidth=2)
-    ax2.axhline(0, color='k')
-    ax2.set_title(f'{PC}  ', loc='left')
-    ax2.set_xlabel('Year')
-    ax2.set_ylabel('Normalized Units')
+    ax2.plot(years, pc, color='b', linewidth=1.5)
+    ax2.axhline(0, color='k', linewidth=0.8, alpha=0.5)
+    ax2.set_title(f'{PC}', fontsize=12, loc='left', pad=10)
+    ax2.set_xlabel('Year', fontsize=10)
+    ax2.set_ylabel('Normalized Units', fontsize=10)
+    ax2.tick_params(axis='both', labelsize=9)
     ax2.set_xlim(int(time_min), int(time_max))
-    ax2.set_xticks(years[::3])
+    ax2.set_xticks(years[::4])
 
 
 def eof(ds, shp_name, output_filepath):
@@ -56,7 +58,8 @@ def eof(ds, shp_name, output_filepath):
     comps = eof.components()  # EOFs (spatial patterns)
     scores = eof.scores()  # PCs (temporal patterns)
 
-    fig = plt.figure(figsize=(12, 6))
+    fig = plt.figure(figsize=(15, 10))
+    fig.subplots_adjust(hspace=0.4, wspace=0.3)
     EOFs = ['EOF1', 'EOF2', 'EOF3', 'EOF4']
     PCs = ['PC1', 'PC2', 'PC3', 'PC4']
     lon, lat = np.meshgrid(ds.longitude, ds.latitude)
@@ -96,7 +99,8 @@ def reof(ds, shp_name, output_filepath):
     comps = components[0]
     scores = scores[0]
 
-    fig = plt.figure(figsize=(12, 6))
+    fig = plt.figure(figsize=(15, 10))
+    fig.subplots_adjust(hspace=0.4, wspace=0.3)
     EOFs = ['EOF1', 'EOF2', 'EOF3', 'EOF4']
     PCs = ['PC1', 'PC2', 'PC3', 'PC4']
     lon, lat = np.meshgrid(ds.longitude, ds.latitude)
