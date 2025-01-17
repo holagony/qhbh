@@ -109,7 +109,11 @@ def interp_and_mask(shp_path, lon_list, lat_list, value_list, method):
         lon_grid 掩膜后的经度网格
         lat_grid 掩膜后的纬度网格
     '''
-    shp = gpd.read_file(shp_path,encoding='utf-8')
+    try:
+        shp = gpd.read_file(shp_path)
+    except:
+        shp = gpd.read_file(shp_path, encoding='gbk')
+        
     bounds = shp['geometry'].total_bounds
     lon_max = bounds[2]
     lon_min = bounds[0]
