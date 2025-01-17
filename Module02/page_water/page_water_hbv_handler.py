@@ -84,10 +84,10 @@ def hbv_single_calc(data_json):
     # ------------------------------------------------------------------
     # 2.参数处理
     uuid4 = uuid.uuid4().hex
-    data_dir = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-        os.chmod(data_dir, 0o007 | 0o070 | 0o700)
+    data_out = os.path.join(cfg.INFO.IN_DATA_DIR, uuid4)
+    if not os.path.exists(data_out):
+        os.makedirs(data_out)
+        os.chmod(data_out, 0o007 | 0o070 | 0o700)
     
     if isinstance(cmip_model, str):
         cmip_model = cmip_model.split(',')

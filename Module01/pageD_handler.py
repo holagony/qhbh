@@ -112,7 +112,7 @@ def water_features_stats(data_json):
         elements = 'Datetime,Station_Id_C,Station_Name,Lon,Lat,q'
 
     elif element=='PRE':
-        table_name = 'qh_qhbh_cmadaas_day'
+        table_name = 'qh_climate_cmadaas_day'
         elements = 'Station_Id_C,Station_Name,Lon,Lat,Datetime,PRE_Time_2020'
 
     # 要素表
