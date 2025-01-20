@@ -144,7 +144,7 @@ def rain_source_esti(data_json):
     lon_list = station_info['经度'].tolist()
     lat_list = station_info['纬度'].tolist()
     sta_info = station_info[['站号', '站名']]
-    result_dict['站号'] = sta_info.to_dict(orient='records')
+    result_dict['站点'] = sta_info.to_dict(orient='records')
 
     # 5.2 预估-各个情景的单模式
     single_cmip_res = dict()
@@ -178,10 +178,11 @@ def rain_source_esti(data_json):
                     res_table = table_stats_simple_cmip(data, base_p)
                     single_cmip_res['2.0℃'][insti] = res_table
 
-    result_dict['表格']['预估单模式'] = single_cmip_res
+    result_dict['表格']['预估'] = single_cmip_res
 
     # 5.3 时序图-基准期
-    result_dict['时序图']['基准期'] = refer_cmip
+    result_dict['时序图']['单模式'] = dict()
+    result_dict['时序图']['单模式']['基准期'] = refer_cmip
 
     # 6 分布图 实时画（后面改为提取提前画好的图）
     if plot == 1:
@@ -202,7 +203,7 @@ def rain_source_esti(data_json):
                         # 插值/掩膜/画图/保存
                         mask_grid, lon_grid, lat_grid = interp_and_mask(shp_path, lon_list, lat_list, value_list, method)
                         png_path = plot_and_save(shp_path, mask_grid, lon_grid, lat_grid, exp_name, insti_name, year_name, data_out, '降水资源量' + bar_name + '(万立方公里/10a)')
-    
+
                         # 转url
                         png_path = png_path.replace(cfg.INFO.IN_DATA_DIR, cfg.INFO.OUT_DATA_DIR)  # 图片容器内转容器外路径
                         png_path = png_path.replace(cfg.INFO.OUT_DATA_DIR, cfg.INFO.OUT_DATA_URL)  # 容器外路径转url
