@@ -260,8 +260,12 @@ def hbv_single_calc(data_json):
     # result_dict['表格历史']['观测'] = None
     # result_dict['表格历史']['模拟观测'] = None
     # result_dict['表格历史']['模拟模式'] = None
-    result_dict['表格'] = single_cmip_res
-    result_dict['时序图']['基准期'] = refer_result
+    result_dict['表格']['预估'] = single_cmip_res
+    
+    for ssp, dict1 in refer_result.items():
+        for mode, val in dict1.items():
+            dict1[mode] = pd.DataFrame([val],columns=[mode])
+    result_dict['时序图']['单模式']['基准期'] = refer_result
 
     # 最后遍历dict，如果是df就to_dict()
     result_dict = convert_nested_df(result_dict)
@@ -273,14 +277,13 @@ def hbv_single_calc(data_json):
 if __name__ == '__main__':
     data_json = dict()
     data_json['time_freq'] = 'Y'
-    data_json['evaluate_times'] = "2030,2060" # 预估时段时间条
-    data_json['refer_years'] = '1985,2014'# 参考时段时间条
-    data_json['valid_times'] = '202303,202403' # 验证期 '%Y%m,%Y%m'
+    data_json['evaluate_times'] = "2023,2025" # 预估时段时间条
+    data_json['refer_years'] = '1985,2014'# 参考时段时间条z
     data_json['hydro_ids'] = '40100350' # 唐乃亥
     data_json['sta_ids'] = "52943,52957,52955,56033,56067,56045,56046,56043,56065,52968,56074,56079,56173"
     data_json['cmip_type'] = 'original' # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None # 分辨率 1/5/10/25/50/100 km
-    data_json['cmip_model'] = ['Set']# 模式，列表：['CanESM5','CESM2']等
+    data_json['cmip_model'] = ['Set','RCM_BCC']# 模式，列表：['CanESM5','CESM2']等
     data_json['d'] = 6.1
     data_json['fc'] = 195
     data_json['beta'] = 2.6143
@@ -295,3 +298,10 @@ if __name__ == '__main__':
     data_json['ca'] = 50000
     # ddata_df, refer_df, data_df_meteo, vaild_cmip, evaluate_cmip, result_q, q_sim_yearly, vaild_cmip_res, evaluate_cmip_res, single_cmip_res = hbv_single_calc(data_json)
     result_dict = hbv_single_calc(data_json)
+    
+    
+    
+    
+    
+    
+    
