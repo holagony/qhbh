@@ -62,7 +62,7 @@ def hbv_single_calc(data_json):
     time_freq = data_json['time_freq'] # 控制预估时段
     evaluate_times = data_json['evaluate_times'] # 预估时段时间条
     refer_years = data_json['refer_years'] # 参考时段时间条
-    valid_times = data_json['valid_times'] # 验证期 '%Y%m,%Y%m'
+    valid_times = data_json.get('valid_times') # 验证期 '%Y%m,%Y%m'
     hydro_ids = data_json['hydro_ids'] # 水文站 40100350 唐乃亥
     sta_ids = data_json['sta_ids'] # 水文站对应的气象站 唐乃亥对应 '52943,52955,52957,52968,56033,56043,56045,56046,56065,56067'
     cmip_type = data_json['cmip_type'] # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
@@ -148,8 +148,9 @@ def hbv_single_calc(data_json):
     # 5.开始计算
     result_dict = dict()
     result_dict['uuid'] = uuid4
-    result_dict['表格预估'] = dict()
+    result_dict['表格'] = dict()
     result_dict['时序图'] = dict()
+    result_dict['时序图']['单模式'] = dict()
 
     # 5.1 参考时段数据，计算基准期
     refer_result = dict()
@@ -255,15 +256,11 @@ def hbv_single_calc(data_json):
 
     single_cmip_res = stats_result_4(single_cmip_res, base_p, '唐乃亥', hydro_ids)
     
-    result_dict = dict()
-    result_dict['uuid'] = uuid4
-    result_dict['表格历史'] = dict()
-    result_dict['表格预估'] = dict()
-    result_dict['时序图'] = dict()
-    result_dict['表格历史']['观测'] = None
-    result_dict['表格历史']['模拟观测'] = None
-    result_dict['表格历史']['模拟模式'] = None
-    result_dict['表格预估']['单模式'] = single_cmip_res
+    # result_dict['表格历史'] = dict()
+    # result_dict['表格历史']['观测'] = None
+    # result_dict['表格历史']['模拟观测'] = None
+    # result_dict['表格历史']['模拟模式'] = None
+    result_dict['表格'] = single_cmip_res
     result_dict['时序图']['基准期'] = refer_result
 
     # 最后遍历dict，如果是df就to_dict()
