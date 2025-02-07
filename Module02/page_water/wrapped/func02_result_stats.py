@@ -163,6 +163,7 @@ def stats_result_4(single_cmip_res, base_p, hydro_name, hydro_id):
             result['站号'] = hydro_id
             result = result[['站名','站号','Q','距平','距平百分率']]
             result.reset_index(drop=False,inplace=True)
+            result.columns = ['时间','站名','站号','Q','距平','距平百分率']
             sub_dict[insti] = result
     
     return single_cmip_res
