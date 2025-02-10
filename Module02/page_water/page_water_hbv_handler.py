@@ -62,7 +62,7 @@ def hbv_single_calc(data_json):
     time_freq = data_json['time_freq'] # 控制预估时段
     evaluate_times = data_json['evaluate_times'] # 预估时段时间条
     refer_years = data_json['refer_years'] # 参考时段时间条
-    valid_times = data_json['valid_times'] # 验证期 '%Y%m,%Y%m'
+    valid_times = data_json.get('valid_times') # 验证期 '%Y%m,%Y%m'
     hydro_ids = data_json['hydro_ids'] # 水文站 40100350 唐乃亥
     sta_ids = data_json['sta_ids'] # 水文站对应的气象站 唐乃亥对应 '52943,52955,52957,52968,56033,56043,56045,56046,56065,56067'
     cmip_type = data_json['cmip_type'] # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
@@ -143,13 +143,14 @@ def hbv_single_calc(data_json):
     # 4.根据预估时段，获取datetimeindex，然后进行filter
     time_index_e, time_index_15deg, time_index_20deg = create_datetimeindex(time_freq, evaluate_times)
     evaluate_cmip = data_time_filter(evaluate_cmip, time_index_e)  # 所有的数据
-
+    
     # ------------------------------------------------------------------
     # 5.开始计算
     result_dict = dict()
     result_dict['uuid'] = uuid4
-    result_dict['表格预估'] = dict()
+    result_dict['表格'] = dict()
     result_dict['时序图'] = dict()
+    result_dict['时序图']['单模式'] = dict()
 
     # 5.1 参考时段数据，计算基准期
     refer_result = dict()
@@ -159,6 +160,11 @@ def hbv_single_calc(data_json):
             tem_daily = data['tas']
             pre_daily = data['pr']
 
+            # 对温度数据(tem_daily)的nan值，使用该序列的平均值进行填充
+            # 对降水数据(pre_daily)的nan值，填充为0（因为缺失的降水通常可以假设为无降水）
+            tem_daily = tem_daily.fillna(tem_daily.mean())  # 用平均值填充温度的nan值
+            pre_daily = pre_daily.fillna(0)  # 将降水的nan值填充为0
+            
             # 计算蒸发
             tem_monthly = tem_daily.resample('1M').mean()
             pre_monthly = pre_daily.resample('1M').sum()
@@ -173,7 +179,7 @@ def hbv_single_calc(data_json):
             q_sim = hbv_main(len(temp), date_time, month, temp, precip, evp_monthly, tem_monthly, d, fc, beta, c, k0, k1, k2, kp, l, pwp, Tsnow_thresh, ca)
             base_p = q_sim.mean(axis=0).round(1)
             refer_result[exp][insti] = base_p
-
+    
     # 5.预估-单情景-单模式
     single_cmip_res = dict()
     for exp, sub_dict1 in evaluate_cmip.items():  # evaluate_cmip[exp][insti]['tmp']
@@ -181,6 +187,9 @@ def hbv_single_calc(data_json):
         for insti, sub_dict2 in sub_dict1.items():
             tem_daily = sub_dict2['tas']
             pre_daily = sub_dict2['pr']
+
+            tem_daily = tem_daily.fillna(tem_daily.mean())  # 用平均值填充温度的nan值
+            pre_daily = pre_daily.fillna(0)  # 将降水的nan值填充为0
         
             # 计算蒸发
             tem_monthly = tem_daily.resample('1M').mean()
@@ -209,7 +218,10 @@ def hbv_single_calc(data_json):
                 for insti, sub_dict2 in sub_dict1.items():
                     tem_daily = sub_dict2['tas']
                     pre_daily = sub_dict2['pr']
-                
+
+                    tem_daily = tem_daily.fillna(tem_daily.mean())  # 用平均值填充温度的nan值
+                    pre_daily = pre_daily.fillna(0)  # 将降水的nan值填充为0
+
                     # 计算蒸发
                     tem_monthly = tem_daily.resample('1M').mean()
                     pre_monthly = pre_daily.resample('1M').sum()
@@ -236,7 +248,10 @@ def hbv_single_calc(data_json):
                 for insti, sub_dict2 in sub_dict1.items():
                     tem_daily = sub_dict2['tas']
                     pre_daily = sub_dict2['pr']
-                
+
+                    tem_daily = tem_daily.fillna(tem_daily.mean())  # 用平均值填充温度的nan值
+                    pre_daily = pre_daily.fillna(0)  # 将降水的nan值填充为0
+                    
                     # 计算蒸发
                     tem_monthly = tem_daily.resample('1M').mean()
                     pre_monthly = pre_daily.resample('1M').sum()
@@ -255,16 +270,16 @@ def hbv_single_calc(data_json):
 
     single_cmip_res = stats_result_4(single_cmip_res, base_p, '唐乃亥', hydro_ids)
     
-    result_dict = dict()
-    result_dict['uuid'] = uuid4
-    result_dict['表格历史'] = dict()
-    result_dict['表格预估'] = dict()
-    result_dict['时序图'] = dict()
-    result_dict['表格历史']['观测'] = None
-    result_dict['表格历史']['模拟观测'] = None
-    result_dict['表格历史']['模拟模式'] = None
-    result_dict['表格预估']['单模式'] = single_cmip_res
-    result_dict['时序图']['基准期'] = refer_result
+    # result_dict['表格历史'] = dict()
+    # result_dict['表格历史']['观测'] = None
+    # result_dict['表格历史']['模拟观测'] = None
+    # result_dict['表格历史']['模拟模式'] = None
+    result_dict['表格']['预估'] = single_cmip_res
+    
+    for ssp, dict1 in refer_result.items():
+        for mode, val in dict1.items():
+            dict1[mode] = pd.DataFrame([val],columns=[mode])
+    result_dict['时序图']['单模式']['基准期'] = refer_result
 
     # 最后遍历dict，如果是df就to_dict()
     result_dict = convert_nested_df(result_dict)
@@ -276,14 +291,13 @@ def hbv_single_calc(data_json):
 if __name__ == '__main__':
     data_json = dict()
     data_json['time_freq'] = 'Y'
-    data_json['evaluate_times'] = "2030,2060" # 预估时段时间条
-    data_json['refer_years'] = '1985,2014'# 参考时段时间条
-    data_json['valid_times'] = '202303,202403' # 验证期 '%Y%m,%Y%m'
+    data_json['evaluate_times'] = "2023,2050" # 预估时段时间条
+    data_json['refer_years'] = '1995,2014'# 参考时段时间条
     data_json['hydro_ids'] = '40100350' # 唐乃亥
     data_json['sta_ids'] = "52943,52957,52955,56033,56067,56045,56046,56043,56065,52968,56074,56079,56173"
     data_json['cmip_type'] = 'original' # 预估数据类型 原始/delta降尺度/rf降尺度/pdf降尺度
     data_json['cmip_res'] = None # 分辨率 1/5/10/25/50/100 km
-    data_json['cmip_model'] = ['Set']# 模式，列表：['CanESM5','CESM2']等
+    data_json['cmip_model'] = ['RCM_BCC']# 模式，列表：['CanESM5','CESM2']等
     data_json['d'] = 6.1
     data_json['fc'] = 195
     data_json['beta'] = 2.6143
@@ -298,3 +312,10 @@ if __name__ == '__main__':
     data_json['ca'] = 50000
     # ddata_df, refer_df, data_df_meteo, vaild_cmip, evaluate_cmip, result_q, q_sim_yearly, vaild_cmip_res, evaluate_cmip_res, single_cmip_res = hbv_single_calc(data_json)
     result_dict = hbv_single_calc(data_json)
+    
+    
+    
+    
+    
+    
+    
