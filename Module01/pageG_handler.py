@@ -177,6 +177,7 @@ def other_features_stats(data_json):
         qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
     
     elif element == 'cargo_transport':
+        path = cfg.FILES.FILE04
         qh_df = pd.read_excel(path, sheet_name='货物运输量', header=0)
         qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
     
