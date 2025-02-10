@@ -76,6 +76,7 @@ def other_features_stats(data_json):
         if sta_ids == '630000':
             qh_df = pd.read_excel(path, sheet_name='青海省国民经济生产总值', header=0)
             qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
+            qh_df = qh_df.round(2)
         else:
             sta_ids = sta_ids.split(',')
             station_info = pd.read_excel(path, sheet_name='Sheet1', header=None)
@@ -85,6 +86,7 @@ def other_features_stats(data_json):
             qh_df = pd.read_excel(path, sheet_name='地区生产总值', header=0)
             qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
             qh_df = qh_df[['年份', '指标', '单位'] + stations]
+            qh_df = qh_df.round(2)
             
             # 站名站号信息
             station_df = pd.read_excel(path, sheet_name='Sheet1', header=None)
