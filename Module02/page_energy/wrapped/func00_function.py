@@ -131,7 +131,7 @@ def data_deal(result_days):
     
     tmp_days_df = pd.DataFrame(columns=result_days.columns)
     tmp_days_df.loc['平均'] = np.round(result_days.iloc[:, :].mean(axis=0).astype(float),2)
-    tmp_days_df.loc['变率'] = np.round(result_days.apply(trend_rate, axis=0),2)
+    tmp_days_df.loc['变率'] = np.round(result_days.apply(trend_rate, axis=0),3)
     tmp_days_df.loc['最大值'] = result_days.iloc[:, :].max(axis=0)
     tmp_days_df.loc['最小值'] = result_days.iloc[:, :].min(axis=0)
     
@@ -154,7 +154,7 @@ def data_deal_num(result_days):
     
     tmp_days_df = pd.DataFrame(columns=result_days.columns)
     tmp_days_df.loc['平均'] = np.round(result_days.iloc[1:, :].mean(axis=0).astype(float),2)
-    tmp_days_df.loc['变率'] = np.round(result_days.iloc[1:, :].apply(trend_rate, axis=0),2)
+    tmp_days_df.loc['变率'] = np.round(result_days.iloc[1:, :].apply(trend_rate, axis=0),3)
     tmp_days_df.loc['最大值'] = result_days.iloc[1:, :].max(axis=0)
     tmp_days_df.loc['最小值'] = result_days.iloc[1:, :].min(axis=0)
     
@@ -190,7 +190,7 @@ def data_deal_2(data_df,refer_df,flag):
     if flag==1:
         tmp_df = pd.DataFrame(columns=data_df.columns)
         tmp_df.loc['平均'] = np.round(data_df.iloc[:, :].mean(axis=0).astype(float),2)
-        tmp_df.loc['变率'] = np.round(data_df.apply(trend_rate, axis=0),2)
+        tmp_df.loc['变率'] = np.round(data_df.apply(trend_rate, axis=0),3)
         tmp_df.loc['最大值'] = data_df.iloc[:, :].max(axis=0).astype(float).round(1)
         tmp_df.loc['最小值'] = data_df.iloc[:, :].min(axis=0).astype(float).round(1)
         tmp_df.loc['参考时段均值'] =  np.round(refer_df.iloc[:, 1:].mean(axis=0).astype(float),2)
@@ -239,7 +239,7 @@ def data_deal_num_2(data_df,refer_df,flag):
     if flag==1:
         tmp_df = pd.DataFrame(columns=data_df.columns)
         tmp_df.loc['平均'] = data_df.iloc[1:, :].mean(axis=0).astype(float).round(2)
-        tmp_df.loc['变率'] = np.round(data_df.iloc[1:, :].apply(trend_rate, axis=0),2)
+        tmp_df.loc['变率'] = np.round(data_df.iloc[1:, :].apply(trend_rate, axis=0),3)
         tmp_df.loc['最大值'] = data_df.iloc[1:, :].max(axis=0)
         tmp_df.loc['最小值'] = data_df.iloc[1:, :].min(axis=0)
         tmp_df.loc['参考时段均值'] = refer_df.iloc[1:, :].mean(axis=0).astype(float).round(2)

@@ -66,7 +66,7 @@ def agriculture_features_stats(data_json):
     stats_times = data_json['stats_times']
     sta_ids = data_json['sta_ids']
     time_freq = data_json['time_freq']
-    last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
+    #last_year = int(nearly_years.split(',')[-1])  # 上一年的年份
 
     # 2.参数处理
     # 确定表名
@@ -345,7 +345,7 @@ def agriculture_features_stats(data_json):
         data_df_1,station_df= get_database_data(elements,element_str,crop_str,sta_ids,table_name,stats_times,1,time_freq)
         refer_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,refer_years,0,time_freq)
         nearly_df = get_database_data(elements,element_str,crop_str,sta_ids,table_name,nearly_years,0,time_freq)
-        last_df=nearly_df[nearly_df.index.year==last_year].copy()
+        last_df=nearly_df[nearly_df.index.year==nearly_df.index.year[-1]].copy()
    
     # 解决冬小麦 跨年问题
     if crop in ['winter_wheat']:

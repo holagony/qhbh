@@ -64,7 +64,7 @@ def data_deal_2(data_df,refer_df,flag):
         
     tmp_df = pd.DataFrame(columns=data_df.columns)
     tmp_df.loc['平均'] = np.round(data_df.iloc[:, :].mean(axis=0).astype(float),2)
-    tmp_df.loc['变率'] = np.round(data_df.apply(trend_rate, axis=0),2)
+    tmp_df.loc['变率'] = np.round(data_df.apply(trend_rate, axis=0),3)
     tmp_df.loc['最大值'] = data_df.iloc[:, :].max(axis=0)
     tmp_df.loc['最小值'] = data_df.iloc[:, :].min(axis=0)
     tmp_df.loc['参考时段均值'] =  np.round(refer_df.iloc[:, :].mean(axis=0).astype(float),2)
