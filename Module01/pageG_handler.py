@@ -132,6 +132,7 @@ def other_features_stats(data_json):
         if sta_ids == '630000':
             qh_df = pd.read_excel(path, sheet_name='5度采暖度日总量（℃•d）', header=0)
             qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
+            qh_df = qh_df.round(1)
         else:
             sta_ids = sta_ids.split(',')
             station_info = pd.read_excel(path, sheet_name='Sheet1', header=0)
@@ -140,6 +141,7 @@ def other_features_stats(data_json):
             qh_df = pd.read_excel(path, sheet_name='5度采暖度日总量（℃•d）', header=0)
             qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
             qh_df = qh_df[['年份'] + stations]
+            qh_df = qh_df.round(1)
             
             # 站名站号信息
             station_df = pd.read_excel(path, sheet_name='Sheet1', header=0)
@@ -154,6 +156,7 @@ def other_features_stats(data_json):
         if sta_ids == '630000':
             qh_df = pd.read_excel(path, sheet_name='18度采暖度日总量（℃•d）', header=0)
             qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
+            qh_df = qh_df.round(1)
         else:
             sta_ids = sta_ids.split(',')
             station_info = pd.read_excel(path, sheet_name='Sheet1', header=0)
@@ -162,6 +165,7 @@ def other_features_stats(data_json):
             qh_df = pd.read_excel(path, sheet_name='18度采暖度日总量（℃•d）', header=0)
             qh_df = qh_df[(qh_df['年份'] >= start_year) & (qh_df['年份'] <= end_year)]
             qh_df = qh_df[['年份'] + stations]
+            qh_df = qh_df.round(1)
             
             # 站名站号信息
             station_df = pd.read_excel(path, sheet_name='Sheet1', header=0)
