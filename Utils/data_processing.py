@@ -178,3 +178,59 @@ def data_processing(data_in, element, degree=None):
     df_data.reset_index(level=0, drop=True, inplace=True)
     
     return df_data
+
+def grid_data_processing(data_in, element_str):
+    '''
+    处理小时CMPAS/CLRAS/HRCLRAS数据成年数据
+    '''
+    if data_in is None or data_in.empty:
+        return data_in
+    df_data = data_in.copy()
+    
+    try:
+        df_data['Datetime'] = pd.to_datetime(df_data['Datetime'])
+    except:
+        df_data['Datetime'] = pd.to_datetime(df_data['Datetime'], format='%Y%m%d%H')
+        
+    df_data.set_index('Datetime', inplace=True)
+    df_data['Station_Id_C'] = df_data['Station_Id_C'].astype(str)
+    df_data['Lon'] = df_data['Lon'].astype(float)
+    df_data['Lat'] = df_data['Lat'].astype(float)
+
+    if element_str == 'tmp_avg':
+        df_data.rename({'tmp':'tmp_avg'}, inplace=True)
+    elif element_str == 'tmp_max':
+        df_data.rename({'tmp':'tmp_max'}, inplace=True)
+    elif element_str == 'tmp_min':
+        df_data.rename({'tmp':'tmp_min'}, inplace=True)
+
+    df_data[element_str] =  pd.to_numeric(df_data[element_str], errors='coerce')
+
+    # 时间转换
+    resample_max = ['tmp_max']
+    resample_min = ['tmp_min']
+    resample_sum = ['pre','ssra']
+    resample_mean = ['tmp_avg','win','shu','rhu','sm10','sm20','sm50','dew']
+
+    def sample(x):
+        '''
+        重采样的applyfunc
+        '''
+        x_info = x[['Station_Id_C', 'Lat', 'Lon']].resample('1A').first()
+        if element_str in resample_max:
+            x_res = x[element_str].resample('1A').max()
+        elif element_str in resample_min:
+            x_res = x[element_str].resample('1A').min()
+        elif element_str in resample_sum:
+            x_res = x[element_str].resample('1A').sum()
+        elif element_str in resample_mean:
+            x_res = x[element_str].resample('1A').mean().astype(float).round(1)
+
+        x_concat = pd.concat([x_info, x_res], axis=1)
+        return x_concat
+    
+    df_data = df_data.groupby('Station_Id_C').apply(sample)  # 月数据和日数据转换为1年一个值
+    df_data = df_data.replace(to_replace='None', value=np.nan).dropna()
+    df_data.reset_index(level=0, drop=True, inplace=True)
+    
+    return df_data
