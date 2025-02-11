@@ -99,7 +99,7 @@ def agriculture_features(data_json):
 
     if element in ['sowin_date','maturity','reproductive_day','crop_acreage','yield']:
         
-        if sta_ids!='63000':
+        if sta_ids!='630000':
             result_dict['uuid'] = uuid4
             result_dict['表格'] = dict()
             result_dict['分布图'] = dict()
