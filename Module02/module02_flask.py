@@ -17,6 +17,9 @@ from Module02.page_climate.page_climate_handler import climate_esti
 from Module02.page_traffic.traffic_handler import traffic_esti
 from Module02.page_grass.page_grass_model_handler import grass_model_def
 from Module02.page_grass.page_grass_table_handler import grass_table_def
+from Module02.page_grass.page_grass_cesva_handler import grass_cesva
+
+
 from Module02.page_risk.risk_handler import risk_esti
 from Module02.page_risk.drought_handler import drought_esti
 from Module02.page_extreme.page_extreme_climate_esti_handler import extreme_climate_esti
@@ -235,6 +238,21 @@ def pagea_grass_table():
     return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result_dict}, ensure_ascii=False, ignore_nan=True)
     return return_data
 
+@module02.route('/v1/cesva', methods=['POST'])
+def pagea_grass_cesva():
+    '''
+    重点领域与行业预估-草地生态影响预估-CESVA模式
+    '''
+    json_str = request.get_data(as_text=True)  # 获取JSON字符串
+    data_json = json.loads(json_str)
+    is_async = data_json.get('is_async')
+    if is_async == 1 or is_async is True or is_async == '1':
+        result = celery_submit.delay('workerPageGrassCesva', json_str)
+        return jsonify({'code': 202, 'msg': '任务提交成功，开始计算...', 'data': {'task_id': result.id}})
+
+    result_dict = grass_cesva(data_json)
+    return_data = simplejson.dumps({'code': 200, 'msg': 'success', 'data': result_dict}, ensure_ascii=False, ignore_nan=True)
+    return return_data
 
 @module02.route('/v1/risk_rain', methods=['POST'])
 def pagea_risk_rain():
