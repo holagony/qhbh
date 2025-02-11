@@ -224,7 +224,7 @@ def water_features_stats(data_json):
 
     # 改一下数据格式
     if element=='Q':
-        stats_result.rename(columns={sta_ids[0]: '径流量'}, inplace=True)
+        stats_result.rename(columns={sta_ids[0]: '流量'}, inplace=True)
         stats_result.insert(1, '水文站', new_station['站名'].iloc[0])
 
     
