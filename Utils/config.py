@@ -113,3 +113,6 @@ __C.FILES.DISASTER = os.path.join(data_file_dir, 'disaster.nc') # 承灾体数�
 __C.FILES.DROUGHT_CZT = os.path.join(data_file_dir, 'drought_czt.nc') # 承灾体数据
 __C.FILES.DROUGHT_YZ = os.path.join(data_file_dir, 'drought_yz.nc') # 承灾体数据
 __C.FILES.DROUGHT_GDP = os.path.join(data_file_dir, 'drought_gdp.nc') # 承灾体数据
+
+# CESVA模型静态数据
+__C.FILES.CESVA = os.path.join(data_file_dir, 'fpar_tem.csv') # 承灾体数据

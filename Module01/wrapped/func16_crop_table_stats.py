@@ -46,7 +46,7 @@ def agriculture_features_stats(data_json):
         (1)当time_freq选择年Y。下载连续的年数据，传参：'%Y,%Y'
 
     :param sta_ids: 传入的站点，多站，传：'52866,52713,52714'
-                    传入的区域，全省：63000；各区域id
+                    传入的区域，全省：630000；各区域id
     :param interp_method: 对应原型的插值方法
         传参：
         克里金 - 'kriging'
@@ -79,13 +79,13 @@ def agriculture_features_stats(data_json):
     table_dict['reproductive_day'] = 'qh_climate_crop_growth'
     
     if element=='crop_acreage':
-        if sta_ids=='63000':
+        if sta_ids=='630000':
             table_name='qh_climate_crop_sowing_province'
         else:
             table_name='qh_climate_crop_sowing_area'
 
     elif element=='yield':
-        if sta_ids=='63000':
+        if sta_ids=='630000':
             table_name='qh_climate_crop_yield_province'
         else:
             table_name='qh_climate_crop_yield'    
@@ -126,13 +126,13 @@ def agriculture_features_stats(data_json):
     element_dict['reproductive_day'] = '11,91'
 
     if element=='crop_acreage':
-        if sta_ids=='63000':
+        if sta_ids=='630000':
             elements='datatime,total,grain,wheat,tubers,cashcrop'
         else:
             elements='datatime,zone,lon,lat,sowing_area,type,station_id_c'
 
     elif element=='yield':
-        if sta_ids=='63000':
+        if sta_ids=='630000':
             elements='datatime,grain,wheat,tubers,oilseeds'
         else:
             elements='datatime,zone,lon,lat,yield,type,station_id_c'    
@@ -437,7 +437,7 @@ def agriculture_features_stats(data_json):
 
     # 产量和面积
     elif element in ['crop_acreage','yield']:
-        if sta_ids=='63000':
+        if sta_ids=='630000':
             def acreage_yield_province_get(element,elements,table_name,stats_times):
                 conn = psycopg2.connect(database=cfg.INFO.DB_NAME, user=cfg.INFO.DB_USER, password=cfg.INFO.DB_PWD, host=cfg.INFO.DB_HOST, port=cfg.INFO.DB_PORT)
                 cur = conn.cursor()
