@@ -210,7 +210,7 @@ def agriculture_features_stats(data_json):
                                     AND crop_name = %s
                                     AND groper_name_ten IN %s
                                 """)
-                cur.execute(query, (start_year, end_year,str(int(start_year)-1),str(int(end_year)+1), sta_ids))
+                cur.execute(query, (start_year, end_year,str(int(start_year)-1),str(int(end_year)+1), sta_ids,crop_str,element_tuple))
     
             else:    
                 query = sql.SQL(f"""
@@ -223,7 +223,7 @@ def agriculture_features_stats(data_json):
                                     AND crop_name = %s
                                     AND groper_name_ten IN %s
                                 """)  
-                cur.execute(query, (start_year, end_year, mon_, sta_ids))
+                cur.execute(query, (start_year, end_year, mon_, sta_ids,crop_str,element_tuple))
     
             data = cur.fetchall()
     
@@ -244,7 +244,7 @@ def agriculture_features_stats(data_json):
             end_year = stats_times.split(',')[1][:4]
             start_month = stats_times.split(',')[0][4:]
             end_month = stats_times.split(',')[1][4:]
-            cur.execute(query, (start_year, start_month, start_year, end_year, end_year, end_month, sta_ids))
+            cur.execute(query, (start_year, start_month, start_year, end_year, end_year, end_month, sta_ids,crop_str,element_tuple))
             data = cur.fetchall()
     
         elif time_freq == 'M2':  # ['%Y,%Y','11,12,1,2']
@@ -264,7 +264,7 @@ def agriculture_features_stats(data_json):
             years = stats_times[0]
             start_year = years.split(',')[0]
             end_year = years.split(',')[1]
-            cur.execute(query, (start_year, end_year, mon_, sta_ids))
+            cur.execute(query, (start_year, end_year, mon_, sta_ids,crop_str,element_tuple))
             data = cur.fetchall()
     
         elif time_freq == 'D1':  # '%Y%m%d,%Y%m%d'
@@ -286,7 +286,7 @@ def agriculture_features_stats(data_json):
             end_month = stats_times.split(',')[1][4:6]
             start_date = stats_times.split(',')[0][6:]
             end_date = stats_times.split(',')[1][6:]
-            cur.execute(query, (start_year, start_month, start_date, start_year, end_year, end_year, end_month, end_date, sta_ids))
+            cur.execute(query, (start_year, start_month, start_date, start_year, end_year, end_year, end_month, end_date, sta_ids,crop_str,element_tuple))
             data = cur.fetchall()
     
         elif time_freq == 'D2':  # ['%Y,%Y','%m%d,%m%d']
@@ -313,7 +313,7 @@ def agriculture_features_stats(data_json):
             end_mon = dates.split(',')[1][:2]
             start_date = dates.split(',')[0][2:]
             end_date = dates.split(',')[1][2:]
-            cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_mon, end_date, sta_ids))
+            cur.execute(query, (start_year, end_year, start_mon, start_date, start_mon, end_mon, end_mon, end_date, sta_ids,crop_str,element_tuple))
             data = cur.fetchall()
     
         cur.close()
@@ -624,3 +624,37 @@ if __name__ == '__main__':
     station_df,stats_result,post_data_df,post_refer_df,reg_params = agriculture_features_stats(data_json)
     t2 = time.time()
     print(t2 - t1)
+    
+    
+    data_json={
+  "element": "sowin_date",
+  "showEleName": "播种期",
+  "crop": "spring_maizet",
+  "区域": "民和,贵德",
+  "sta_ids": "52868,52876",
+  "time_freq": "D2",
+  "showTimeScale": "日",
+  "refer_years": [
+    "1991,2024",
+    "0101,1231"
+  ],
+  "stats_times": [
+    "2009,2024",
+    "0101,1231"
+  ],
+  "时间": "2009年01月01日—2024年12月31日",
+  "interp_method": "idw",
+  "nearly_years": [
+    "2015,2024",
+    "0101,1231"
+  ],
+  "is_async": 1,
+  "ci": ""
+}
+    
+    
+    
+    
+    
+    
+    
