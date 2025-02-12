@@ -33,7 +33,12 @@ def cesva_pre(element,data_dir,time_scale,insti,scene,stats_times,time_freq,stat
     # 读取数据
     cesva_file=pd.read_csv(cfg.FILES.CESVA)
     df_rsds=read_model_data(data_dir,time_scale,insti,scene,'rsds',stats_times,time_freq,station_ids)
-    df_rsds = df_rsds*24 * 3600*31 / 1e6
+    
+    if time_scale== 'monthly':
+        df_rsds = df_rsds*24 * 3600*31 / 1e6
+    elif time_scale== 'yearly':
+        df_rsds = df_rsds*24 * 3600*360 / 1e6
+        
 
     df_tas=read_model_data(data_dir,time_scale,insti,scene,'tas',stats_times,time_freq,station_ids)
     df_pr=read_model_data(data_dir,time_scale,insti,scene,'pr',stats_times,time_freq,station_ids)
