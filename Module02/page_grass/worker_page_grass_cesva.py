@@ -19,7 +19,7 @@ def callback(url, result_id, result):
     requests.put(url, headers=header, data=json.dumps(_json))
 
 
-class workerPageGrassTable:
+class workerPageGrassCesva:
 
     def act(self, json_str):
         data_json = json.loads(json_str)

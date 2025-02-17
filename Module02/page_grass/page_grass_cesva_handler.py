@@ -147,7 +147,7 @@ def grass_cesva(data_json):
                 base_p[scene_a][insti_a]=dict()
                 base_p[scene_a][insti_a][elem_dict[element]]=dict()
                 
-                result= cesva_pre(element,data_dir,time_scale,insti_a,scene_a,var,refer_times,time_freq,sta_ids2,station_dict)
+                result= cesva_pre(element,data_dir,time_scale,insti_a,scene_a,refer_times,time_freq,sta_ids2,station_dict)
                 refer_data[scene_a][insti_a]=result
                 base_p[scene_a][insti_a][elem_dict[element]]=result.iloc[:,1::].mean().to_frame().round(1).T.reset_index(drop=True).to_dict(orient='records')
 
@@ -159,7 +159,7 @@ def grass_cesva(data_json):
         for scene_a in scene:
             pre_data[insti_a][scene_a]=dict()
             
-            result= cesva_pre(element,data_dir,time_scale,insti_a,scene_a,var,stats_times,time_freq,sta_ids2,station_dict)
+            result= cesva_pre(element,data_dir,time_scale,insti_a,scene_a,stats_times,time_freq,sta_ids2,station_dict)
             pre_data[insti_a][scene_a]=result
             
     stats_end_year=result['年'].iloc[-1]
